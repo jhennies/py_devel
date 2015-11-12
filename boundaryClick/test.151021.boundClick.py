@@ -13,7 +13,6 @@ from PyQt4.QtGui import QApplication, QPainter
 from PyQt4 import QtGui
 from PyQt4 import Qt
 
-
 import pyqtgraph as pg
 from pyqtgraph.functions import arrayToQPath
 
