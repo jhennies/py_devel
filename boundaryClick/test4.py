@@ -35,3 +35,12 @@ labels[0:5, 0:5] = 2
 print labels
 print _image_processing.findEdgePaths(labels)
 
+back = (numpy.ones((500, 500, 500)) * 0).astype(numpy.uint8)
+back[:] = 1
+for i in range(0, 500, 50):
+    back[i:i+50, :] = back[i:i+50, :] + i
+    back[:, i:i+50] = back[:, i:i+50] + i
+ol = (numpy.zeros((500, 500, 500))).astype(numpy.uint8)
+ol[:] = back
+
+print back

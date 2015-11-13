@@ -1,7 +1,6 @@
 
 import numpy
 from volumina.api import Viewer
-from volumina.pixelpipeline.datasources import *
 from PyQt4.QtGui import *
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import *
@@ -85,15 +84,6 @@ class BoundaryViewer(Viewer):
     def __init__(self):
         super(BoundaryViewer, self).__init__()
         self.editor.posModel.slicingPositionChanged.connect(self.slicing_position_changed)
-
-    def add_layer_from_datasource(self, source, name=None, colortable=None, direct=False):
-        if colortable is None:
-            colortable = self._randomColors()
-        layer = ColortableLayer(source, colortable, direct=direct)
-        if name:
-            layer.name = name
-        self.layerstack.append(layer)
-        return layer
 
     def add_background_image(self, image):
         self._back_image = image
@@ -194,17 +184,25 @@ if __name__ == "__main__":
     #     back[i:i+50, :, :] = back[i:i+50, :, :] + i
     #     back[:, i:i+50, :] = back[:, i:i+50, :] + i*10
     #     back[:, :, i:i+50] = back[:, :, i:i+50] + i*100
+    #
     # ol = (numpy.zeros((500, 500, 500))).astype(numpy.uint16)
     # ol[:] = back
+
 
     back.shape = (1,)+back.shape+(1,)
     ol.shape = (1,)+ol.shape+(1,)
 
     # Add layers
+    # l1 = v.addGrayscaleLayer(back, name="back")
+    # l1.visible = True
+    # l2 = v.addColorTableLayer(ol, name="overlay")
     l1 = v.add_background_image(back)
-    # l2 = v.add_overlay(ol)
-    src = ArraySource(ol)
-    l2 = v.add_layer_from_datasource(src, name="ol", colortable=None, direct=False)
+    l2 = v.add_overlay(ol)
+
+    # Add the path to the graphics scene
+    # v.editor.imageScenes[0].addItem(item1)
+    # v.editor.imageScenes[1].addItem(item1)
+    # v.editor.imageScenes[2].addItem(item1)
 
     v.setWindowTitle("Clickable Border Viewer")
     v.show()
