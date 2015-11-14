@@ -75,12 +75,13 @@ class ClickablePathItem(QGraphicsPathItem):
 
 class BoundaryViewer(Viewer):
 
-    _back_image = numpy.array
-    _overlay_image = numpy.array
+    # _back_image = numpy.array
+    # _overlay_image = numpy.array
     _layer_back = GrayscaleLayer
-    _layer_overlay = ColortableLayer
+    # _layer_overlay = ColortableLayer
 
     _clickable_paths = [[]]
+    _overlay_layer = ColortableLayer
 
     def __init__(self):
         super(BoundaryViewer, self).__init__()
@@ -89,26 +90,28 @@ class BoundaryViewer(Viewer):
     def add_layer_from_datasource(self, source, name=None, colortable=None, direct=False):
         if colortable is None:
             colortable = self._randomColors()
-        layer = ColortableLayer(source, colortable, direct=direct)
+        self._overlay_layer = ColortableLayer(source, colortable, direct=direct)
         if name:
-            layer.name = name
-        self.layerstack.append(layer)
-        return layer
+            self._overlay_layer.name = name
+        self.layerstack.append(self._overlay_layer)
+        return self._overlay_layer
 
     def add_background_image(self, image):
-        self._back_image = image
+        # self._back_image = image
         self._layer_back = self.addGrayscaleLayer(image, name="back")
         self._layer_back.visible = True
         return self._layer_back
 
-    def add_overlay(self, overlay):
-        self._overlay_image = overlay
-        self._layer_overlay = self.addColorTableLayer(overlay, name="overlay")
-        self._layer_overlay.visible = True
-        return self._layer_overlay
+    # def add_overlay(self, overlay):
+    #     self._overlay_image = overlay
+    #     self._layer_overlay = self.addColorTableLayer(overlay, name="overlay")
+    #     self._layer_overlay.visible = True
+    #     return self._layer_overlay
 
     @pyqtSlot(object, object)
     def slicing_position_changed(self, new_position, old_position):
+
+        # TODO: This code has to be also executed when the viewport rect changes
 
         # Calculate paths for each of the three displays
         for i in range(0, 3):
@@ -135,14 +138,34 @@ class BoundaryViewer(Viewer):
                 self.editor.imageScenes[i].addItem(self._clickable_paths[i][-1])
 
     def get_visible_paths(self, position, display_plane):
-        if display_plane == 0:
-            current_slice = numpy.transpose(numpy.array(self._overlay_image[0, position[0], :, :, 0], dtype=numpy.float32))
-        elif display_plane == 1:
-            current_slice = numpy.array(self._overlay_image[0, :, position[1], :, 0], dtype=numpy.float32)
-        elif display_plane == 2:
-            current_slice = numpy.array(self._overlay_image[0, :, :, position[2], 0], dtype=numpy.float32)
+        # TODO: Here we need to obtain the image using the data source object
+        # if display_plane == 0:
+        #     current_slice = numpy.transpose(numpy.array(self._overlay_image[0, position[0], :, :, 0], dtype=numpy.float32))
+        # elif display_plane == 1:
+        #     current_slice = numpy.array(self._overlay_image[0, :, position[1], :, 0], dtype=numpy.float32)
+        # elif display_plane == 2:
+        #     current_slice = numpy.array(self._overlay_image[0, :, :, position[2], 0], dtype=numpy.float32)
+        #
+        # return _image_processing.findEdgePaths(current_slice)
 
-        return _image_processing.findEdgePaths(current_slice)
+        # TODO: replace this by determination of the actual bounding box
+        rq = self._overlay_layer.datasources[0].request(
+            (slice(0, 1),
+             slice(10, 70),
+             slice(10, 70),
+             slice(10, 70),
+             slice(0, 1)
+             ))
+
+        print self.editor.imageViews[0].viewportRect()
+
+        # Get request data and convert it into an array
+        slc = numpy.asarray(rq.wait(), dtype=numpy.float32)
+        # print slc.shape
+        return _image_processing.findEdgePaths(slc[0, :, :, position[2], 0])
+
+        # # TODO: This is just a dummy to avoid errors
+        # return _image_processing.findEdgePaths(numpy.zeros((10, 10), dtype=numpy.float32))
 
 ########################################################################################################################
 # __main__

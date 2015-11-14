@@ -184,10 +184,8 @@ if __name__ == "__main__":
     #     back[i:i+50, :, :] = back[i:i+50, :, :] + i
     #     back[:, i:i+50, :] = back[:, i:i+50, :] + i*10
     #     back[:, :, i:i+50] = back[:, :, i:i+50] + i*100
-    #
     # ol = (numpy.zeros((500, 500, 500))).astype(numpy.uint16)
     # ol[:] = back
-
 
     back.shape = (1,)+back.shape+(1,)
     ol.shape = (1,)+ol.shape+(1,)
