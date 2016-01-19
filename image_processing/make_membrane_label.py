@@ -49,6 +49,7 @@ class ImageFileProcessing:
             return data
 
     def write_h5(self, nfile, data, image_name=None):
+        print "Writing..."
         of = h5py.File(self._imagePath + nfile)
         if image_name is None:
             of.create_dataset(self._imageName, data=data)
@@ -186,6 +187,10 @@ class ImageFileProcessing:
         n_total = len(coords[0])
         print n_total
 
+        if n >= n_total:
+            print 'n > n_total'
+            return None
+
         # Randomly select n coordinates for conversion
         new_coords = ()
         rnd = random.sample(xrange(n_total), n)
@@ -194,8 +199,9 @@ class ImageFileProcessing:
             print i
 
         self._data[new_coords] = to_label
-        
-        if file_name is None:
+
+        if file_name is not None:
+            print file_name
             self.write_h5(file_name, self._data, image_name=dataset_name)
         else:
             return self._data
@@ -215,7 +221,11 @@ if __name__ == "__main__":
     # ifp.crop_h5((100, 100, 100))
     # quit()
 
-    ifp.mark_boundaries(boundary_label=None, ignore_width=4, ignore_label=1, name='boundaries.blNone.ign4.ignl1.h5')
+    # Large membrane areas (label == 1) such as myelin sheets are not labeled
+    # ifp.mark_boundaries(boundary_label=None, ignore_width=4, ignore_label=1, name='boundaries.blNone.ign4.ignl1.h5')
+
+    # Large membrane areas are labeled as membrane
+    ifp.mark_boundaries(boundary_label=1, ignore_width=4, ignore_label=None, name='boundaries.bl1.ign4.h5')
 
 
 

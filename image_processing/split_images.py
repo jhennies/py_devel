@@ -2,8 +2,8 @@ from make_membrane_label import ImageFileProcessing
 
 __author__ = 'jhennies'
 
-imagePath = '/windows/mobi/h1.hci/isbi_2013/prediction/2015.test.crop_100_100_100/'
-imageFile = 'xytc_test-data-probs.crop_100_100_100_probs.h5'
+imagePath = '/windows/mobi/h1.hci/isbi_2013/prediction/20160105.blNone.ign4.ignl1.sparse10k/'
+imageFile = 'xytc_test-data-probs_probs.h5'
 imageName = None
 imageID = 0
 

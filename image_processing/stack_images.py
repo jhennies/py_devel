@@ -3,7 +3,7 @@ from make_membrane_label import ImageFileProcessing
 __author__ = 'jhennies'
 
 imagePath = '/windows/mobi/h1.hci/isbi_2013/data/'
-imageFile = 'test-input.crop_100_100_100.h5'
+imageFile = 'test-input.h5'
 imageName = None
 imageID = 0
 
@@ -15,5 +15,5 @@ ifp.set_file(imagePath, imageFile, imageName, imageID)
 # ifp.crop_h5((100, 100, 100))
 # quit()
 
-ifp.stack_h5('test-data-probs.crop_100_100_100.h5',
-             '/windows/mobi/h1.hci/isbi_2013/data/test-probs-nn-m.crop_100_100_100.h5', stack_id=0)
+ifp.stack_h5('test-data-probs.h5',
+             '/windows/mobi/h1.hci/isbi_2013/data/test-probs-nn-m.h5', stack_id=0)
