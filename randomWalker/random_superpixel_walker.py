@@ -280,7 +280,7 @@ class RandomSuperpixelWalker:
     def set_seed(self, seed, value):
         self._seeds[seed] = value
 
-    def walker(self, mode='bf', return_full_prob=False, depth=1.):
+    def walker(self, mode='bf', return_full_prob=False, tol=1.e-3):
 
         # self._data = np.atleast_3d(data)[..., np.newaxis]
 
@@ -296,10 +296,9 @@ class RandomSuperpixelWalker:
         self._B = B
         self._lap_sparse = lap_sparse
 
+        if mode == 'cg':
+            X = self._solve_cg(lap_sparse, B, tol=tol, return_full_prob=return_full_prob)
         # TODO
-        # if mode == 'cg':
-        #     X = self._solve_cg(lap_sparse, B, tol=tol,
-        #               return_full_prob=return_full_prob)
         # if mode == 'cg_mg':
         #     if not amg_loaded:
         #         warnings.warn(
@@ -341,21 +340,21 @@ class RandomSuperpixelWalker:
             X = np.argmax(X, axis=0)
         return X
 
-    # def _solve_cg(self, lap_sparse, B, tol, return_full_prob=False):
-    #     """
-    #     solves lap_sparse X_i = B_i for each phase i, using the conjugate
-    #     gradient method. For each pixel, the label i corresponding to the
-    #     maximal X_i is returned.
-    #     """
-    #     lap_sparse = lap_sparse.tocsc()
-    #     X = []
-    #     for i in range(len(B)):
-    #         x0 = cg(lap_sparse, -B[i].todense(), tol=tol)[0]
-    #         X.append(x0)
-    #     if not return_full_prob:
-    #         X = np.array(X)
-    #         X = np.argmax(X, axis=0)
-    #     return X
+    def _solve_cg(self, lap_sparse, B, tol=1.e-3, return_full_prob=False):
+        """
+        solves lap_sparse X_i = B_i for each phase i, using the conjugate
+        gradient method. For each pixel, the label i corresponding to the
+        maximal X_i is returned.
+        """
+        lap_sparse = lap_sparse.tocsc()
+        X = []
+        for i in range(len(B)):
+            x0 = linalg.isolve.iterative.cg(lap_sparse, -B[i].todense(), tol=tol)[0]
+            X.append(x0)
+        if not return_full_prob:
+            X = np.array(X)
+            X = np.argmax(X, axis=0)
+        return X
 
 if __name__ == "__main__":
 
@@ -375,7 +374,7 @@ if __name__ == "__main__":
     rsw.set_seed(17, 1)
     rsw.set_seed(85, 2)
 
-    result = rsw.walker(return_full_prob=False)
+    result = rsw.walker(return_full_prob=False, mode='cg')
 
     f = plt.figure(figsize=(8, 4))
 
