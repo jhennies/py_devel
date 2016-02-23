@@ -142,24 +142,14 @@ class RandomSuperpixelWalker:
 
     def calc_edge_features(self, feature_matrix=None):
 
-        #TODO: Find out how this works...
-        self._edge_features = 1
-        # compute gradient on interpolated image
-        # imgLabBig = vigra.resize(imgLab, [imgLab.shape[0]*2-1, imgLab.shape[1]*2-1])
-        # gradMag = vigra.filters.gaussianGradientMagnitude(self._data, 3)
-        #
-        # gridGraph = graphs.gridGraph(self._data.shape)
-        # print gridGraph
-        # print gradMag.shape
-        # gridGraphEdgeIndicator = graphs.edgeFeaturesFromInterpolatedImage(gridGraph, gradMag)
+        grid_graph = graphs.gridGraph(self._data.shape)
 
-        # if feature_matrix is None:
-        #     self._edge_features = self._rag.accumulateEdgeFeatures(self._data)
-        # else:
-        #     self._edge_features = self._rag.accumulateEdgeFeatures(feature_matrix)
-        #
-        # print self._edge_features
-        pass
+        if feature_matrix is None:
+            edge_features = graphs.edgeFeaturesFromImage(grid_graph, self._data)
+        else:
+            edge_features = graphs.edgeFeaturesFromImage(grid_graph, feature_matrix)
+
+        self._edge_features = self._rag.accumulateEdgeFeatures(edge_features)
 
     def calc_node_features(self, feature_matrix=None):
         if feature_matrix is None:
@@ -169,28 +159,8 @@ class RandomSuperpixelWalker:
 
     def _calc_weights_from_edge_features(self, eps=1.e-10):
 
-        # TODO: This is not how it's supposed to be. Also see calc_edge_features()
         beta = self._beta / (10 * self._data.std())
-
-        # Iterate over all edges...
-        edge_num = self._rag.edgeNum
-        weights = np.zeros((edge_num,))
-        for edge in self._rag.edgeIter():
-
-            eid = self._rag.id(edge)
-            uc, vc = self._rag.edgeUVCoordinates(eid)
-
-            # Get image intensities
-            if len(self._data.shape) == 3:
-                u_int = self._data[uc.transpose()[0], uc.transpose()[1], uc.transpose()[2]]
-                v_int = self._data[vc.transpose()[0], vc.transpose()[1], vc.transpose()[2]]
-            elif len(self._data.shape) == 2:
-                u_int = self._data[uc.transpose()[0], uc.transpose()[1]]
-                v_int = self._data[vc.transpose()[0], vc.transpose()[1]]
-
-            weight = np.exp(- beta * (np.mean(u_int) + np.mean(v_int)) / 2)
-            weights[eid] = weight
-
+        weights = np.exp(- beta * self._edge_features)
         weights += eps
         return weights
 
@@ -215,7 +185,6 @@ class RandomSuperpixelWalker:
     def _compute_weights(self, eps=1.e-10):
 
         if self._edge_features is not None:
-            # TODO: This doesn't work yet
             weights = self._calc_weights_from_edge_features()
 
         elif self._node_features is not None:
@@ -342,7 +311,7 @@ class RandomSuperpixelWalker:
 
         lap = sparse.coo_matrix((weights, (i_indices, j_indices)),
                                 shape=(pixel_nb, pixel_nb))
-        connect = - np.ravel(lap.sum(axis=1))
+        connect = -np.ravel(lap.sum(axis=1))
         lap = sparse.coo_matrix(
             (np.hstack((weights, connect)), (np.hstack((i_indices, diag)),
                                           np.hstack((j_indices, diag)))),
@@ -451,61 +420,63 @@ class RandomSuperpixelWalker:
 
 if __name__ == "__main__":
 
-    # EXAMPLE 0 ########################################################################################################
-    # Superpixel random walker based on node features
-
-    img = vigra.impex.readHDF5("/windows/mobi/h1.hci/isbi_2013/data/test-input.crop_100_100_100.h5", "data")[:, :, 50]
-    rsw = RandomSuperpixelWalker()
-    rsw.set_data(img)
-    rsw.set_beta(130)
-
-    rsw.calc_slic_superpixels(slicWeight=0.15, superpixelDiameter=10)
-
-    rsw.calc_rag()
-
-    rsw.calc_node_features()
+    # # EXAMPLE 0 ########################################################################################################
+    # # Superpixel random walker based on rag node or edge features
+    #
+    # img = vigra.impex.readHDF5("/windows/mobi/h1.hci/isbi_2013/data/test-input.crop_100_100_100.h5", "data")[:, :, 50]
+    # rsw = RandomSuperpixelWalker()
+    # rsw.set_data(img)
+    # rsw.set_beta(130)
+    #
+    # rsw.calc_slic_superpixels(slicWeight=0.15, superpixelDiameter=10)
+    #
+    # rsw.calc_rag()
+    #
+    # # Select one of the following
+    # rsw.calc_node_features()
     # rsw.calc_edge_features()
-
-    rsw.init_seeds()
-    rsw.set_seed(17, 1)
-    rsw.set_seed(85, 2)
-    result = rsw.walker(return_full_prob=False, mode='bf')
-
-    fig, axarr = plt.subplots(2, 2, figsize=(8, 8),
-                                        sharex=True, sharey=True)
-    axarr[0, 0].imshow(img, cmap='gray', interpolation='nearest')
-    axarr[0, 0].axis('off')
-    axarr[0, 0].set_adjustable('box-forced')
-    axarr[0, 0].set_title('Image')
-
-    seeds = rsw.get_seeds()
-    n_seeds = np.zeros((seeds.shape[0]+1,), dtype=result.dtype)
-    n_seeds[0:-1] = seeds
-    resSeeds = rsw.get_rag().projectLabelsToGridGraph(n_seeds)
-    axarr[0, 1].imshow(resSeeds, cmap='hot', interpolation='nearest')
-    axarr[0, 1].axis('off')
-    axarr[0, 1].set_adjustable('box-forced')
-    axarr[0, 1].set_title('Markers')
-
-    segm = np.zeros(result.shape, dtype=result.dtype)
-    segm[:] = range(0, result.shape[0])
-    rsw.get_rag().projectLabelsToGridGraph(segm)
-    colors = [(1, 1, 1)] + [(random(), random(), random()) for i in xrange(255)]
-    new_map = mplib.colors.LinearSegmentedColormap.from_list('new_map', colors, N=256)
-    axarr[1, 0].imshow(rsw.get_rag().projectLabelsToGridGraph(segm), cmap=new_map, interpolation='nearest')
-    axarr[1, 0].axis('off')
-    axarr[1, 0].set_adjustable('box-forced')
-    axarr[1, 0].set_title('Superpixels')
-
-    n_result = np.zeros((result.shape[0]+1,), dtype=result.dtype)
-    n_result[0:-1] = result
-    resImg = rsw.get_rag().projectLabelsToGridGraph(n_result)
-    axarr[1, 1].imshow(resImg, interpolation='nearest')
-    axarr[1, 1].axis('off')
-    axarr[1, 1].set_adjustable('box-forced')
-    axarr[1, 1].set_title('RSW segmentation')
-
-    vigra.show()
+    #
+    # rsw.init_seeds()
+    # rsw.set_seed(17, 1)
+    # rsw.set_seed(85, 2)
+    # result = rsw.walker(return_full_prob=False, mode='bf')
+    #
+    # # Plot results
+    # fig, axarr = plt.subplots(2, 2, figsize=(8, 8),
+    #                                     sharex=True, sharey=True)
+    # axarr[0, 0].imshow(img, cmap='gray', interpolation='nearest')
+    # axarr[0, 0].axis('off')
+    # axarr[0, 0].set_adjustable('box-forced')
+    # axarr[0, 0].set_title('Image')
+    #
+    # seeds = rsw.get_seeds()
+    # n_seeds = np.zeros((seeds.shape[0]+1,), dtype=result.dtype)
+    # n_seeds[0:-1] = seeds
+    # resSeeds = rsw.get_rag().projectLabelsToGridGraph(n_seeds)
+    # axarr[0, 1].imshow(resSeeds, cmap='hot', interpolation='nearest')
+    # axarr[0, 1].axis('off')
+    # axarr[0, 1].set_adjustable('box-forced')
+    # axarr[0, 1].set_title('Markers')
+    #
+    # segm = np.zeros(result.shape, dtype=result.dtype)
+    # segm[:] = range(0, result.shape[0])
+    # rsw.get_rag().projectLabelsToGridGraph(segm)
+    # colors = [(1, 1, 1)] + [(random(), random(), random()) for i in xrange(255)]
+    # new_map = mplib.colors.LinearSegmentedColormap.from_list('new_map', colors, N=256)
+    # axarr[1, 0].imshow(rsw.get_rag().projectLabelsToGridGraph(segm), cmap=new_map, interpolation='nearest')
+    # axarr[1, 0].axis('off')
+    # axarr[1, 0].set_adjustable('box-forced')
+    # axarr[1, 0].set_title('Superpixels')
+    #
+    # n_result = np.zeros((result.shape[0]+1,), dtype=result.dtype)
+    # n_result[0:-1] = result
+    # resImg = rsw.get_rag().projectLabelsToGridGraph(n_result)
+    # axarr[1, 1].imshow(resImg, interpolation='nearest')
+    # axarr[1, 1].axis('off')
+    # axarr[1, 1].set_adjustable('box-forced')
+    # axarr[1, 1].set_title('RSW segmentation')
+    #
+    # vigra.show()
 
     # # EXAMPLE 1 ########################################################################################################
     #
@@ -560,72 +531,76 @@ if __name__ == "__main__":
     # vigra.show()
 
 
-    # # EXAMPLE 2 ########################################################################################################
-    # # Comparison to skimage random walker
-    #
-    # # Generate noisy synthetic data
-    # # -----------------------------
-    #
-    # data = np.zeros((100, 100), dtype=np.float64)
-    # data[50:60, 50:70] = 1
-    # data[20:40, 20:30] = 1
-    # data[30:40, 80:90] = 1
-    # data += 0.35 * np.random.randn(*data.shape)
-    # print data.dtype
-    # markers = np.zeros(data.shape, dtype=np.uint32)
-    # markers[data < -0.3] = 1
-    # markers[data > 1.3] = 2
-    #
-    # # Random superpixel walker...
-    # # ---------------------------
-    #
-    # rsw = RandomSuperpixelWalker()
-    # rsw.set_data(data)
-    # rsw.set_beta(130)
-    #
-    # # Create superpixels the size of one pixel (for comparison to the pixel-wise random walker)
-    # sp = np.zeros((data.shape[0] * data.shape[1],), dtype=np.uint32)
-    # sp[:] = range(0, sp.shape[0])
-    # sp = np.reshape(sp, data.shape)
-    # rsw.set_superpixels(sp)
-    #
-    # rsw.calc_rag()
-    #
-    # seeds = np.reshape(markers.copy(), (markers.shape[0] * markers.shape[1],))
-    # rsw.set_seeds(seeds)
-    # rsw_result = rsw.walker(return_full_prob=False)
-    # rsw_res_img = rsw.get_rag().projectLabelsToGridGraph(rsw_result)
-    # print rsw_result.shape
-    #
-    # # Skimage random walker...
-    # # ------------------------
-    #
-    # from skimage.segmentation import random_walker
-    #
-    # # Run random walker algorithm
-    # rw_result = random_walker(data, markers, beta=10, mode='bf')
-    #
-    # # Plot results
-    # # ------------------------
-    #
-    # fig, axarr = plt.subplots(2, 2, figsize=(8, 8),
-    #                                     sharex=True, sharey=True)
-    # axarr[0, 0].imshow(data, cmap='gray', interpolation='nearest')
-    # axarr[0, 0].axis('off')
-    # axarr[0, 0].set_adjustable('box-forced')
-    # axarr[0, 0].set_title('Noisy data')
-    # axarr[0, 1].imshow(markers, cmap='hot', interpolation='nearest')
-    # axarr[0, 1].axis('off')
-    # axarr[0, 1].set_adjustable('box-forced')
-    # axarr[0, 1].set_title('Markers')
-    # axarr[1, 0].imshow(rw_result, cmap='gray', interpolation='nearest')
-    # axarr[1, 0].axis('off')
-    # axarr[1, 0].set_adjustable('box-forced')
-    # axarr[1, 0].set_title('Skimage RW Segmentation')
-    # axarr[1, 1].imshow(rsw_res_img, cmap='gray', interpolation='nearest')
-    # axarr[1, 1].axis('off')
-    # axarr[1, 1].set_adjustable('box-forced')
-    # axarr[1, 1].set_title('RSW segmentation')
-    #
-    # fig.tight_layout()
-    # plt.show()
+    # EXAMPLE 2 ########################################################################################################
+    # Comparison to skimage random walker
+
+    # Generate noisy synthetic data
+    # -----------------------------
+
+    data = np.zeros((100, 100), dtype=np.float64)
+    data[50:60, 50:70] = 1
+    data[20:40, 20:30] = 1
+    data[30:40, 80:90] = 1
+    data += 0.35 * np.random.randn(*data.shape)
+    print data.dtype
+    markers = np.zeros(data.shape, dtype=np.uint32)
+    markers[data < -0.3] = 1
+    markers[data > 1.3] = 2
+
+    # Random superpixel walker...
+    # ---------------------------
+
+    rsw = RandomSuperpixelWalker()
+    rsw.set_data(data.astype(np.float32))
+    rsw.set_beta(130)
+
+    # Create superpixels the size of one pixel (for comparison to the pixel-wise random walker)
+    sp = np.zeros((data.shape[0] * data.shape[1],), dtype=np.uint32)
+    sp[:] = range(0, sp.shape[0])
+    sp = np.reshape(sp, data.shape)
+    rsw.set_superpixels(sp)
+
+    rsw.calc_rag()
+
+    # Select one of the following or comment out both
+    rsw.calc_node_features()
+    # rsw.calc_edge_features()
+
+    seeds = np.reshape(markers.copy(), (markers.shape[0] * markers.shape[1],))
+    rsw.set_seeds(seeds)
+    rsw_result = rsw.walker(return_full_prob=False)
+    rsw_res_img = rsw.get_rag().projectLabelsToGridGraph(rsw_result)
+    print rsw_result.shape
+
+    # Skimage random walker...
+    # ------------------------
+
+    from skimage.segmentation import random_walker
+
+    # Run random walker algorithm
+    rw_result = random_walker(data, markers, beta=10, mode='bf')
+
+    # Plot results
+    # ------------------------
+
+    fig, axarr = plt.subplots(2, 2, figsize=(8, 8),
+                                        sharex=True, sharey=True)
+    axarr[0, 0].imshow(data, cmap='gray', interpolation='nearest')
+    axarr[0, 0].axis('off')
+    axarr[0, 0].set_adjustable('box-forced')
+    axarr[0, 0].set_title('Noisy data')
+    axarr[0, 1].imshow(markers, cmap='hot', interpolation='nearest')
+    axarr[0, 1].axis('off')
+    axarr[0, 1].set_adjustable('box-forced')
+    axarr[0, 1].set_title('Markers')
+    axarr[1, 0].imshow(rw_result, cmap='gray', interpolation='nearest')
+    axarr[1, 0].axis('off')
+    axarr[1, 0].set_adjustable('box-forced')
+    axarr[1, 0].set_title('Skimage RW Segmentation')
+    axarr[1, 1].imshow(rsw_res_img, cmap='gray', interpolation='nearest')
+    axarr[1, 1].axis('off')
+    axarr[1, 1].set_adjustable('box-forced')
+    axarr[1, 1].set_title('RSW segmentation')
+
+    fig.tight_layout()
+    plt.show()
