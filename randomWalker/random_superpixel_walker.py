@@ -213,7 +213,7 @@ class RandomSuperpixelWalker:
         # print "_build_laplacian"
 
         # Edges
-        self._edge_uv_ids = rsw.get_rag().uvIds().transpose()
+        self._edge_uv_ids = self._rag.uvIds().transpose()
         # print "_edge_uv_ids"
         # print self._edge_uv_ids
         # print self._edge_uv_ids.max()
@@ -269,6 +269,9 @@ class RandomSuperpixelWalker:
     def set_seeds(self, seeds):
         self._seeds = seeds
 
+    def get_seeds(self):
+        return self._seeds
+
     def init_seeds(self, zero_based=False):
         # print "rag.nodeNum"
         # print self._rag.nodeNum
@@ -317,7 +320,7 @@ class RandomSuperpixelWalker:
         # print X
         # print X.shape
 
-        result = self._seeds
+        result = self._seeds.copy()
         result[result == 0] = X + 1
 
         # print "result"
@@ -361,7 +364,6 @@ if __name__ == "__main__":
     # EXAMPLE 1 ########################################################################################################
 
     img = vigra.impex.readHDF5("/windows/mobi/h1.hci/isbi_2013/data/test-input.crop_100_100_100.h5", "data")[:, :, 50]
-    print img.shape
     rsw = RandomSuperpixelWalker()
     rsw.set_data(img)
     rsw.set_beta(130)
@@ -373,36 +375,42 @@ if __name__ == "__main__":
     rsw.init_seeds()
     rsw.set_seed(17, 1)
     rsw.set_seed(85, 2)
+    result = rsw.walker(return_full_prob=False, mode='bf')
 
-    result = rsw.walker(return_full_prob=False, mode='cg')
+    fig, axarr = plt.subplots(2, 2, figsize=(8, 8),
+                                        sharex=True, sharey=True)
+    axarr[0, 0].imshow(img, cmap='gray', interpolation='nearest')
+    axarr[0, 0].axis('off')
+    axarr[0, 0].set_adjustable('box-forced')
+    axarr[0, 0].set_title('Image')
 
-    f = plt.figure(figsize=(8, 4))
+    seeds = rsw.get_seeds()
+    n_seeds = np.zeros((seeds.shape[0]+1,), dtype=result.dtype)
+    n_seeds[0:-1] = seeds
+    resSeeds = rsw.get_rag().projectLabelsToGridGraph(n_seeds)
+    axarr[0, 1].imshow(resSeeds, cmap='hot', interpolation='nearest')
+    axarr[0, 1].axis('off')
+    axarr[0, 1].set_adjustable('box-forced')
+    axarr[0, 1].set_title('Markers')
 
-    ax1 = f.add_subplot(131)
-    ax1.imshow(img, cmap=cm.Greys_r)
-    ax1.set_title("Image")
-    plt.axis('off')
-
-    ax2 = f.add_subplot(133)
-    n_result = np.zeros((result.shape[0]+1,), dtype=result.dtype)
-    n_result[0:-1] = result
-    resImg = rsw.get_rag().projectLabelsToGridGraph(n_result)
-    ax2.imshow(resImg)
-    ax2.set_title("Result-Segmentation")
-    plt.axis('off')
-
-    ax3 = f.add_subplot(132)
-    print result.shape
     segm = np.zeros(result.shape, dtype=result.dtype)
     segm[:] = range(0, result.shape[0])
     rsw.get_rag().projectLabelsToGridGraph(segm)
     colors = [(1, 1, 1)] + [(random(), random(), random()) for i in xrange(255)]
     new_map = mplib.colors.LinearSegmentedColormap.from_list('new_map', colors, N=256)
-    ax3.imshow(rsw.get_rag().projectLabelsToGridGraph(segm), cmap=new_map)
-    ax3.set_title("Superpixels")
-    plt.axis('off')
+    axarr[1, 0].imshow(rsw.get_rag().projectLabelsToGridGraph(segm), cmap=new_map, interpolation='nearest')
+    axarr[1, 0].axis('off')
+    axarr[1, 0].set_adjustable('box-forced')
+    axarr[1, 0].set_title('Superpixels')
 
-    mplib.pyplot.draw()
+    n_result = np.zeros((result.shape[0]+1,), dtype=result.dtype)
+    n_result[0:-1] = result
+    resImg = rsw.get_rag().projectLabelsToGridGraph(n_result)
+    axarr[1, 1].imshow(resImg, interpolation='nearest')
+    axarr[1, 1].axis('off')
+    axarr[1, 1].set_adjustable('box-forced')
+    axarr[1, 1].set_title('RSW segmentation')
+
     vigra.show()
 
 
