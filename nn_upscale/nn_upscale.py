@@ -53,6 +53,38 @@ class nn_upscale:
         # And it's done
         print "The network was performed on " + str(count) + "images. "
 
+    def create_cube(self, position=(0,0,0), size=512, step=32):
+
+        x = range(0, (size/step)**3, 1)
+        x[:] = [i / (size/step)**2 * step + position[0] for i in x]
+        y = range(0, (size/step)**2, 1)
+        y[:] = [i / (size/step) * step + position[1] for i in y] * (size/step)
+        z = range(0, size, step) * (size/step) ** 2
+        z[:] = [i + position[2] for i in z]
+
+        # print x
+        # print y
+        # print z
+
+        cube = (x, y, z)
+
+        cube = map(list, zip(*cube))
+
+        cube = [tuple(el) for el in cube]
+
+        return cube
+
+    def move_cube(self, position, cube, cube_init):
+        # print square
+        # print position
+
+        for i in xrange(0, len(cube)):
+            cube[i] = (cube_init[i][0] + position[0], cube_init[i][1] + position[1], cube_init[i][2] + position[2])
+
+        return cube
+
+        # print square
+
     def create_square(self, position=[0, 0, 0], size=512, step=32):
 
         x = range(0, (size/step)**3, 1)
@@ -85,18 +117,27 @@ class nn_upscale:
 
         # print square
 
-    def rois_dict(self, rois_in, size=1024):
+    def rois_dict(self, rois_in, size=1024, overlap=512):
 
         rois_out = {}
-
+        a= 10
         for i in rois_in:
-            x = i[0] / size * size
-            y = i[1] / size * size
-            z = i[2] / size * size
+            x = i[0] / (size-overlap) * (size-overlap)
+            y = i[1] / (size-overlap) * (size-overlap)
+            z = i[2] / (size-overlap) * (size-overlap)
             if (x, y, z) in rois_out.keys():
                 rois_out[(x, y, z)] += [i]
             else:
                 rois_out[(x, y, z)] = [i]
+            # if overlap > 0:
+            #     x2 = (i[0]-overlap) / (size-overlap) * (size-overlap)
+            #     y2 = (i[1]-overlap) / (size-overlap) * (size-overlap)
+            #     z2 = (i[2]-overlap) / (size-overlap) * (size-overlap)
+            #     if x != x2 or y != y2 or z != z2:
+            #         if (x2, y2, z2) in rois_out.keys():
+            #             rois_out[(x2, y2, z2)] += [i]
+            #         else:
+            #             rois_out[(x2, y2, z2)] = [i]
 
         return rois_out
 
@@ -105,17 +146,158 @@ class nn_upscale:
         data = pickle.load(f)
         return data
 
-    def detect_rois(self, input="/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl", size=512, step=32):
+    def detect_rois_dict3(self, input="/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl",
+                    size=512, step=32, dict_size=1025, dict_overlap=512):
 
         datasize = [2623, 6527, 3168]
 
         data = self.open_rois(input)
 
+        areas = self.rois_dict(data, size=dict_size, overlap=dict_overlap)
+        print areas.keys()
+
         # data = data[0:100000]
 
         print data[0]
-        size = 512
-        step = 32
+        # size = 512
+        # step = 32
+
+        square_init = self.create_square(position=[0, 0, 0], size=size, step=step)
+        square = copy.deepcopy(square_init)
+
+        complete = 0
+
+        print 'len(areas.values())'
+        print len(areas.values()[:])
+
+        while len(areas.values()[:]) > 0:
+
+            if (complete % 100) == 0:
+                print str(complete) + '/' + str(len(data))
+            complete += 1
+
+            d = data[0]
+
+            square = self.move_square(position=d, square=square, square_init=square_init)
+
+            if (square[0][0] < datasize[0]-size) \
+                    and (square[0][1] < datasize[1]-size)\
+                    and (square[0][2] < datasize[2]-size):
+
+                count = 0
+                val = square[0]
+                while val in data and count < (size / step) ** 3:
+                    val = square[count]
+                    count += 1
+
+                if count == (size / step) ** 3:
+
+                    for val in square:
+                        data.remove(val)
+
+                    print 'Found cube!'
+                    print square
+                    print len(data)
+
+                else:
+                    data.pop(0)
+
+            else:
+                data.pop(0)
+
+    def detect_rois_dict2(self, input="/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl",
+                    size=512, step=32, dict_size=1025, dict_overlap=512):
+
+        datasize = [2623, 6527, 3168]
+
+        data = self.open_rois(input)
+
+        areas = self.rois_dict(data, size=dict_size, overlap=dict_overlap)
+        print areas.keys()
+
+        # data = data[0:100000]
+
+        print data[0]
+        # size = 512
+        # step = 32
+
+        square_init = self.create_square(position=[0, 0, 0], size=size, step=step)
+        square = copy.deepcopy(square_init)
+
+        complete = 0
+
+        for areakey in areas.keys():
+            # TODO: This doesn't work...
+            c_area = areas[areakey]
+            w_areakeys = [areakey,
+                          (areakey[0]+dict_size, areakey[1], areakey[2]),
+                          (areakey[0], areakey[1]+dict_size, areakey[2]),
+                          (areakey[0], areakey[1], areakey[2]+dict_size),
+                          (areakey[0]+dict_size, areakey[1]+dict_size, areakey[2]),
+                          (areakey[0], areakey[1]+dict_size, areakey[2]+dict_size),
+                          (areakey[0]+dict_size, areakey[1], areakey[2]+dict_size),
+                          (areakey[0]+dict_size, areakey[1]+dict_size, areakey[2]+dict_size)]
+            print "areakey:"
+
+            # print w_areakeys
+            w_areakeys = set(w_areakeys).intersection(set(areas.keys()))
+            w_area=[]
+            for key in w_areakeys:
+                w_area += areas[key]
+            print w_area[0:10]
+            # print areakey
+            # print w_areakeys
+            while len(c_area) > 0:
+
+                if (complete % 100) == 0:
+                    print str(complete) + '/' + str(len(data))
+                complete += 1
+
+                d = data[0]
+
+                square = self.move_square(position=d, square=square, square_init=square_init)
+
+                if (square[0][0] < datasize[0]-size) \
+                        and (square[0][1] < datasize[1]-size)\
+                        and (square[0][2] < datasize[2]-size):
+
+                    # TODO: This doesn't work...
+                    count = 0
+                    val = square[0]
+                    while val in w_area and count < (size / step) ** 3:
+                        val = square[count]
+                        count += 1
+                    print count
+                    if count == (size / step) ** 3:
+
+                        for val in square:
+                            data.remove(val)
+
+                        print 'Found cube!'
+                        print square
+                        print len(data)
+
+                    else:
+                        data.pop(0)
+
+                else:
+                    data.pop(0)
+
+    def detect_rois_dict(self, input="/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl",
+                    size=512, step=32, dict_size=1025, dict_overlap=512):
+
+        datasize = [2623, 6527, 3168]
+
+        data = self.open_rois(input)
+
+        areas = self.rois_dict(data, size=dict_size, overlap=dict_overlap)
+        print areas.keys()
+
+        # data = data[0:100000]
+
+        print data[0]
+        # size = 512
+        # step = 32
 
         square_init = self.create_square(position=[0, 0, 0], size=size, step=step)
         square = copy.deepcopy(square_init)
@@ -135,9 +317,38 @@ class nn_upscale:
             if (square[0][0] < datasize[0]-size) \
                     and (square[0][1] < datasize[1]-size)\
                     and (square[0][2] < datasize[2]-size):
+
+
+                # print d
+                # print d[0] / (dict_size-dict_overlap) * (dict_size-dict_overlap)
+                # print d[1] / (dict_size-dict_overlap) * (dict_size-dict_overlap)
+                # print d[2] / (dict_size-dict_overlap) * (dict_size-dict_overlap)
+                area = areas[(d[0] / (dict_size-dict_overlap) * (dict_size-dict_overlap),
+                              d[1] / (dict_size-dict_overlap) * (dict_size-dict_overlap),
+                              d[2] / (dict_size-dict_overlap) * (dict_size-dict_overlap))]
+
+
+                # print d
+                # print area[0]
+                # print len(area)
+                if (d[0] / dict_size * dict_size + dict_size, d[1] / dict_size * dict_size, d[2] / dict_size * dict_size) in areas.keys():
+                    area += areas[(d[0] / dict_size * dict_size + dict_size, d[1] / dict_size * dict_size, d[2] / dict_size * dict_size)]
+                if (d[0] / dict_size * dict_size, d[1] / dict_size * dict_size + dict_size, d[2] / dict_size * dict_size) in areas.keys():
+                    area += areas[(d[0] / dict_size * dict_size, d[1] / dict_size * dict_size + dict_size, d[2] / dict_size * dict_size)]
+                if (d[0] / dict_size * dict_size, d[1] / dict_size * dict_size, d[2] / dict_size * dict_size + dict_size) in areas.keys():
+                    area += areas[(d[0] / dict_size * dict_size, d[1] / dict_size * dict_size, d[2] / dict_size * dict_size + dict_size)]
+                if (d[0] / dict_size * dict_size + dict_size, d[1] / dict_size * dict_size + dict_size, d[2] / dict_size * dict_size) in areas.keys():
+                    area += areas[(d[0] / dict_size * dict_size + dict_size, d[1] / dict_size * dict_size + dict_size, d[2] / dict_size * dict_size)]
+                if (d[0] / dict_size * dict_size, d[1] / dict_size * dict_size + dict_size, d[2] / dict_size * dict_size + dict_size) in areas.keys():
+                    area += areas[(d[0] / dict_size * dict_size, d[1] / dict_size * dict_size + dict_size, d[2] / dict_size * dict_size + dict_size)]
+                if (d[0] / dict_size * dict_size + dict_size, d[1] / dict_size * dict_size, d[2] / dict_size * dict_size + dict_size) in areas.keys():
+                    area += areas[(d[0] / dict_size * dict_size + dict_size, d[1] / dict_size * dict_size, d[2] / dict_size * dict_size + dict_size)]
+                if (d[0] / dict_size * dict_size + dict_size, d[1] / dict_size * dict_size + dict_size, d[2] / dict_size * dict_size + dict_size) in areas.keys():
+                    area += areas[(d[0] / dict_size * dict_size + dict_size, d[1] / dict_size * dict_size + dict_size, d[2] / dict_size * dict_size + dict_size)]
+
                 count = 0
                 val = square[0]
-                while val in data and count < (size / step) ** 3:
+                while val in area and count < (size / step) ** 3:
                     val = square[count]
                     count += 1
 
@@ -145,7 +356,6 @@ class nn_upscale:
 
                     for val in square:
                         data.remove(val)
-                        # process_data.remove(val)
 
                     print 'Found cube!'
                     print square
@@ -153,8 +363,174 @@ class nn_upscale:
 
                 else:
                     data.pop(0)
+
             else:
                 data.pop(0)
+
+    def store_rois(self, file, rois):
+        pickle.dump(rois, open(file, "wb"))
+
+    def extract_rois(self, inputfile="/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl",
+                     outputfile="/media/julian/Daten/mobi/h1.hci/data/fib25/rois512.pkl",
+                     size=512, step=32):
+        """Detects ROIs of given size and saves them as pickle"""
+
+        rois = self.detect_rois(input=inputfile, size=size, step=step)
+        self.store_rois(file=outputfile, rois=rois)
+
+    def detect_rois2(self, input="/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl",
+                    size=512, step=32):
+        """Uses tuples for coordinate representation"""
+
+        datasize = [2623, 6527, 3168]
+
+        data = self.open_rois(input)
+        data = [tuple(el) for el in data]
+
+        # data = data[0:100000]
+
+        # print data[0:10]
+
+        cube_init = self.create_cube(position=[0, 0, 0], size=size, step=step)
+        cube = copy.deepcopy(cube_init)
+
+        complete = 0
+
+        rois_out = []
+
+        while len(data) > 0:
+
+            if (complete % 100) == 0:
+                print str(complete) + '/' + str(len(data))
+            complete += 1
+
+            d = data[0]
+
+            cube = self.move_cube(position=d, cube=cube, cube_init=cube_init)
+
+            if (cube[0][0] < datasize[0]-size) \
+                    and (cube[0][1] < datasize[1]-size)\
+                    and (cube[0][2] < datasize[2]-size):
+
+                count = 0
+                val = cube[0]
+                while val in data and count < (size / step) ** 3:
+                    val = cube[count]
+                    count += 1
+
+                if count == (size / step) ** 3:
+
+                    [data.remove(val) for val in cube]
+
+                    print 'Found cube!'
+                    print cube
+                    print len(data)
+
+                    # Store only the first coordinate of the cube, the size information is known
+                    rois_out += cube[0]
+
+                else:
+                    data.pop(0)
+            else:
+                data.pop(0)
+
+        return rois_out
+
+    def get_upper_bounds(self, rois, step):
+
+        bounds = [0,0,0]
+
+        bounds[0] = max([x[0] for x in rois]) + 32
+        bounds[1] = max([x[1] for x in rois]) + 32
+        bounds[2] = max([x[2] for x in rois]) + 32
+
+        return bounds
+
+    def get_lower_bounds(self, rois):
+
+        bounds = [0,0,0]
+
+        bounds[0] = min([x[0] for x in rois])
+        bounds[1] = min([x[1] for x in rois])
+        bounds[2] = min([x[2] for x in rois])
+
+        return bounds
+
+    def alternating_coord(self, x, min, len):
+
+        if x & 1:
+            # Uneven number
+            return (len - (x-min/2*2)) + min/2*2
+        else:
+            # Even number
+            return x
+
+    def detect_rois(self, input="/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl",
+                    size=512, step=32):
+        """Uses lists for coordinate representation"""
+
+        # datasize = [2623, 6527, 3168]
+
+        data = sorted(self.open_rois(input))
+
+        bounds_u = self.get_upper_bounds(data, step)
+        bounds_l = self.get_lower_bounds(data)
+
+        print "Detected upper bounds: " + str(bounds_u)
+        print "Detected lower bounds: " + str(bounds_l)
+
+        cube_init = self.create_square(position=[0, 0, 0], size=size, step=step)
+        cube = copy.deepcopy(cube_init)
+
+        complete = 0
+
+        rois_out = []
+
+        alternating_coords = [self.alternating_coord(x, 0, len(cube)) for x in range(0, len(cube))]
+
+        # # Temporarily abort...
+        # return rois_out
+
+        while len(data) > 0:
+
+            if (complete % 100) == 0:
+                print str(complete) + '/' + str(len(data))
+            complete += 1
+
+            d = data[0]
+
+            if (d[0] < bounds_u[0]-size) \
+                    and (d[1] < bounds_u[1]-size)\
+                    and (d[2] < bounds_u[2]-size):
+
+                cube = self.move_square(position=d, square=cube, square_init=cube_init)
+                count = 0
+
+                cubelen = len(cube)
+                val = cube[0]
+                while val in data and count < (size / step) ** 3:
+                    val = cube[alternating_coords[count]]
+                    count += 1
+
+                if count == (size / step) ** 3:
+
+                    # for val in cube:
+                    #     data.remove(val)
+                    [data.remove(val) for val in cube]
+
+                    print 'Found cube!'
+                    print cube
+                    print str(complete) + '/' + str(len(data))
+
+                    # Store only the first coordinate of the cube, the size information is known
+                    rois_out += cube[0]
+
+                else:
+                    data.pop(0)
+            else:
+                data.pop(0)
+
+        return rois_out
 
 
     def load_data(self, currentslice):
@@ -175,9 +551,38 @@ if __name__ == "__main__":
     datapath = "zeros"
     #
     nnupsc = nn_upscale(path=path, datapath=datapath)
+
+    nnupsc.extract_rois("/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl",
+                        "/media/julian/Daten/mobi/h1.hci/data/fib25/rois512.pkl",
+                        size=512, step=32)
+
+
     # nnupsc.run_nn_on_dataset()
 
-    nnupsc.detect_rois()
+    # nnupsc.detect_rois_dict2(dict_size=4068, dict_overlap=0)
+    # nnupsc.detect_rois_dict(dict_size=512, dict_overlap=0)
+
+    # nnupsc.detect_rois()
+
+
+    # # ------------------------
+    # # Testing tuples...
+    # sq = nnupsc.create_square()
+    # sq_init = copy.deepcopy(sq)
+    # start = time.clock()
+    # sq = nnupsc.move_square([32, 32, 32], sq, sq_init)
+    # end = time.clock()
+    # print "Elapsed time: " + str(end-start)
+    # print sq
+    #
+    # cube = nnupsc.create_cube()
+    # cube_init = copy.deepcopy(cube)
+    # start = time.clock()
+    # cube = nnupsc.move_cube((32, 32, 32), cube, cube_init)
+    # end = time.clock()
+    # print "Elapsed time: " + str(end-start)
+    # print cube
+    # # ------------------------
 
     # sq = nnupsc.create_square(position=[0,0,0], size=10, step=5)
     # print sq
@@ -185,8 +590,17 @@ if __name__ == "__main__":
     # sq20 = nnupsc.create_square(position=[20, 30, 40], size=10, step=5)
     # print sq20
     #
-    # sq20m = nnupsc.move_square(position=[20, 30, 40], square=sq)
+    # sq20m = nnupsc.move_square(position=[20, 30, 40], square=sq, square_init=sq)
     # print sq20m
+    #
+    # tsq = tuple(sq)
+    # print tsq
+    #
+    # itsq = [tuple(el) for el in sq]
+    # print itsq
+    #
+    # set(itsq)
+    # print set(itsq)
 
     # rois = nnupsc.rois_dict(nnupsc.open_rois())
     # print rois.keys()
