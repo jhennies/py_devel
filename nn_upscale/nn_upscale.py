@@ -1,10 +1,12 @@
 
-from netdatautils import fromh5, slidingwindowslices
+from netdatautils import fromh5, toh5, slidingwindowslices
 # import scipy
 import time
 import copy
 import pickle
 import math
+import cPickle as pkl
+import numpy as np
 
 __author__ = 'jhennies'
 
@@ -13,6 +15,7 @@ class nn_upscale:
 
     _path = ""
     _datapath = ""
+    _resultfile = ""
     _currentslice=None
     _datasetsize=None
     _nhoodsize=None
@@ -22,6 +25,7 @@ class nn_upscale:
         pass
 
     def __init__(self, path=None, datapath=None,
+                 resultfile=None,
                  datasetsize=[256, 256, 256],
                  nhoodsize=[32, 32, 32],
                  stride=16):
@@ -30,28 +34,111 @@ class nn_upscale:
         self._datasetsize = datasetsize
         self._nhoodsize = nhoodsize
         self._stride = stride
+        self._resultfile = resultfile
 
-    def run_nn_on_dataset(self):
+    def run_nn_on_dataset(self, roispath, cubesize=512):
 
-        # Determine slices which will be used
-        slices = slidingwindowslices(self._datasetsize, self._nhoodsize, stride=self._stride, shuffle=False)
+        # # Determine slices which will be used
+        # slices = slidingwindowslices(self._datasetsize, self._nhoodsize, stride=self._stride, shuffle=False)
+        #
+        # # Iterate over the slices
+        # count = 0
+        # for currentslice in slices:
+        #     count += 1
+        #     print "slice:"
+        #     print (currentslice[0], currentslice[1], currentslice[2])
+        #
+        #     # Get the necessary part of the image
+        #     data = self.load_data(currentslice)
+        #     print data.shape
+        #
+        #     # Compute the neuronal network
+        #     output = self.call_nn(input=data)
+        #
+        # # And it's done
+        # print "The network was performed on " + str(count) + "images. "
 
-        # Iterate over the slices
-        count = 0
-        for currentslice in slices:
-            count += 1
+
+        # -------------------------------------
+        # New version:
+
+        # Load ROIs
+        rois = self.open_rois(input=roispath)
+        rois = zip(*[iter(rois)]*3)
+        print len(rois)
+
+        rois = rois[0:1]
+        # Iterate over ROIs
+        for roi in rois:
+            # print roi
+            # Get the slice information
+            sl = (slice(roi[0], roi[0]+cubesize),
+                  slice(roi[1], roi[1]+cubesize),
+                  slice(roi[2], roi[2]+cubesize))
+
             print "slice:"
-            print (currentslice[0], currentslice[1], currentslice[2])
+            print sl
 
-            # Get the necessary part of the image
-            data = self.load_data(currentslice)
-            print data.shape
+            # Load the respective part of the image
+            data = self.load_data(sl)
+            # print data[0:10, 0:10, 0:10]
 
             # Compute the neuronal network
-            output = self.call_nn(input=data)
+            self.nn_on_cube(input=data, resultfile=self._resultfile, cubename=str(roi[0]) + "_" + str(roi[1]) + "_" + str(roi[2]))
 
-        # And it's done
-        print "The network was performed on " + str(count) + "images. "
+        # It's done
+
+    def load_data(self, currentslice):
+        return fromh5(self._path, datapath=self._datapath,
+                      dataslice=currentslice, asnumpy=True, preptrain=None)
+
+    def nn_on_cube_dimension(self, cube, dimension=0):
+
+        cubeshape = cube.shape
+        # Roll dimension such that the desired stack plane becomes the first
+        cube = np.rollaxis(cube, dimension, 0)
+        print str(dimension) + " -> " + str(cube.shape)
+
+        # nn_result = np.zeros(cube.shape, dtype=np.double)
+        #
+        # for i in xrange(0, cubeshape[dimension]):
+        #
+        #     if i == 0:
+        #         # Reflect the image to account for the border problem
+        #         indata = np.zeros((3, cube.shape[1], cube.shape[2]), dtype=cube.dtype)
+        #         indata[1:3, :, :] = cube[i:i + 2, :, :]
+        #         indata[0, :, :] = cube[i + 2, :, :]
+        #     elif i == cubeshape[dimension]-1:
+        #         # Reflect the image to account for the border problem
+        #         indata = np.zeros((3, cube.shape[1], cube.shape[2]), dtype=cube.dtype)
+        #         indata[0:2, :, :] = cube[i-1:i+1, :, :]
+        #         indata[2, :, :] = cube[i - 1, :, :]
+        #     else:
+        #         indata = cube[i - 1:i + 2, :, :]
+        #
+        #     print indata.shape
+        #
+        #     nn_result_t = self.call_nn(indata)
+        #     nn_result[i, :, :] = nn_result_t[1, :, :]
+        # print i
+
+        # # Roll the result back to obtain the dimensional orientation of the input data
+        # nn_result = np.rollaxis(nn_result, 0, dimension+1)
+        # print nn_result.shape
+        #
+        # return nn_result
+
+    def nn_on_cube(self, input, resultfile, cubename='cube'):
+
+        input = np.zeros((10, 20, 30))
+
+        for dim in xrange(0, 3):
+            self.nn_on_cube_dimension(input, dim)
+            # print str(dim) + " -> " + str(input.shape)
+
+    def call_nn(self, input):
+        # TODO: Put NN function here!
+        return input
 
     def create_cube(self, position=(0,0,0), size=512, step=32):
 
@@ -145,65 +232,6 @@ class nn_upscale:
         f = open(input)
         data = pickle.load(f)
         return data
-
-    def detect_rois_dict3(self, input="/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl",
-                    size=512, step=32, dict_size=1025, dict_overlap=512):
-
-        datasize = [2623, 6527, 3168]
-
-        data = self.open_rois(input)
-
-        areas = self.rois_dict(data, size=dict_size, overlap=dict_overlap)
-        print areas.keys()
-
-        # data = data[0:100000]
-
-        print data[0]
-        # size = 512
-        # step = 32
-
-        square_init = self.create_square(position=[0, 0, 0], size=size, step=step)
-        square = copy.deepcopy(square_init)
-
-        complete = 0
-
-        print 'len(areas.values())'
-        print len(areas.values()[:])
-
-        while len(areas.values()[:]) > 0:
-
-            if (complete % 100) == 0:
-                print str(complete) + '/' + str(len(data))
-            complete += 1
-
-            d = data[0]
-
-            square = self.move_square(position=d, square=square, square_init=square_init)
-
-            if (square[0][0] < datasize[0]-size) \
-                    and (square[0][1] < datasize[1]-size)\
-                    and (square[0][2] < datasize[2]-size):
-
-                count = 0
-                val = square[0]
-                while val in data and count < (size / step) ** 3:
-                    val = square[count]
-                    count += 1
-
-                if count == (size / step) ** 3:
-
-                    for val in square:
-                        data.remove(val)
-
-                    print 'Found cube!'
-                    print square
-                    print len(data)
-
-                else:
-                    data.pop(0)
-
-            else:
-                data.pop(0)
 
     def detect_rois_dict2(self, input="/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl",
                     size=512, step=32, dict_size=1025, dict_overlap=512):
@@ -368,7 +396,7 @@ class nn_upscale:
                 data.pop(0)
 
     def store_rois(self, file, rois):
-        pickle.dump(rois, open(file, "wb"))
+        pickle.dump(rois, open(file, "wb"), protocol=pkl.HIGHEST_PROTOCOL)
 
     def extract_rois(self, inputfile="/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl",
                      outputfile="/media/julian/Daten/mobi/h1.hci/data/fib25/rois512.pkl",
@@ -533,31 +561,20 @@ class nn_upscale:
         return rois_out
 
 
-    def load_data(self, currentslice):
-        return fromh5(self._path, self._datapath, currentslice, True, None)
-
-    def call_nn(self, input=None):
-
-        # TODO: extract the slices
-
-        # TODO: function to call the NN
-
-        return input
-
-
 if __name__ == "__main__":
 
-    path = "/media/julian/Daten/mobi/h1.hci/data/testdata/zeros.h5"
-    datapath = "zeros"
+    path = "/media/julian/Daten/mobi/h1.hci/data/fib25/raw_fib25.h5"
+    datapath = "data"
+    resultfile = "/media/julian/Daten/mobi/h1.hci/data/fib25/results/result_fib25"
     #
-    nnupsc = nn_upscale(path=path, datapath=datapath)
+    nnupsc = nn_upscale(path=path, datapath=datapath, resultfile=resultfile)
 
-    nnupsc.extract_rois("/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl",
-                        "/media/julian/Daten/mobi/h1.hci/data/fib25/rois512.pkl",
-                        size=512, step=32)
+    # nnupsc.extract_rois("/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl",
+    #                     "/media/julian/Daten/mobi/h1.hci/data/fib25/rois512.pkl",
+    #                     size=512, step=32)
 
 
-    # nnupsc.run_nn_on_dataset()
+    nnupsc.run_nn_on_dataset("/media/julian/Daten/mobi/h1.hci/data/fib25/rois512.pkl", cubesize=512)
 
     # nnupsc.detect_rois_dict2(dict_size=4068, dict_overlap=0)
     # nnupsc.detect_rois_dict(dict_size=512, dict_overlap=0)
