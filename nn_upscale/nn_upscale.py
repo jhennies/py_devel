@@ -37,13 +37,27 @@ class nn_upscale:
         self._stride = stride
         self._resultfile = resultfile
 
-    def train_nn(self, roispath, popcubes=0):
+    def train_nn(self, roispath, popcubes=0, slicedimensions=[0, 1, 2]):
+        """
+        Creates feederweave object to train the neuronal network
+
+        :type roispath: str
+        :param roispath: Path to pickle file containing the regions of interest in the format:
+            tuple( tuple(slice(x_start, x_end), slice(y_start, y_end), slice(z_start, z_end)), ... )
+
+        :type popcubes: int
+        :param popcubes: Number of cargo objects which are grouped together into one feederweave
+
+        :type slicedimensions: list of int
+        :param slicedimensions: Dimensions which will be used to create slices.
+            When using [0, 1, 2] a cargo object for all three dimensions will be created, respectively
+
+        :return: a feederweave containing a list of feederweaves each containing a list of cargo objects
+        """
 
         # Load ROIs
-        # The ROIs pickle file needs the format:
-        #   tuple( tuple(slice(x_start, x_end), slice(y_start, y_end), slice(z_start, z_end)), ... )
         rois = self.open_rois(input=roispath)
-
+        # Convert from tuple to list to make it poppable
         rois = list(rois)
 
         if popcubes == 0:
@@ -63,7 +77,7 @@ class nn_upscale:
                 if len(rois) == 0: break
 
             # Generate a list of cargo objects from these selected slices
-            cg = self.make_cargo_list(data_slices)
+            cg = self.make_cargo_list(data_slices, slicedimensions=slicedimensions)
 
             # Put this list into a feederweave object and append the list of feederweaves
             fw += [feederweave(cg)]
@@ -71,11 +85,10 @@ class nn_upscale:
         # One feederweave to represent them all...
         ffw = feederweave(fw)
 
+        # It's done
         return ffw
 
-        # It's done
-
-    def get_axistag(self, dim):
+    def get_slicedimension_axistag(self, dim):
         if dim == 0:
             return 'ijk'
         elif dim == 1:
@@ -83,13 +96,14 @@ class nn_upscale:
         elif dim == 2:
             return 'kij'
 
-    def make_cargo_list(self, data_slices):
+    def make_cargo_list(self, data_slices, slicedimensions=[0, 1, 2]):
 
         cg = []
+
         for sl in data_slices:
-            for dim in xrange(0, 3):
+            for dim in slicedimensions:
                 # print sl
-                axistag = self.get_axistag(dim)
+                axistag = self.get_slicedimension_axistag(dim)
 
                 cg += [cargo(h5path=self._path, pathh5=self._datapath, data=None, axistags=axistag,
                             batchsize=1, nhoodsize=None, ds=None,
@@ -591,154 +605,3 @@ if __name__ == "__main__":
     # nnupsc.detect_rois_dict(dict_size=512, dict_overlap=0)
 
     # nnupsc.detect_rois()
-
-
-    # # ------------------------
-    # # Testing tuples...
-    # sq = nnupsc.create_square()
-    # sq_init = copy.deepcopy(sq)
-    # start = time.clock()
-    # sq = nnupsc.move_square([32, 32, 32], sq, sq_init)
-    # end = time.clock()
-    # print "Elapsed time: " + str(end-start)
-    # print sq
-    #
-    # cube = nnupsc.create_cube()
-    # cube_init = copy.deepcopy(cube)
-    # start = time.clock()
-    # cube = nnupsc.move_cube((32, 32, 32), cube, cube_init)
-    # end = time.clock()
-    # print "Elapsed time: " + str(end-start)
-    # print cube
-    # # ------------------------
-
-    # sq = nnupsc.create_square(position=[0,0,0], size=10, step=5)
-    # print sq
-    #
-    # sq20 = nnupsc.create_square(position=[20, 30, 40], size=10, step=5)
-    # print sq20
-    #
-    # sq20m = nnupsc.move_square(position=[20, 30, 40], square=sq, square_init=sq)
-    # print sq20m
-    #
-    # tsq = tuple(sq)
-    # print tsq
-    #
-    # itsq = [tuple(el) for el in sq]
-    # print itsq
-    #
-    # set(itsq)
-    # print set(itsq)
-
-    # rois = nnupsc.rois_dict(nnupsc.open_rois())
-    # print rois.keys()
-
-    # start = time.clock()
-    #
-    # sq = nnupsc.create_square()
-    #
-    # end = time.clock()
-    # print 'Time elapsed:'
-    # print end - start
-    #
-    # start = time.clock()
-    #
-    # nnupsc.move_square([32, 64, 128], sq)
-    #
-    # end = time.clock()
-    # print 'Time elapsed:'
-    # print end - start
-
-    # f = open("/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl")
-    # data = pickle.load(f)
-    #
-    # print data[0]
-    # size = 512
-    # step = 32
-    #
-    # complete = 0
-    #
-    # lendata = len(data)
-    #
-    # # process_data = copy.deepcopy(data)
-    #
-    # # for d in data:
-    # i = 0
-    # while len(data) > 0:
-    #
-    #     if (complete % 100) == 0:
-    #         print str(complete) + '/' + str(len(data))
-    #     complete += 1
-    #
-    #     d = data[0]
-    #
-    #     square = nnupsc.create_square(position=d, size=size, step=step)
-    #     # print square
-    #     # matches = set(data) & set(square)
-    #     # matches = set(data).intersection(square)
-    #     # print matches
-    #
-    #
-    #     # # This is slow:
-    #     # start = time.clock()
-    #     #
-    #     # count = 0
-    #     # for val in data:
-    #     #     if val in square:
-    #     #         count += 1
-    #     #
-    #     # print count
-    #     #
-    #     # end = time.clock()
-    #     # print 'Time elapsed:'
-    #     # print end - start
-    #
-    #     # start = time.clock()
-    #
-    #     # Finds matches in the square and the data
-    #     # count = 0
-    #     # for val in square:
-    #     #     if val in data:
-    #     #         count += 1
-    #     #
-    #     # print count
-    #
-    #     count = 0
-    #     val = square[0]
-    #     while val in data and count < (size/step)**3:
-    #         val = square[count]
-    #         count += 1
-    #
-    #     # print count
-    #
-    #     # end = time.clock()
-    #     # print 'Time elapsed:'
-    #     # print end - start
-    #
-    #     # print len(data)
-    #
-    #     if count == (size/step)**3:
-    #
-    #         for val in square:
-    #             data.remove(val)
-    #             # process_data.remove(val)
-    #
-    #         print 'Found cube!'
-    #         print square
-    #         print len(data)
-    #
-    #     else:
-    #         # process_data = process_data[1:]
-    #         data.pop(0)
-    #
-    #     # print len(data)
-    #
-    #     # print len(data)
-    #     # print "------------------------"
-    #
-    #
-    #
-    #     # for a in xrange(1, len(data)):
-    # #     print a
-
-
