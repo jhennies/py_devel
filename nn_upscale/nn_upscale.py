@@ -1,5 +1,6 @@
 
 from netdatautils import fromh5, toh5, slidingwindowslices
+from netdatakit import cargo, feederweave
 # import scipy
 import time
 import copy
@@ -36,57 +37,85 @@ class nn_upscale:
         self._stride = stride
         self._resultfile = resultfile
 
-    def run_nn_on_dataset(self, roispath, cubesize=512):
-
-        # # Determine slices which will be used
-        # slices = slidingwindowslices(self._datasetsize, self._nhoodsize, stride=self._stride, shuffle=False)
-        #
-        # # Iterate over the slices
-        # count = 0
-        # for currentslice in slices:
-        #     count += 1
-        #     print "slice:"
-        #     print (currentslice[0], currentslice[1], currentslice[2])
-        #
-        #     # Get the necessary part of the image
-        #     data = self.load_data(currentslice)
-        #     print data.shape
-        #
-        #     # Compute the neuronal network
-        #     output = self.call_nn(input=data)
-        #
-        # # And it's done
-        # print "The network was performed on " + str(count) + "images. "
-
-
-        # -------------------------------------
-        # New version:
+    def train_nn(self, roispath, popcubes=0):
 
         # Load ROIs
         rois = self.open_rois(input=roispath)
-        rois = zip(*[iter(rois)]*3)
+        # rois = zip(*[iter(rois)]*3)
         print len(rois)
 
-        rois = rois[0:1]
-        # Iterate over ROIs
-        for roi in rois:
-            # print roi
-            # Get the slice information
-            sl = (slice(roi[0], roi[0]+cubesize),
-                  slice(roi[1], roi[1]+cubesize),
-                  slice(roi[2], roi[2]+cubesize))
+        # rois = rois[0:2]
+        slices = list(rois)
 
-            print "slice:"
-            print sl
+        if popcubes == 0:
+            popcubes = len(slices)
 
-            # Load the respective part of the image
-            data = self.load_data(sl)
-            # print data[0:10, 0:10, 0:10]
+        fw = []
 
-            # Compute the neuronal network
-            self.nn_on_cube(input=data, resultfile=self._resultfile, cubename=str(roi[0]) + "_" + str(roi[1]) + "_" + str(roi[2]))
+        # Training
+        while len(slices) > 0:
+
+            print "len(slices) = " + str(len(slices))
+
+            # Make a cargo list
+            # cargolist = self.make_cargo_list(slices)
+            #
+            # [slices.remove(el) for el in slices]
+
+            data_slice = []
+            for i in xrange(0, popcubes):
+                print i
+                print len(slices)
+                data_slice += [slices.pop(np.random.randint(0, len(slices)))]
+                if len(slices) == 0: break
+
+            print data_slice
+
+            cg = self.make_cargo_list(data_slice)
+            # print cg
+
+            print "======="
+
+            # fw += [feederweave(cg)]
+            fw += [feederweave(cg)]
+
+            # Call the network
+            # Feederweave
+
+            # fw[0].next()
+
+
+        ffw = feederweave(fw)
+
+        ffw.next()
+
+        return ffw
+        #return [feederweave]
 
         # It's done
+
+    def get_axistag(self, dim):
+        if dim == 0:
+            return 'ijk'
+        elif dim == 1:
+            return 'jik'
+        elif dim == 2:
+            return 'kij'
+
+    def make_cargo_list(self, data_slice):
+
+        cg = []
+        for sl in data_slice:
+            for dim in xrange(0, 3):
+                # print sl
+                axistag = self.get_axistag(dim)
+
+                cg += [cargo(h5path=self._path, pathh5=self._datapath, data=None, axistags=axistag,
+                            batchsize=1, nhoodsize=None, ds=None,
+                            window=None, stride=None, preload=False, dataslice=sl,
+                            preptrain=None, shuffleiterator=True)]
+
+        return cg
 
     def load_data(self, currentslice):
         return fromh5(self._path, datapath=self._datapath,
@@ -574,7 +603,8 @@ if __name__ == "__main__":
     #                     size=512, step=32)
 
 
-    nnupsc.run_nn_on_dataset("/media/julian/Daten/mobi/h1.hci/data/fib25/rois512.pkl", cubesize=512)
+    nnupsc.train_nn(roispath="/media/julian/Daten/mobi/h1.hci/data/fib25/roissl512.pkl",
+                    popcubes=10)
 
     # nnupsc.detect_rois_dict2(dict_size=4068, dict_overlap=0)
     # nnupsc.detect_rois_dict(dict_size=512, dict_overlap=0)
