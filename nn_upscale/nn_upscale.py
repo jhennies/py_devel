@@ -40,57 +40,38 @@ class nn_upscale:
     def train_nn(self, roispath, popcubes=0):
 
         # Load ROIs
+        # The ROIs pickle file needs the format:
+        #   tuple( tuple(slice(x_start, x_end), slice(y_start, y_end), slice(z_start, z_end)), ... )
         rois = self.open_rois(input=roispath)
-        # rois = zip(*[iter(rois)]*3)
-        print len(rois)
 
-        # rois = rois[0:2]
-        slices = list(rois)
+        rois = list(rois)
 
         if popcubes == 0:
-            popcubes = len(slices)
+            popcubes = len(rois)
 
         fw = []
 
-        # Training
-        while len(slices) > 0:
+        # This loop is performed for a group of ROIs (amount = popcubes)
+        while len(rois) > 0:
 
-            print "len(slices) = " + str(len(slices))
-
-            # Make a cargo list
-            # cargolist = self.make_cargo_list(slices)
-            #
-            # [slices.remove(el) for el in slices]
-
-            data_slice = []
+            # Randomly pop a list of slices
+            data_slices = []
             for i in xrange(0, popcubes):
                 print i
-                print len(slices)
-                data_slice += [slices.pop(np.random.randint(0, len(slices)))]
-                if len(slices) == 0: break
+                print len(rois)
+                data_slices += [rois.pop(np.random.randint(0, len(rois)))]
+                if len(rois) == 0: break
 
-            print data_slice
+            # Generate a list of cargo objects from these selected slices
+            cg = self.make_cargo_list(data_slices)
 
-            cg = self.make_cargo_list(data_slice)
-            # print cg
-
-            print "======="
-
-            # fw += [feederweave(cg)]
+            # Put this list into a feederweave object and append the list of feederweaves
             fw += [feederweave(cg)]
 
-            # Call the network
-            # Feederweave
-
-            # fw[0].next()
-
-
+        # One feederweave to represent them all...
         ffw = feederweave(fw)
 
-        ffw.next()
-
         return ffw
-        #return [feederweave]
 
         # It's done
 
@@ -102,10 +83,10 @@ class nn_upscale:
         elif dim == 2:
             return 'kij'
 
-    def make_cargo_list(self, data_slice):
+    def make_cargo_list(self, data_slices):
 
         cg = []
-        for sl in data_slice:
+        for sl in data_slices:
             for dim in xrange(0, 3):
                 # print sl
                 axistag = self.get_axistag(dim)
