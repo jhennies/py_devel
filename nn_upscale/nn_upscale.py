@@ -22,29 +22,40 @@ class nn_upscale:
     _datasetsize=None
     _nhoodsize=None
     _stride=None
+    _roispath=None
 
     def __init__(self):
         pass
 
-    def __init__(self, path=None, datapath=None,
+    def __init__(self, path=None, datapath=None, roispath=None,
                  resultfile=None,
                  datasetsize=[256, 256, 256],
                  nhoodsize=[32, 32, 32],
                  stride=16):
+        """
+        :param path:
+        :param datapath:
+
+        :type roispath: str
+        :param roispath: Path to pickle file containing the regions of interest in the format:
+            tuple( tuple(slice(x_start, x_end), slice(y_start, y_end), slice(z_start, z_end)), ... )
+
+        :param resultfile:
+        :param datasetsize:
+        :param nhoodsize:
+        :param stride:
+        """
         self._path = path
         self._datapath = datapath
+        self._roispath = roispath
         self._datasetsize = datasetsize
         self._nhoodsize = nhoodsize
         self._stride = stride
         self._resultfile = resultfile
 
-    def train_nn(self, roispath, popcubes=0, slicedimensions=[0, 1, 2]):
+    def train_nn(self, popcubes=0, slicedimensions=[0, 1, 2]):
         """
         Creates feederweave object to train the neuronal network
-
-        :type roispath: str
-        :param roispath: Path to pickle file containing the regions of interest in the format:
-            tuple( tuple(slice(x_start, x_end), slice(y_start, y_end), slice(z_start, z_end)), ... )
 
         :type popcubes: int
         :param popcubes: Number of cargo objects which are grouped together into one feederweave
@@ -57,7 +68,7 @@ class nn_upscale:
         """
 
         # Load ROIs
-        rois = self.open_rois(input=roispath)
+        rois = self.open_rois(input=self._roispath)
         # Convert from tuple to list to make it poppable
         rois = list(rois)
 
@@ -595,16 +606,18 @@ if __name__ == "__main__":
     path = "/media/julian/Daten/mobi/h1.hci/data/fib25/raw_fib25.h5"
     datapath = "data"
     resultfile = "/media/julian/Daten/mobi/h1.hci/data/fib25/results/result_fib25"
+    roispath = "/media/julian/Daten/mobi/h1.hci/data/fib25/roissl512.pkl"
     #
-    nnupsc = nn_upscale(path=path, datapath=datapath, resultfile=resultfile)
+    nnupsc = nn_upscale(path=path, datapath=datapath,
+                        roispath=roispath,
+                        resultfile=resultfile)
 
     # nnupsc.extract_rois("/media/julian/Daten/mobi/h1.hci/data/fib25/rois.pkl",
     #                     "/media/julian/Daten/mobi/h1.hci/data/fib25/rois512.pkl",
     #                     size=512, step=32)
 
 
-    nnupsc.train_nn(roispath="/media/julian/Daten/mobi/h1.hci/data/fib25/roissl512.pkl",
-                    popcubes=10)
+    nnupsc.train_nn(popcubes=10, slicedimensions=[0, 1, 2])
 
     # nnupsc.detect_rois_dict2(dict_size=4068, dict_overlap=0)
     # nnupsc.detect_rois_dict(dict_size=512, dict_overlap=0)

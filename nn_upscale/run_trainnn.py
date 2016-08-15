@@ -33,5 +33,6 @@ dataconfig = yaml2dict(configfile)
 
 sys.path.append('/media/julian/Daten/src/hci/nasim/')
 import nn_upscale
-nnupsc = nn_upscale.nn_upscale(path=dataconfig['datapath'], datapath=dataconfig['dataname'], resultfile=None)
-nnupsc.train_nn(roispath=dataconfig['roispath'], popcubes=dataconfig['popcubes'])
+nnupsc = nn_upscale.nn_upscale(path=dataconfig['datapath'], datapath=dataconfig['dataname'],
+                               roispath=dataconfig['roispath'], resultfile=None)
+nnupsc.train_nn(popcubes=dataconfig['popcubes'], slicedimensions=dataconfig['slicedimensions'])
