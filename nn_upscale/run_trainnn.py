@@ -6,6 +6,9 @@ import sys
 
 __author__ = 'jhennies'
 
+# _________________________________________________________
+# Argument parsing
+
 
 # Makes sure the specified file is both a valid file and readable by the current user
 def readablefile(prospective_file):
@@ -24,6 +27,10 @@ configfile = args.ConfigFile
 print 'Selected configuration file:'
 print configfile
 
+# _________________________________________________________
+# Load settings
+
+
 # Yaml to dict reader
 def yaml2dict(path):
      with open(path, 'r') as f: readict = yaml.load(f)
@@ -31,8 +38,13 @@ def yaml2dict(path):
 
 dataconfig = yaml2dict(configfile)
 
+# _________________________________________________________
+# Running the network
+
 sys.path.append('/media/julian/Daten/src/hci/nasim/')
 import nn_upscale
 nnupsc = nn_upscale.nn_upscale(path=dataconfig['datapath'], datapath=dataconfig['dataname'],
                                roispath=dataconfig['roispath'], resultfile=None)
-nnupsc.train_nn(popcubes=dataconfig['popcubes'], slicedimensions=dataconfig['slicedimensions'])
+
+# Create feederweave object
+fw = nnupsc.train_nn(popcubes=dataconfig['popcubes'], slicedimensions=dataconfig['slicedimensions'])

@@ -33,17 +33,27 @@ class nn_upscale:
                  nhoodsize=[32, 32, 32],
                  stride=16):
         """
-        :param path:
-        :param datapath:
+        :type path: str
+        :param path: Path to dataset h5 file
+
+        :type datapath: str
+        :param datapath: Path inside the h5 file
 
         :type roispath: str
         :param roispath: Path to pickle file containing the regions of interest in the format:
             tuple( tuple(slice(x_start, x_end), slice(y_start, y_end), slice(z_start, z_end)), ... )
 
-        :param resultfile:
-        :param datasetsize:
-        :param nhoodsize:
-        :param stride:
+        :type resultfile: str
+        :param resultfile: File for result storage. Defaults to None, is not needed for training
+
+        :param datasetsize: list of int
+        :param datasetsize: Needed only for re-calculation of the regions of interest, i.e., extract_rois()
+
+        :param nhoodsize: List of int
+        :param nhoodsize: see datasetsize
+
+        :type int
+        :param stride: experimental...
         """
         self._path = path
         self._datapath = datapath
