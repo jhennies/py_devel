@@ -29,13 +29,7 @@ def yaml2dict(path):
      with open(path, 'r') as f: readict = yaml.load(f)
      return readict
 
-# TODO: replace this by YAML file input
-dataconfig = {
-    'datapath': '/media/julian/Daten/mobi/h1.hci/data/fib25/raw_fib25.h5',
-    'dataname': 'data',
-    'roispath': '/media/julian/Daten/mobi/h1.hci/data/fib25/roissl512.pkl',
-    'popcubes': 10
-}
+dataconfig = yaml2dict(configfile)
 
 sys.path.append('/media/julian/Daten/src/hci/nasim/')
 import nn_upscale

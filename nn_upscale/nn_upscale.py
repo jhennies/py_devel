@@ -1,5 +1,6 @@
 
-from netdatautils import fromh5, toh5, slidingwindowslices
+# from nasim, netdatautils import fromh5, toh5, slidingwindowslices
+import netdatautils as nda
 from netdatakit import cargo, feederweave
 # import scipy
 import time
@@ -71,8 +72,8 @@ class nn_upscale:
             # Randomly pop a list of slices
             data_slices = []
             for i in xrange(0, popcubes):
-                print i
-                print len(rois)
+                # print i
+                # print len(rois)
                 data_slices += [rois.pop(np.random.randint(0, len(rois)))]
                 if len(rois) == 0: break
 
@@ -81,6 +82,10 @@ class nn_upscale:
 
             # Put this list into a feederweave object and append the list of feederweaves
             fw += [feederweave(cg)]
+
+            print '_____________________________________________'
+            print 'Remaining ROIs:'
+            print len(rois)
 
         # One feederweave to represent them all...
         ffw = feederweave(fw)
@@ -113,7 +118,7 @@ class nn_upscale:
         return cg
 
     def load_data(self, currentslice):
-        return fromh5(self._path, datapath=self._datapath,
+        return nda.fromh5(self._path, datapath=self._datapath,
                       dataslice=currentslice, asnumpy=True, preptrain=None)
 
     def nn_on_cube_dimension(self, cube, dimension=0):
