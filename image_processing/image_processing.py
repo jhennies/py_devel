@@ -26,6 +26,12 @@ class ImageProcessing:
     def invert_image(self):
         self._image = np.amax(self._image) - self._image
 
+    def swapaxes(self, axis1, axis2):
+        self._image = np.swapaxes(self._image, axis1, axis2)
+
+    def rollaxis(self, axis, start=0):
+        self._image = np.rollaxis(self._image, axis, start)
+
 
 class ImageFileProcessing:
 
@@ -54,7 +60,7 @@ class ImageFileProcessing:
             f = h5py.File(self._imagePath + self._imageFile)
             if self._imageName is None:
                 self._imageName = f.keys()[self._imageID]
-            self._data = np.array(f.get(self._imageName))
+            self._data = ImageProcessing(np.array(f.get(self._imageName)))
             f.close()
             return self._data
         else:
@@ -67,15 +73,23 @@ class ImageFileProcessing:
             f.close()
             return data
 
+    ###########################################################################################
+    # Image processing
+
     def invert_image(self):
+        self._data.invert_image()
+        self._imageFileName += '.inv'
 
-        self.load_h5()
+    def swapaxes(self, axis1, axis2):
+        self._data.swapaxes(axis1, axis2)
+        self._imageFileName += '.swpxs_' + str(axis1) + '_' + str(axis2)
 
-        ip = ImageProcessing(self._data)
-        ip.invert_image()
-        self._data = ip.get_image()
+    def rollaxis(self, axis, start=0):
+        self._data.rollaxis(axis, start)
+        self._imageFileName += '.rllxs_' + str(axis) + '_' + str(start)
 
-        self._imageFileName = self._imageFileName + '.inv'
+    ###########################################################################################
+    # Write h5 files
 
     def write_h5(self, nfile, data, image_name=None):
         print "Writing..."
@@ -87,13 +101,15 @@ class ImageFileProcessing:
         of.close()
 
     def write(self):
-        self.write_h5(self._imageFileName + '.h5', self._data)
+        self.write_h5(self._imageFileName + '.h5', self._data.get_image())
 
 
 if __name__ == "__main__":
 
     ifp = ImageFileProcessing(
-        "/media/julian/Daten/neuraldata/isbi_2013/data_crop/",
+        "/media/julian/Daten/neuraldata/isbi_2013/data/",
         "probabilities_test.h5", None, 0)
     ifp.invert_image()
+    ifp.swapaxes(0, 2)
+    ifp.rollaxis(1, 0)
     ifp.write()
