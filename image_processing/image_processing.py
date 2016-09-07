@@ -106,10 +106,15 @@ class ImageFileProcessing:
 
 if __name__ == "__main__":
 
+    # Create object and define image file
     ifp = ImageFileProcessing(
         "/media/julian/Daten/neuraldata/isbi_2013/data/",
         "probabilities_test.h5", None, 0)
+
+    # Modify the image
     ifp.invert_image()
     ifp.swapaxes(0, 2)
     ifp.rollaxis(1, 0)
+
+    # Write the result (File name is automatically generated depending on the performed operations)
     ifp.write()
