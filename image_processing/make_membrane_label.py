@@ -9,6 +9,26 @@ import random
 __author__ = 'jhennies'
 
 
+class ImageProcessing:
+
+    _image = None
+
+    def __init__(self):
+        pass
+
+    def __init__(self, image):
+        self._image = image
+
+    def set_image(self, image):
+        self._image = image
+
+    def get_image(self):
+        return self._image
+
+    def invert_image(self):
+        self._image = np.amax(self._image) - self._image
+
+
 class ImageFileProcessing:
 
     _imagePath = ''
@@ -57,7 +77,7 @@ class ImageFileProcessing:
             of.create_dataset(image_name, data=data)
         of.close()
 
-    def crop_h5(self, crop):
+    def crop_h5(self, crop, rollaxis=None, swapaxes=None):
         # INPUT
         #   crop: Tuple (size_d1, size_d2, ... , size_dn)
 
@@ -66,6 +86,16 @@ class ImageFileProcessing:
 
         # Crop image
         cropped_data = self._data[0:crop[0], 0:crop[1], 0:crop[2]]
+
+        print cropped_data.shape
+
+        if rollaxis is not None:
+            cropped_data = np.rollaxis(cropped_data, rollaxis[0], rollaxis[1])
+
+        if swapaxes is not None:
+            cropped_data = np.swapaxes(cropped_data, swapaxes[0], swapaxes[1])
+
+        print cropped_data.shape
 
         # Write cropped image
         cropped_file = self._imageFileName + '.crop_' + str(crop[0]) + '_' + str(crop[1]) + '_' + str(crop[2]) + '.h5'
@@ -206,6 +236,16 @@ class ImageFileProcessing:
         else:
             return self._data
 
+    def invert_image_h5(self):
+
+        self.load_h5()
+
+        ip = ImageProcessing(self._data)
+        ip.invert_image()
+        inverted_data = ip.get_image()
+
+        inverted_file = self._imageFileName + '.inv.h5'
+        self.write_h5(inverted_file, inverted_data)
 
 if __name__ == "__main__":
     imagePath = '/windows/mobi/h1.hci/isbi_2013/data/'
