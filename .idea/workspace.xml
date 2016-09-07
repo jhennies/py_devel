@@ -2,11 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7ebdd879-ca8c-404d-8514-67fdae1c303d" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/nn_upscale/.idea/misc.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/nn_upscale/.idea/modules.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/nn_upscale/.idea/nn_upscale.iml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/nn_upscale/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/image_processing/split_images.py" afterPath="$PROJECT_DIR$/image_processing/split_images.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="py_devel.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -31,7 +27,7 @@
           <file leaf-file-name="make_test_datasets.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/image_processing/make_test_datasets.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="735">
+                <state relative-caret-position="661">
                   <caret line="59" column="0" selection-start-line="59" selection-start-column="0" selection-end-line="59" selection-end-column="0" />
                   <folding>
                     <element signature="e#1#12#0" expanded="true" />
@@ -40,10 +36,38 @@
               </provider>
             </entry>
           </file>
+          <file leaf-file-name="scratch_2.py" pinned="false" current-in-tab="true">
+            <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/scratch_2.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="420">
+                  <caret line="28" column="0" selection-start-line="28" selection-start-column="0" selection-end-line="28" selection-end-column="0" />
+                  <folding>
+                    <element signature="e#1#19#0" expanded="true" />
+                    <marker date="1473256847988" expanded="true" signature="414:514" ph="..." />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="image_processing.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/image_processing/image_processing.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="594">
+                  <caret line="98" column="15" selection-start-line="94" selection-start-column="0" selection-end-line="98" selection-end-column="15" />
+                  <folding>
+                    <element signature="e#1#12#0" expanded="true" />
+                    <element signature="e#700#782#0" expanded="false" />
+                    <element signature="e#862#1064#0" expanded="false" />
+                    <element signature="e#1138#1701#0" expanded="false" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
           <file leaf-file-name="nn_upscale.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/nn_upscale/nn_upscale.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="585">
+                <state relative-caret-position="615">
                   <caret line="47" column="0" selection-start-line="47" selection-start-column="0" selection-end-line="47" selection-end-column="0" />
                   <folding>
                     <element signature="e#69#95#0" expanded="true" />
@@ -64,11 +88,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="run_trainnn.py" pinned="false" current-in-tab="true">
+          <file leaf-file-name="run_trainnn.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/nn_upscale/run_trainnn.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="570">
-                  <caret line="38" column="30" selection-start-line="38" selection-start-column="30" selection-end-line="38" selection-end-column="30" />
+                <state relative-caret-position="465">
+                  <caret line="31" column="0" selection-start-line="31" selection-start-column="0" selection-end-line="31" selection-end-column="0" />
                   <folding>
                     <element signature="e#1#16#0" expanded="true" />
                   </folding>
@@ -110,7 +134,7 @@
       </split-first>
       <split-second>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-          <file leaf-file-name="netdatautils.py" pinned="false" current-in-tab="true">
+          <file leaf-file-name="netdatautils.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/../nasim/netdatautils.py">
               <provider selected="true" editor-type-id="text-editor">
                 <state relative-caret-position="124">
@@ -144,14 +168,40 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="make_membrane_label.py" pinned="false" current-in-tab="false">
+          <file leaf-file-name="make_membrane_label.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/image_processing/make_membrane_label.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="3150">
-                  <caret line="214" column="0" selection-start-line="210" selection-start-column="0" selection-end-line="214" selection-end-column="0" />
+                <state relative-caret-position="-609">
+                  <caret line="49" column="43" selection-start-line="49" selection-start-column="42" selection-end-line="49" selection-end-column="43" />
                   <folding>
                     <element signature="e#1#12#0" expanded="true" />
+                    <element signature="e#670#674#0" expanded="false" />
+                    <element signature="e#2757#3090#0" expanded="false" />
+                    <element signature="e#3199#5847#0" expanded="false" />
+                    <element signature="e#5947#6570#0" expanded="false" />
+                    <element signature="e#6617#6746#0" expanded="false" />
+                    <element signature="e#6868#7651#0" expanded="false" />
                   </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="split_images.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/image_processing/split_images.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="15">
+                  <caret line="1" column="0" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="stack_images.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/image_processing/stack_images.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="0">
+                  <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+                  <folding />
                 </state>
               </provider>
             </entry>
@@ -205,6 +255,9 @@
         <option value="$PROJECT_DIR$/nn_upscale/run_trainnn.py" />
         <option value="$PROJECT_DIR$/nn_upscale/nn_upscale.py" />
         <option value="$APPLICATION_CONFIG_DIR$/scratches/scratch_1.py" />
+        <option value="$PROJECT_DIR$/image_processing/make_membrane_label.py" />
+        <option value="$PROJECT_DIR$/image_processing/image_processing.py" />
+        <option value="$APPLICATION_CONFIG_DIR$/scratches/scratch_2.py" />
       </list>
     </option>
   </component>
@@ -239,6 +292,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scratches" />
       <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
@@ -318,7 +372,6 @@
           </PATH>
         </subPane>
       </pane>
-      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -327,29 +380,7 @@
     <property name="settings.editor.splitter.proportion" value="0.2" />
     <property name="com.intellij.ide.scratch.LRUPopupBuilder$2/Languages" value="Python" />
   </component>
-  <component name="RunManager" selected="Python.nn_upscale">
-    <configuration default="false" name="Unittests in py_devel" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs />
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="py_devel" />
-      <option name="SCRIPT_NAME" value="" />
-      <option name="CLASS_NAME" value="" />
-      <option name="METHOD_NAME" value="" />
-      <option name="FOLDER_NAME" value="$PROJECT_DIR$" />
-      <option name="TEST_TYPE" value="TEST_FOLDER" />
-      <option name="PATTERN" value="" />
-      <option name="USE_PATTERN" value="false" />
-      <option name="PUREUNITTEST" value="true" />
-      <option name="PARAMS" value="" />
-      <option name="USE_PARAM" value="false" />
-      <method />
-    </configuration>
+  <component name="RunManager" selected="Python.scratch_2">
     <configuration default="false" name="nn_upscale" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -397,6 +428,40 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="py_devel" />
       <option name="SCRIPT_NAME" value="$APPLICATION_CONFIG_DIR$/scratches/scratch.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="scratch_2" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$APPLICATION_CONFIG_DIR$/scratches" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="py_devel" />
+      <option name="SCRIPT_NAME" value="$APPLICATION_CONFIG_DIR$/scratches/scratch_2.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="image_processing" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/image_processing" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="py_devel" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/image_processing/image_processing.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -535,18 +600,20 @@
       <option name="USE_KEYWORD" value="false" />
       <method />
     </configuration>
-    <list size="4">
-      <item index="0" class="java.lang.String" itemvalue="Python tests.Unittests in py_devel" />
-      <item index="1" class="java.lang.String" itemvalue="Python.nn_upscale" />
-      <item index="2" class="java.lang.String" itemvalue="Python.make_test_datasets" />
-      <item index="3" class="java.lang.String" itemvalue="Python.scratch" />
+    <list size="5">
+      <item index="0" class="java.lang.String" itemvalue="Python.nn_upscale" />
+      <item index="1" class="java.lang.String" itemvalue="Python.make_test_datasets" />
+      <item index="2" class="java.lang.String" itemvalue="Python.scratch" />
+      <item index="3" class="java.lang.String" itemvalue="Python.scratch_2" />
+      <item index="4" class="java.lang.String" itemvalue="Python.image_processing" />
     </list>
     <recent_temporary>
-      <list size="4">
-        <item index="0" class="java.lang.String" itemvalue="Python.nn_upscale" />
-        <item index="1" class="java.lang.String" itemvalue="Python.scratch" />
-        <item index="2" class="java.lang.String" itemvalue="Python.make_test_datasets" />
-        <item index="3" class="java.lang.String" itemvalue="Python tests.Unittests in py_devel" />
+      <list size="5">
+        <item index="0" class="java.lang.String" itemvalue="Python.scratch_2" />
+        <item index="1" class="java.lang.String" itemvalue="Python.image_processing" />
+        <item index="2" class="java.lang.String" itemvalue="Python.scratch" />
+        <item index="3" class="java.lang.String" itemvalue="Python.nn_upscale" />
+        <item index="4" class="java.lang.String" itemvalue="Python.make_test_datasets" />
       </list>
     </recent_temporary>
   </component>
@@ -662,7 +729,14 @@
       <option name="project" value="LOCAL" />
       <updated>1471256270295</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="Set up new structure of image file processing class">
+      <created>1473259785156</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1473259785156</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="TestHistory">
@@ -678,19 +752,19 @@
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32902583" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32902583" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.27534792" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33996025" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2664016" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32902583" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33996025" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
   <component name="Vcs.Log.UiProperties">
@@ -719,7 +793,8 @@
     <MESSAGE value="yaml working" />
     <MESSAGE value="moved roispath init to __init__" />
     <MESSAGE value="Some comments" />
-    <option name="LAST_COMMIT_MESSAGE" value="Some comments" />
+    <MESSAGE value="Set up new structure of image file processing class" />
+    <option name="LAST_COMMIT_MESSAGE" value="Set up new structure of image file processing class" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -745,36 +820,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/image_processing/make_membrane_label.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3150">
-          <caret line="214" column="0" selection-start-line="210" selection-start-column="0" selection-end-line="214" selection-end-column="0" />
-          <folding>
-            <element signature="e#1#12#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../nasim/prepkit.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="180">
-          <caret line="16" column="0" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
-          <folding>
-            <element signature="e#409#427#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/image_processing/make_test_datasets.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1395">
-          <caret line="103" column="23" selection-start-line="103" selection-start-column="23" selection-end-line="103" selection-end-column="23" />
-          <folding>
-            <element signature="e#1#12#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/nn_upscale/nn_upscale.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="915">
@@ -841,6 +886,12 @@
           <caret line="214" column="0" selection-start-line="210" selection-start-column="0" selection-end-line="214" selection-end-column="0" />
           <folding>
             <element signature="e#1#12#0" expanded="true" />
+            <element signature="e#670#674#0" expanded="false" />
+            <element signature="e#2757#3090#0" expanded="false" />
+            <element signature="e#3199#5847#0" expanded="false" />
+            <element signature="e#5947#6570#0" expanded="false" />
+            <element signature="e#6617#6746#0" expanded="false" />
+            <element signature="e#6868#7651#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -931,6 +982,12 @@
           <caret line="214" column="0" selection-start-line="210" selection-start-column="0" selection-end-line="214" selection-end-column="0" />
           <folding>
             <element signature="e#1#12#0" expanded="true" />
+            <element signature="e#670#674#0" expanded="false" />
+            <element signature="e#2757#3090#0" expanded="false" />
+            <element signature="e#3199#5847#0" expanded="false" />
+            <element signature="e#5947#6570#0" expanded="false" />
+            <element signature="e#6617#6746#0" expanded="false" />
+            <element signature="e#6868#7651#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -1021,6 +1078,12 @@
           <caret line="214" column="0" selection-start-line="210" selection-start-column="0" selection-end-line="214" selection-end-column="0" />
           <folding>
             <element signature="e#1#12#0" expanded="true" />
+            <element signature="e#670#674#0" expanded="false" />
+            <element signature="e#2757#3090#0" expanded="false" />
+            <element signature="e#3199#5847#0" expanded="false" />
+            <element signature="e#5947#6570#0" expanded="false" />
+            <element signature="e#6617#6746#0" expanded="false" />
+            <element signature="e#6868#7651#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -1091,6 +1154,12 @@
           <caret line="214" column="0" selection-start-line="210" selection-start-column="0" selection-end-line="214" selection-end-column="0" />
           <folding>
             <element signature="e#1#12#0" expanded="true" />
+            <element signature="e#670#674#0" expanded="false" />
+            <element signature="e#2757#3090#0" expanded="false" />
+            <element signature="e#3199#5847#0" expanded="false" />
+            <element signature="e#5947#6570#0" expanded="false" />
+            <element signature="e#6617#6746#0" expanded="false" />
+            <element signature="e#6868#7651#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -1151,6 +1220,12 @@
           <caret line="214" column="0" selection-start-line="210" selection-start-column="0" selection-end-line="214" selection-end-column="0" />
           <folding>
             <element signature="e#1#12#0" expanded="true" />
+            <element signature="e#670#674#0" expanded="false" />
+            <element signature="e#2757#3090#0" expanded="false" />
+            <element signature="e#3199#5847#0" expanded="false" />
+            <element signature="e#5947#6570#0" expanded="false" />
+            <element signature="e#6617#6746#0" expanded="false" />
+            <element signature="e#6868#7651#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -1211,45 +1286,12 @@
           <caret line="214" column="0" selection-start-line="210" selection-start-column="0" selection-end-line="214" selection-end-column="0" />
           <folding>
             <element signature="e#1#12#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/image_processing/split_images.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="15">
-          <caret line="1" column="0" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/image_processing/make_test_datasets.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="735">
-          <caret line="59" column="0" selection-start-line="59" selection-start-column="0" selection-end-line="59" selection-end-column="0" />
-          <folding>
-            <element signature="e#1#12#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/nn_upscale/nn_upscale.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="585">
-          <caret line="47" column="0" selection-start-line="47" selection-start-column="0" selection-end-line="47" selection-end-column="0" />
-          <folding>
-            <element signature="e#69#95#0" expanded="true" />
-            <element signature="e#4549#5970#0" expanded="false" />
-            <element signature="e#6379#6876#0" expanded="false" />
-            <element signature="e#6938#7178#0" expanded="false" />
-            <element signature="e#7257#7719#0" expanded="false" />
-            <element signature="e#7787#8092#0" expanded="false" />
-            <element signature="e#8161#9047#0" expanded="false" />
-            <element signature="e#9386#11996#0" expanded="false" />
-            <element signature="e#12173#16269#0" expanded="false" />
-            <element signature="e#16935#18418#0" expanded="false" />
-            <element signature="e#18473#18666#0" expanded="false" />
-            <element signature="e#18715#18893#0" expanded="false" />
-            <element signature="e#18950#19097#0" expanded="false" />
+            <element signature="e#670#674#0" expanded="false" />
+            <element signature="e#2757#3090#0" expanded="false" />
+            <element signature="e#3199#5847#0" expanded="false" />
+            <element signature="e#5947#6570#0" expanded="false" />
+            <element signature="e#6617#6746#0" expanded="false" />
+            <element signature="e#6868#7651#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -1258,16 +1300,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="59" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/nn_upscale/run_trainnn.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="570">
-          <caret line="38" column="30" selection-start-line="38" selection-start-column="30" selection-end-line="38" selection-end-column="30" />
-          <folding>
-            <element signature="e#1#16#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1295,16 +1327,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../nasim/netdatautils.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="124">
-          <caret line="143" column="7" selection-start-line="143" selection-start-column="7" selection-end-line="143" selection-end-column="7" />
-          <folding>
-            <element signature="e#95#113#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../nasim/netdatakit.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="615">
@@ -1325,16 +1347,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/image_processing/make_membrane_label.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3150">
-          <caret line="214" column="0" selection-start-line="210" selection-start-column="0" selection-end-line="214" selection-end-column="0" />
-          <folding>
-            <element signature="e#1#12#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../nasim/prepkit.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
@@ -1350,6 +1362,114 @@
         <state relative-caret-position="300">
           <caret line="20" column="0" selection-start-line="20" selection-start-column="0" selection-end-line="20" selection-end-column="0" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nn_upscale/run_trainnn.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="465">
+          <caret line="31" column="0" selection-start-line="31" selection-start-column="0" selection-end-line="31" selection-end-column="0" />
+          <folding>
+            <element signature="e#1#16#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../nasim/netdatautils.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="124">
+          <caret line="143" column="7" selection-start-line="143" selection-start-column="7" selection-end-line="143" selection-end-column="7" />
+          <folding>
+            <element signature="e#95#113#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/image_processing/split_images.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="15">
+          <caret line="1" column="0" selection-start-line="1" selection-start-column="0" selection-end-line="1" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/image_processing/stack_images.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nn_upscale/nn_upscale.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="615">
+          <caret line="47" column="0" selection-start-line="47" selection-start-column="0" selection-end-line="47" selection-end-column="0" />
+          <folding>
+            <element signature="e#69#95#0" expanded="true" />
+            <element signature="e#4549#5970#0" expanded="false" />
+            <element signature="e#6379#6876#0" expanded="false" />
+            <element signature="e#6938#7178#0" expanded="false" />
+            <element signature="e#7257#7719#0" expanded="false" />
+            <element signature="e#7787#8092#0" expanded="false" />
+            <element signature="e#8161#9047#0" expanded="false" />
+            <element signature="e#9386#11996#0" expanded="false" />
+            <element signature="e#12173#16269#0" expanded="false" />
+            <element signature="e#16935#18418#0" expanded="false" />
+            <element signature="e#18473#18666#0" expanded="false" />
+            <element signature="e#18715#18893#0" expanded="false" />
+            <element signature="e#18950#19097#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/image_processing/make_test_datasets.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="661">
+          <caret line="59" column="0" selection-start-line="59" selection-start-column="0" selection-end-line="59" selection-end-column="0" />
+          <folding>
+            <element signature="e#1#12#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/image_processing/make_membrane_label.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-609">
+          <caret line="49" column="43" selection-start-line="49" selection-start-column="42" selection-end-line="49" selection-end-column="43" />
+          <folding>
+            <element signature="e#1#12#0" expanded="true" />
+            <element signature="e#670#674#0" expanded="false" />
+            <element signature="e#2757#3090#0" expanded="false" />
+            <element signature="e#3199#5847#0" expanded="false" />
+            <element signature="e#5947#6570#0" expanded="false" />
+            <element signature="e#6617#6746#0" expanded="false" />
+            <element signature="e#6868#7651#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/image_processing/image_processing.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="594">
+          <caret line="98" column="15" selection-start-line="94" selection-start-column="0" selection-end-line="98" selection-end-column="15" />
+          <folding>
+            <element signature="e#1#12#0" expanded="true" />
+            <element signature="e#700#782#0" expanded="false" />
+            <element signature="e#862#1064#0" expanded="false" />
+            <element signature="e#1138#1701#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$APPLICATION_CONFIG_DIR$/scratches/scratch_2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="420">
+          <caret line="28" column="0" selection-start-line="28" selection-start-column="0" selection-end-line="28" selection-end-column="0" />
+          <folding>
+            <element signature="e#1#19#0" expanded="true" />
+            <marker date="1473256847988" expanded="true" signature="414:514" ph="..." />
+          </folding>
         </state>
       </provider>
     </entry>
