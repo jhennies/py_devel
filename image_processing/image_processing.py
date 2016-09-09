@@ -2,6 +2,8 @@
 import h5py
 import numpy as np
 import re
+import vigra
+import scipy
 from scipy import ndimage
 import random
 
@@ -34,6 +36,12 @@ class ImageProcessing:
 
     def rollaxis(self, axis, start=0):
         self._image = np.rollaxis(self._image, axis, start)
+
+    def resize(self, zoom, mode):
+        # self._image = vigra.sampling.resizeImageNoInterpolation(self._image, shape=shape)
+        print 'Resizing with mode = ' + mode
+        self._image = scipy.ndimage.interpolation.zoom(self._image, zoom, mode=mode, order=0)
+        # scipy.misc.imresize(self._image, shape, interp='nearest')
 
     def getlabel(self, label):
         self._image = (self._image == label).astype(np.uint32)
@@ -119,6 +127,10 @@ class ImageFileProcessing:
     def rollaxis(self, axis, start=0):
         self._data.rollaxis(axis, start)
         self._imageFileName += '.rllxs_' + str(axis) + '_' + str(start)
+
+    def resize(self, zoom, mode):
+        self._data.resize(zoom, mode)
+        self._imageFileName += '.resize'
 
     def getlabel(self, label):
         self._data.getlabel(label)

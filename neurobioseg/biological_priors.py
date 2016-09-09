@@ -23,9 +23,10 @@ def conncomp(img, neighborhood='direct'):
     return vigra.analysis.labelMultiArrayWithBackground(img, neighborhood=neighborhood, background_value=0)
 
 
-def binarize(img):
-    returnimg = copy.deepcopy(img)
-    returnimg[returnimg > 1] = 1
+def binarize(img, value):
+    # returnimg = copy.deepcopy(img)
+    returnimg = (img > value).astype(np.uint32)
+
     return returnimg
 
 
@@ -38,11 +39,11 @@ if __name__ == "__main__":
 
     # Parameters
     tapering_tolerance = 5
-    object = 172
+    object = 191
 
     ifp = ImageFileProcessing(
         "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
-        "multicut_segmentation.h5", None, 0)
+        "multicut_segmentation.resize.h5", None, 0)
 
     # Start with one object only
     ifp.getlabel(object)
@@ -62,11 +63,12 @@ if __name__ == "__main__":
         print 'i = ' + str(i)
 
         # Remove value i from distance transform
-        ifp.anytask(settozero, '.' + str(i), i)
-        disttransf = copy.deepcopy(ifp.get_image())
+        # ifp.anytask(settozero, '.' + str(i), i)
+        # disttransf = copy.deepcopy(ifp.get_image())
+        disttransf = ifp.get_image()
 
         # Get connected components
-        binarized = binarize(disttransf)
+        binarized = binarize(disttransf, i)
         conncomps = conncomp(binarized, neighborhood='indirect')
         print 'Number of objects: ' + str(np.amax(conncomps))
 
@@ -85,7 +87,7 @@ if __name__ == "__main__":
                     mainarbors += 1
 
             if mainarbors > 1:
-                ifp.write()
+                # ifp.write()
                 print 'Tapering violation detected! ' + str(mainarbors) + ' objects found.'
 
 
