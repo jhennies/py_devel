@@ -35,8 +35,14 @@ class ImageProcessing:
     def rollaxis(self, axis, start=0):
         self._image = np.rollaxis(self._image, axis, start)
 
+    def getlabel(self, label):
+        self._image = (self._image == label).astype(np.uint32)
+
     def anytask(self, function, *args, **kwargs):
         self._image = function(self._image, *args, **kwargs)
+
+    def amax(self):
+        return np.amax(self._image)
 
 class ImageFileProcessing:
 
@@ -64,6 +70,9 @@ class ImageFileProcessing:
         self._imageID = image_id
         if self._imageFile is not None:
             self._imageFileName = re.sub('\.h5$', '', self._imageFile)
+
+    def set_image(self, image):
+        self._data.set_image(image)
 
     def load_h5(self, im_file=None, im_id=None, im_name=None):
 
@@ -111,6 +120,10 @@ class ImageFileProcessing:
         self._data.rollaxis(axis, start)
         self._imageFileName += '.rllxs_' + str(axis) + '_' + str(start)
 
+    def getlabel(self, label):
+        self._data.getlabel(label)
+        self._imageFileName += '.lbl_' + str(label)
+
     def anytask(self, function, addtofilename, *args, **kwargs):
         """
         :type function
@@ -128,6 +141,9 @@ class ImageFileProcessing:
             self._imageFileName += addtofilename
         else:
             self._imageFileName += '.modified'
+
+    def amax(self):
+        return self._data.amax()
 
     ###########################################################################################
     # Write h5 files
