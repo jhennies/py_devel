@@ -5,7 +5,7 @@ from image_processing import ImageProcessing, ImageFileProcessing
 from scipy import ndimage
 import copy
 import sys
-
+from skimage.feature import peak_local_max
 
 __author__ = 'jhennies'
 
@@ -39,24 +39,66 @@ if __name__ == "__main__":
 
     # Parameters
     tapering_tolerance = 5
-    object = 191
+    object = 627
 
-    ifp = ImageFileProcessing(
-        "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
-        "multicut_segmentation.resize.h5", None, 0)
+    if True:
+        ifp = ImageFileProcessing(
+            "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
+            "multicut_segmentation.h5", None, 0)
 
-    # Start with one object only
-    ifp.getlabel(object)
-    if ifp.amax() == 0:
-        print 'Terminating scirpt: No object found.'
-        sys.exit()
-    ifp.write()
+        # Start with one object only
+        ifp.getlabel(object)
+        if ifp.amax() == 0:
+            print 'Terminating scirpt: No object found.'
+            sys.exit()
+        ifp.write()
 
+        # Distance transform
+        ifp.invert_image()
+        ifp.resize([1, 1, 5], 'nearest')
+        ifp.anytask(distancetransform, '.disttransf')
+        ifp.resize([1, 1, 0.2], 'nearest')
+        ifp.write()
+
+    else:
+        ifp = ImageFileProcessing(
+            "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
+            "multicut_segmentation.lbl_" + str(object) + ".inv.resize.disttransf.resize.h5", None, 0)
+
+    # # The local maximum algorithm: Fast but imprecise
+    # # -------------------------------------------------
+    # # Using the vigra max filter and local maxima
+    # # Yet it somehow won't do the trick
+    # ifp.anytask(vigra.filters.discRankOrderFilter, '.maxfilt', tapering_tolerance, 1)
+    # # ifp.write()
+    # ifp.anytask(vigra.analysis.extendedLocalMaxima3D, '.locmax', neighborhood=26)
+    #
+    # # # Lets try the skimage library
+    # # # ifp.anytask(ndimage.maximum_filter, size=20, mode='constant')
+    # # ifp.anytask(peak_local_max, '.locmax_skimage', min_distance=tapering_tolerance)
+    # # # ifp.write()
+    # # print ifp.get_image().shape
+    #
+    # locmaxs = ifp.get_image()
+    # print len(locmaxs[locmaxs > 0])
+    # conncomps = conncomp(locmaxs, neighborhood='indirect')
+    # print 'Number of objects: ' + str(np.amax(conncomps))
+
+    # ifp.write()
+
+
+
+
+
+    # The erosion algorithm:
+    # ----------------------
     # Get the distance transform inside this object
-    ifp.invert_image()
-    ifp.anytask(distancetransform, '.disttransf')
+    # ifp.invert_image()
+    # ifp.anytask(distancetransform, '.disttransf')
     disttransf = copy.deepcopy(ifp.get_image())
     max_disttransf = np.amax(disttransf)
+    print max_disttransf
+    # print disttransf[disttransf > 0]
 
     for i in xrange(1, int(max_disttransf+1)):
 
@@ -87,7 +129,12 @@ if __name__ == "__main__":
                     mainarbors += 1
 
             if mainarbors > 1:
-                # ifp.write()
+                ifpwrite = ImageFileProcessing(
+                    "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
+                    "multicut_segmentation.lbl_" + str(object) + ".inv.resize.disttransf.resize.h5", None, 0)
+                ifpwrite.set_image(conncomps)
+                ifpwrite.addtoname('.conncomps.' + str(i))
+                ifpwrite.write()
                 print 'Tapering violation detected! ' + str(mainarbors) + ' objects found.'
 
 

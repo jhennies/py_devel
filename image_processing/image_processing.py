@@ -4,7 +4,7 @@ import numpy as np
 import re
 import vigra
 import scipy
-from scipy import ndimage
+from scipy import ndimage, misc
 import random
 
 __author__ = 'jhennies'
@@ -42,6 +42,19 @@ class ImageProcessing:
         print 'Resizing with mode = ' + mode
         self._image = scipy.ndimage.interpolation.zoom(self._image, zoom, mode=mode, order=0)
         # scipy.misc.imresize(self._image, shape, interp='nearest')
+
+    def resize_z_nearest(self, z):
+        img = self._image
+        newimg = np.zeros((img.shape[0], img.shape[1], z))
+        for i in xrange(0, img.shape[1]):
+            t = img[:, i, :]
+            # print img.shape
+            # print t.shape
+            # t = np.swapaxes(t, 1, 2)
+            misc.imresize(t, z, interp='nearest')
+            # t = np.swapaxes(t, 1, 2)
+
+            newimg[:, i, :] = t
 
     def getlabel(self, label):
         self._image = (self._image == label).astype(np.uint32)
@@ -113,6 +126,9 @@ class ImageFileProcessing:
     def get_filename(self):
         return self._imageFileName + '.h5'
 
+    def addtoname(self, addstr):
+        self._imageFileName += addstr
+
     ###########################################################################################
     # Image processing
 
@@ -131,6 +147,10 @@ class ImageFileProcessing:
     def resize(self, zoom, mode):
         self._data.resize(zoom, mode)
         self._imageFileName += '.resize'
+
+    def resize_z_nearest(self, z):
+        self._data.resize_z_nearest(z)
+        self._imageFileName += '.resizez_' + str(z)
 
     def getlabel(self, label):
         self._data.getlabel(label)
