@@ -9,6 +9,54 @@ import random
 
 __author__ = 'jhennies'
 
+
+# _____________________________________________________________________________________________
+# The image processing library
+
+def invert_image(image):
+    return np.amax(image) - image
+
+
+def swapaxes(image, axis1, axis2):
+    return np.swapaxes(image, axis1, axis2)
+
+
+def rollaxis(image, axis, start=0):
+    return np.rollaxis(image, axis, start)
+
+
+def resize(image, zoom, mode):
+    # self._image = vigra.sampling.resizeImageNoInterpolation(self._image, shape=shape)
+    print 'Resizing with mode = ' + mode
+    return scipy.ndimage.interpolation.zoom(image, zoom, mode=mode, order=0)
+    # scipy.misc.imresize(self._image, shape, interp='nearest')
+
+
+def resize_z_nearest(image, z):
+    img = image
+    newimg = np.zeros((img.shape[0], img.shape[1], z))
+    for i in xrange(0, img.shape[1]):
+        t = img[:, i, :]
+        # print img.shape
+        # print t.shape
+        # t = np.swapaxes(t, 1, 2)
+        misc.imresize(t, z, interp='nearest')
+        # t = np.swapaxes(t, 1, 2)
+
+        newimg[:, i, :] = t
+
+    return newimg
+
+
+def getlabel(image, label):
+    return (image == label).astype(np.uint32)
+
+
+def amax(image):
+    return np.amax(image)
+
+# _____________________________________________________________________________________________
+
 class ImageProcessing:
 
     _image = None
@@ -22,48 +70,79 @@ class ImageProcessing:
     def empty(cls):
         return cls(None)
 
+    ###########################################################################################
+    # Data operations
+
     def set_image(self, image):
         self._image = image
 
     def get_image(self):
         return self._image
 
-    def invert_image(self):
-        self._image = np.amax(self._image) - self._image
+    def converttodict(self, name):
+        if type(self._image) is dict:
+            print 'Warning: Type already a dict!'
+            return
+        else:
+            t = self._image
+            self._image = {}
+            self._image[name] = t
 
-    def swapaxes(self, axis1, axis2):
-        self._image = np.swapaxes(self._image, axis1, axis2)
+    def addtodict(self, image, name):
+        if type(self._image) is dict:
+            self._image[name] = image
+        else:
+            print 'Warning: Not like this, convert to dict first!'
 
-    def rollaxis(self, axis, start=0):
-        self._image = np.rollaxis(self._image, axis, start)
+    ###########################################################################################
+    # Image processing
 
-    def resize(self, zoom, mode):
-        # self._image = vigra.sampling.resizeImageNoInterpolation(self._image, shape=shape)
-        print 'Resizing with mode = ' + mode
-        self._image = scipy.ndimage.interpolation.zoom(self._image, zoom, mode=mode, order=0)
-        # scipy.misc.imresize(self._image, shape, interp='nearest')
+    def anytask(self, function, ids, *args, **kwargs):
+        if type(self._image) is dict:
+            if ids is None:
+                for id in self._image:
+                    self._image[id] = function(self._image[id], *args, **kwargs)
+            else:
+                for id in ids:
+                    self._image[id] = function(self._image[id], *args, **kwargs)
+        else:
+            self._image = function(self._image, *args, **kwargs)
 
-    def resize_z_nearest(self, z):
-        img = self._image
-        newimg = np.zeros((img.shape[0], img.shape[1], z))
-        for i in xrange(0, img.shape[1]):
-            t = img[:, i, :]
-            # print img.shape
-            # print t.shape
-            # t = np.swapaxes(t, 1, 2)
-            misc.imresize(t, z, interp='nearest')
-            # t = np.swapaxes(t, 1, 2)
+    def anytask_rtrn(self, function, ids, *args, **kwargs):
+        if type(self._image) is dict:
+            returndict = {}
+            if ids is None:
+                for id in self._image:
+                    returndict[id] = function(self._image[id], *args, **kwargs)
+            else:
+                for id in ids:
+                    returndict[id] = function(self._image[id], *args, **kwargs)
+            return returndict
+        else:
+            return function(self._image, *args, **kwargs)
 
-            newimg[:, i, :] = t
+    def invert_image(self, ids=None):
+        self.anytask(invert_image, ids)
 
-    def getlabel(self, label):
-        self._image = (self._image == label).astype(np.uint32)
+    def swapaxes(self, axis1, axis2, ids=None):
+        self.anytask(swapaxes, ids, axis1, axis2)
 
-    def anytask(self, function, *args, **kwargs):
-        self._image = function(self._image, *args, **kwargs)
+    def rollaxis(self, axis, start=0, ids=None):
+        self.anytask(rollaxis, ids, axis, start=start)
 
-    def amax(self):
-        return np.amax(self._image)
+    def resize(self, zoom, mode, ids=None):
+        self.anytask(resize, ids, zoom, mode)
+
+    def resize_z_nearest(self, z, ids=None):
+        self.anytask(resize_z_nearest, ids, z)
+
+    def getlabel(self, label, ids=None):
+        self.anytask(getlabel, ids, label)
+
+    def amax(self, ids=None):
+        return self.anytask_rtrn(amax, ids=ids)
+
+
 
 class ImageFileProcessing:
 
@@ -92,9 +171,6 @@ class ImageFileProcessing:
         if self._imageFile is not None:
             self._imageFileName = re.sub('\.h5$', '', self._imageFile)
 
-    def set_image(self, image):
-        self._data.set_image(image)
-
     def load_h5(self, im_file=None, im_id=None, im_name=None):
 
         if self._imagePath is not None:
@@ -120,9 +196,6 @@ class ImageFileProcessing:
             self._data = ImageProcessing.empty()
             return None
 
-    def get_image(self):
-        return self._data.get_image()
-
     def get_filename(self):
         return self._imageFileName + '.h5'
 
@@ -130,33 +203,51 @@ class ImageFileProcessing:
         self._imageFileName += addstr
 
     ###########################################################################################
+    # Data operations
+
+    def set_image(self, image):
+        self._data.set_image(image)
+
+    def get_image(self):
+        return self._data.get_image()
+
+    def converttodict(self, name):
+        self._data.converttodict(name)
+
+    def addtodict(self, image, name):
+        self._data.addtodict(image, name)
+
+    ###########################################################################################
     # Image processing
 
-    def invert_image(self):
-        self._data.invert_image()
+    def invert_image(self, ids=None):
+        self._data.invert_image(ids=ids)
         self._imageFileName += '.inv'
 
-    def swapaxes(self, axis1, axis2):
-        self._data.swapaxes(axis1, axis2)
+    def swapaxes(self, axis1, axis2, ids=None):
+        self._data.swapaxes(axis1, axis2, ids=ids)
         self._imageFileName += '.swpxs_' + str(axis1) + '_' + str(axis2)
 
-    def rollaxis(self, axis, start=0):
-        self._data.rollaxis(axis, start)
+    def rollaxis(self, axis, start=0, ids=None):
+        self._data.rollaxis(axis, start, ids=ids)
         self._imageFileName += '.rllxs_' + str(axis) + '_' + str(start)
 
-    def resize(self, zoom, mode):
-        self._data.resize(zoom, mode)
+    def resize(self, zoom, mode, ids=None):
+        self._data.resize(zoom, mode, ids=ids)
         self._imageFileName += '.resize'
 
-    def resize_z_nearest(self, z):
-        self._data.resize_z_nearest(z)
+    def resize_z_nearest(self, z, ids=None):
+        self._data.resize_z_nearest(z, ids=ids)
         self._imageFileName += '.resizez_' + str(z)
 
-    def getlabel(self, label):
-        self._data.getlabel(label)
+    def getlabel(self, label, ids=None):
+        self._data.getlabel(label, ids=ids)
         self._imageFileName += '.lbl_' + str(label)
 
-    def anytask(self, function, addtofilename, *args, **kwargs):
+    def amax(self, ids=None):
+        return self._data.amax(ids=ids)
+
+    def anytask(self, function, addtofilename, ids, *args, **kwargs):
         """
         :type function
         :param function:
@@ -167,31 +258,72 @@ class ImageFileProcessing:
         :param addtofilename:
             Extension to the output file name; defaults to '.modified' when set to None
             If no extension is desired supply as empty string ('')
+
+        :type list
+        :param ids:
+            list of keys denoting the dictionary entries in self._data._image which will be processed
+            Set to None if self._data is not a dictionary or for processing of all entries
         """
-        self._data.anytask(function, *args, **kwargs)
+        self._data.anytask(function, ids, *args, **kwargs)
         if addtofilename is not None:
             self._imageFileName += addtofilename
         else:
             self._imageFileName += '.modified'
 
-    def amax(self):
-        return self._data.amax()
+    def anytask_rtrn(self, function, ids, *args, **kwargs):
+        """
+        :type function
+        :param function:
+            A function in the form: func(image, *args, **kwargs)
+            Note that the first parameter is fixed to the currently loaded image
+
+        :type list
+        :param ids:
+            list of keys denoting the dictionary entries in self._data._image which will be processed
+            Set to None if self._data is not a dictionary or for processing of all entries
+        """
+        return self._data.anytask_rtrn(function, ids, *args, **kwargs)
+
 
     ###########################################################################################
     # Write h5 files
 
-    def write_h5(self, nfile, data, image_name=None):
+    def write_h5(self, nfile, data, image_names=None, dict_ids=None):
         print "Writing..."
         of = h5py.File(self._imagePath + nfile)
-        if image_name is None:
-            of.create_dataset(self._imageName, data=data)
+
+        if type(data) is dict:
+
+            if dict_ids is None:
+                for d in data:
+                    if image_names is None:
+                        of.create_dataset(d, data=data[d])
+                    else:
+                        of.create_dataset(image_names[d], data=data[d])
+            else:
+                for d in dict_ids:
+                    if image_names is None:
+                        of.create_dataset(d, data=data[d])
+                    else:
+                        of.create_dataset(image_names[d], data=data[d])
+
         else:
-            of.create_dataset(image_name, data=data)
+
+            if image_names is None:
+                of.create_dataset(self._imageName, data=data)
+            else:
+                of.create_dataset(image_names, data=data)
+
         of.close()
 
-    def write(self):
-        self.write_h5(self._imageFileName + '.h5', self._data.get_image())
-
+    def write(self, dict_ids=None):
+        """
+        :type list
+        :param dict_ids: Set only if data is a dict!
+            Use to specify which entries in the data dictionary are written to file
+            Default: None (everything is written)
+        """
+        self.write_h5(self._imageFileName + '.h5', self._data.get_image(), dict_ids=dict_ids)
 
 
 if __name__ == "__main__":
