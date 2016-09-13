@@ -121,7 +121,6 @@ if __name__ == "__main__":
 
                 if mainarbors > 1:
 
-                    # ifp.addtoname('.violation.step_' + str(i))
                     ifp.write(filename='tapering_violation.lbl_' + str(object) + '.i_' + str(i) + '.h5')
                     print 'Tapering violation detected! ' + str(mainarbors) + ' objects found.'
 
@@ -129,20 +128,29 @@ if __name__ == "__main__":
 
     # ifp.converttodict('disttransf')
 
-    max_disttransf = int(ifp.amax(('disttransf',))['disttransf'])
-    print max_disttransf
+    if False:
+        max_disttransf = int(ifp.amax(('disttransf',))['disttransf'])
+        print max_disttransf
 
-    splittingcandidate_by_erosion(1, max_disttransf, ifp)
+        splittingcandidate_by_erosion(1, max_disttransf, ifp)
 
-    sys.exit()
+    else:
+        i = 29
+        ifp = ImageFileProcessing(
+            '/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/',
+            'tapering_violation.lbl_' + str(object) + '.i_' + str(i) + '.h5',
+            asdict=True
+        )
 
-    ifp.load_h5(im_file='/media/julian/Daten/neuraldata/data_crop/probabilities_test.h5',
-                im_id=0, asdict=True, key='probs')
-    ifp.anytask(vigra.analysis.watersheds, '.probs', ('mempred',),
-                neighborhood=26, seeds=ifp.get_image()['conncomp'],
+
+    # ifp.load_h5(im_file='/media/julian/Daten/neuraldata/data_crop/probabilities_test.h5',
+    #             im_id=0, asdict=True, key='probs')
+    ifp.load_h5(im_file='/media/julian/Daten/neuraldata/isbi_2013/data_crop/probabilities_test.h5',
+                im_ids=None, im_names=None, asdict=True, keys=('mempred',), append=True)
+    ifp.anytask(vigra.analysis.watersheds, '', ('mempred',),
+                neighborhood=26, seeds=ifp.get_data()['conncomp'],
                 methods='RegionGrowing', terminate=None, threshold=0, out=None)
     ifp.write('test.h5')
-
 
     sys.exit()
 

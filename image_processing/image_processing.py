@@ -111,7 +111,8 @@ class ImageProcessing:
 
     def deepcopy_entry(self, sourcekey, targetkey):
         if type(self._data) is dict:
-            self._data[targetkey] = copy.deepcopy(self._data[sourcekey])
+            # self._data[targetkey] = copy.deepcopy(self._data[sourcekey])
+            self._data[targetkey] = self._data[sourcekey]
         else:
             print 'Warning: Deepcopy only implemented for dict type!'
 
