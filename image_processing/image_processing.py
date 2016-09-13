@@ -6,6 +6,7 @@ import vigra
 import scipy
 from scipy import ndimage, misc
 import random
+import copy
 
 __author__ = 'jhennies'
 
@@ -57,6 +58,7 @@ def amax(image):
 
 # _____________________________________________________________________________________________
 
+
 class ImageProcessing:
 
     _image = None
@@ -93,6 +95,12 @@ class ImageProcessing:
             self._image[name] = image
         else:
             print 'Warning: Not like this, convert to dict first!'
+
+    def deepcopy(self, sourcekey, targetkey):
+        if type(self._image) is dict:
+            self._image[targetkey] = copy.deepcopy(self._image[sourcekey])
+        else:
+            print 'Warning: Deepcopy only implemented for dict type!'
 
     ###########################################################################################
     # Image processing
@@ -142,6 +150,8 @@ class ImageProcessing:
     def amax(self, ids=None):
         return self.anytask_rtrn(amax, ids=ids)
 
+
+# _____________________________________________________________________________________________
 
 
 class ImageFileProcessing:
@@ -202,6 +212,9 @@ class ImageFileProcessing:
     def addtoname(self, addstr):
         self._imageFileName += addstr
 
+    def deepcopy(self, sourcekey, targetkey):
+        self._data.deepcopy(sourcekey, targetkey)
+
     ###########################################################################################
     # Data operations
 
@@ -219,33 +232,6 @@ class ImageFileProcessing:
 
     ###########################################################################################
     # Image processing
-
-    def invert_image(self, ids=None):
-        self._data.invert_image(ids=ids)
-        self._imageFileName += '.inv'
-
-    def swapaxes(self, axis1, axis2, ids=None):
-        self._data.swapaxes(axis1, axis2, ids=ids)
-        self._imageFileName += '.swpxs_' + str(axis1) + '_' + str(axis2)
-
-    def rollaxis(self, axis, start=0, ids=None):
-        self._data.rollaxis(axis, start, ids=ids)
-        self._imageFileName += '.rllxs_' + str(axis) + '_' + str(start)
-
-    def resize(self, zoom, mode, ids=None):
-        self._data.resize(zoom, mode, ids=ids)
-        self._imageFileName += '.resize'
-
-    def resize_z_nearest(self, z, ids=None):
-        self._data.resize_z_nearest(z, ids=ids)
-        self._imageFileName += '.resizez_' + str(z)
-
-    def getlabel(self, label, ids=None):
-        self._data.getlabel(label, ids=ids)
-        self._imageFileName += '.lbl_' + str(label)
-
-    def amax(self, ids=None):
-        return self._data.amax(ids=ids)
 
     def anytask(self, function, addtofilename, ids, *args, **kwargs):
         """
@@ -284,6 +270,32 @@ class ImageFileProcessing:
         """
         return self._data.anytask_rtrn(function, ids, *args, **kwargs)
 
+    def invert_image(self, ids=None):
+        self._data.invert_image(ids=ids)
+        self._imageFileName += '.inv'
+
+    def swapaxes(self, axis1, axis2, ids=None):
+        self._data.swapaxes(axis1, axis2, ids=ids)
+        self._imageFileName += '.swpxs_' + str(axis1) + '_' + str(axis2)
+
+    def rollaxis(self, axis, start=0, ids=None):
+        self._data.rollaxis(axis, start, ids=ids)
+        self._imageFileName += '.rllxs_' + str(axis) + '_' + str(start)
+
+    def resize(self, zoom, mode, ids=None):
+        self._data.resize(zoom, mode, ids=ids)
+        self._imageFileName += '.resize'
+
+    def resize_z_nearest(self, z, ids=None):
+        self._data.resize_z_nearest(z, ids=ids)
+        self._imageFileName += '.resizez_' + str(z)
+
+    def getlabel(self, label, ids=None):
+        self._data.getlabel(label, ids=ids)
+        self._imageFileName += '.lbl_' + str(label)
+
+    def amax(self, ids=None):
+        return self._data.amax(ids=ids)
 
     ###########################################################################################
     # Write h5 files
@@ -316,14 +328,19 @@ class ImageFileProcessing:
 
         of.close()
 
-    def write(self, dict_ids=None):
+    def write(self, dict_ids=None, filename=None):
         """
         :type list
         :param dict_ids: Set only if data is a dict!
             Use to specify which entries in the data dictionary are written to file
             Default: None (everything is written)
         """
-        self.write_h5(self._imageFileName + '.h5', self._data.get_image(), dict_ids=dict_ids)
+        if filename is None:
+            self.write_h5(self._imageFileName + '.h5', self._data.get_image(), dict_ids=dict_ids)
+        else:
+            self.write_h5(filename, self._data.get_image(), dict_ids=dict_ids)
+
+# _____________________________________________________________________________________________
 
 
 if __name__ == "__main__":

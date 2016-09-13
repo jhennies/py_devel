@@ -39,9 +39,9 @@ if __name__ == "__main__":
 
     # Parameters
     tapering_tolerance = 5
-    object = 627
+    object = 191
 
-    if True:
+    if False:
         ifp = ImageFileProcessing(
             "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
             "multicut_segmentation.h5", None, 0)
@@ -65,6 +65,7 @@ if __name__ == "__main__":
             "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
             "multicut_segmentation.lbl_" + str(object) + ".inv.resize.disttransf.resize.h5", None, 0)
 
+    # #########################################################################################
     # # The local maximum algorithm: Fast but imprecise
     # # -------------------------------------------------
     # # Using the vigra max filter and local maxima
@@ -86,63 +87,47 @@ if __name__ == "__main__":
 
     # ifp.write()
 
-
-
-
-
+    # #########################################################################################
     # The erosion algorithm:
     # ----------------------
-    # Get the distance transform inside this object
-    # ifp.invert_image()
-    # ifp.anytask(distancetransform, '.disttransf')
-    disttransf = copy.deepcopy(ifp.get_image())
-    max_disttransf = np.amax(disttransf)
+    def splitting_by_erosion(start, stop, ifp):
+
+        for i in xrange(start, stop):
+            print 'i = ' + str(i)
+
+            # Create connected components
+            ifp.deepcopy('disttransf', 'conncomp')
+            ifp.anytask(binarize, '', ('conncomp',), i)
+            ifp.anytask(conncomp, '', ('conncomp',), neighborhood='indirect')
+
+            print 'Number of objects: ' + str(ifp.amax(('conncomp',))['conncomp'])
+
+            # Check potential candidates according to tapering tolerance
+            if ifp.amax(('conncomp',))['conncomp'] > 1:
+
+                mainarbors = 0
+
+                for l in xrange(1, ifp.amax(('conncomp',))['conncomp']+1):
+
+                    distinobj = ifp.get_image()['disttransf'][ifp.get_image()['conncomp'] == l]
+                    # print distinobj
+                    print 'Maximum distance in object ' + str(l) + ': ' + str(np.amax(distinobj) - i)
+
+                    if np.amax(distinobj) - i > tapering_tolerance:
+                        mainarbors += 1
+
+                if mainarbors > 1:
+
+                    # ifp.addtoname('.violation.step_' + str(i))
+                    ifp.write(filename='tapering_violation.lbl_' + str(object) + '.i_' + str(i) + '.h5')
+                    print 'Tapering violation detected! ' + str(mainarbors) + ' objects found.'
+
+    ifp.converttodict('disttransf')
+
+    max_disttransf = int(ifp.amax(('disttransf',))['disttransf'])
     print max_disttransf
-    # print disttransf[disttransf > 0]
 
-    for i in xrange(1, int(max_disttransf+1)):
+    splitting_by_erosion(1, max_disttransf, ifp)
 
-        print 'i = ' + str(i)
+    sys.exit()
 
-        # Remove value i from distance transform
-        # ifp.anytask(settozero, '.' + str(i), i)
-        # disttransf = copy.deepcopy(ifp.get_image())
-        disttransf = ifp.get_image()
-
-        # Get connected components
-        binarized = binarize(disttransf, i)
-        conncomps = conncomp(binarized, neighborhood='indirect')
-        print 'Number of objects: ' + str(np.amax(conncomps))
-
-        # Check potential candidates according to tapering tolerance
-        if np.amax(conncomps) > 1:
-
-            mainarbors = 0
-
-            for l in xrange(1, np.amax(conncomps)+1):
-
-                distinobj = disttransf[conncomps == l]
-                # print distinobj
-                print 'Maximum distance in object ' + str(l) + ': ' + str(np.amax(distinobj) - i)
-
-                if np.amax(distinobj) - i > tapering_tolerance:
-                    mainarbors += 1
-
-            if mainarbors > 1:
-                ifpwrite = ImageFileProcessing(
-                    "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
-                    "multicut_segmentation.lbl_" + str(object) + ".inv.resize.disttransf.resize.h5", None, 0)
-                ifpwrite.set_image(conncomps)
-                ifpwrite.addtoname('.conncomps.' + str(i))
-                ifpwrite.write()
-                print 'Tapering violation detected! ' + str(mainarbors) + ' objects found.'
-
-
-
-
-    # ifp.write()
-
-    # image = ifp.get_image()
-    # print image.shape
-    #
-    # print np.swapaxes(image[500:512, 400:480, 75], 0, 1)
