@@ -42,9 +42,10 @@ if __name__ == "__main__":
     object = 191
 
     if False:
+
         ifp = ImageFileProcessing(
             "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
-            "multicut_segmentation.h5", None, 0)
+            "multicut_segmentation.h5", image_names=None, image_ids=None, asdict=True, keys=None)
 
         # Start with one object only
         ifp.getlabel(object)
@@ -56,14 +57,16 @@ if __name__ == "__main__":
         # Distance transform
         ifp.invert_image()
         ifp.resize([1, 1, 5], 'nearest')
-        ifp.anytask(distancetransform, '.disttransf')
+        ifp.anytask(distancetransform, '', None)
         ifp.resize([1, 1, 0.2], 'nearest')
-        ifp.write()
+        ifp.write(filename='multicut_segmentation.lbl_' + str(object) + '.disttransf.h5')
 
     else:
         ifp = ImageFileProcessing(
             "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
-            "multicut_segmentation.lbl_" + str(object) + ".inv.resize.disttransf.resize.h5", None, 0)
+            "multicut_segmentation.lbl_" + str(object) + ".disttransf.h5",
+            asdict=True, keys=('disttransf',)
+        )
 
     # #########################################################################################
     # # The local maximum algorithm: Fast but imprecise
@@ -90,13 +93,13 @@ if __name__ == "__main__":
     # #########################################################################################
     # The erosion algorithm:
     # ----------------------
-    def splitting_by_erosion(start, stop, ifp):
+    def splittingcandidate_by_erosion(start, stop, ifp):
 
         for i in xrange(start, stop):
             print 'i = ' + str(i)
 
             # Create connected components
-            ifp.deepcopy('disttransf', 'conncomp')
+            ifp.deepcopy_entry('disttransf', 'conncomp')
             ifp.anytask(binarize, '', ('conncomp',), i)
             ifp.anytask(conncomp, '', ('conncomp',), neighborhood='indirect')
 
@@ -109,7 +112,7 @@ if __name__ == "__main__":
 
                 for l in xrange(1, ifp.amax(('conncomp',))['conncomp']+1):
 
-                    distinobj = ifp.get_image()['disttransf'][ifp.get_image()['conncomp'] == l]
+                    distinobj = ifp.get_data()['disttransf'][ifp.get_data()['conncomp'] == l]
                     # print distinobj
                     print 'Maximum distance in object ' + str(l) + ': ' + str(np.amax(distinobj) - i)
 
@@ -122,12 +125,24 @@ if __name__ == "__main__":
                     ifp.write(filename='tapering_violation.lbl_' + str(object) + '.i_' + str(i) + '.h5')
                     print 'Tapering violation detected! ' + str(mainarbors) + ' objects found.'
 
-    ifp.converttodict('disttransf')
+                    break
+
+    # ifp.converttodict('disttransf')
 
     max_disttransf = int(ifp.amax(('disttransf',))['disttransf'])
     print max_disttransf
 
-    splitting_by_erosion(1, max_disttransf, ifp)
+    splittingcandidate_by_erosion(1, max_disttransf, ifp)
+
+    sys.exit()
+
+    ifp.load_h5(im_file='/media/julian/Daten/neuraldata/data_crop/probabilities_test.h5',
+                im_id=0, asdict=True, key='probs')
+    ifp.anytask(vigra.analysis.watersheds, '.probs', ('mempred',),
+                neighborhood=26, seeds=ifp.get_image()['conncomp'],
+                methods='RegionGrowing', terminate=None, threshold=0, out=None)
+    ifp.write('test.h5')
+
 
     sys.exit()
 

@@ -61,11 +61,13 @@ def amax(image):
 
 class ImageProcessing:
 
-    _image = None
+    _data = None
 
-    def __init__(self, image):
-        self._image = image
-        if image is None:
+    def __init__(self, data, key=None):
+
+        self.set_data(data, key=key)
+
+        if data is None:
             print "ImageProcessing: Empty construction."
 
     @classmethod
@@ -75,30 +77,41 @@ class ImageProcessing:
     ###########################################################################################
     # Data operations
 
-    def set_image(self, image):
-        self._image = image
+    def set_data(self, data, key=None):
+        if key is None:
+            self._data = data
+        else:
+            self._data = {key, data}
 
-    def get_image(self):
-        return self._image
+    def set_data_dict(self, data, append=False):
+
+        if not append or self._data is None:
+            self._data = {}
+
+        for d in data:
+            self._data[d] = data[d]
+
+    def get_data(self):
+        return self._data
 
     def converttodict(self, name):
-        if type(self._image) is dict:
+        if type(self._data) is dict:
             print 'Warning: Type already a dict!'
             return
         else:
-            t = self._image
-            self._image = {}
-            self._image[name] = t
+            t = self._data
+            self._data = {}
+            self._data[name] = t
 
-    def addtodict(self, image, name):
-        if type(self._image) is dict:
-            self._image[name] = image
+    def addtodict(self, data, name):
+        if type(self._data) is dict:
+            self._data[name] = data
         else:
             print 'Warning: Not like this, convert to dict first!'
 
-    def deepcopy(self, sourcekey, targetkey):
-        if type(self._image) is dict:
-            self._image[targetkey] = copy.deepcopy(self._image[sourcekey])
+    def deepcopy_entry(self, sourcekey, targetkey):
+        if type(self._data) is dict:
+            self._data[targetkey] = copy.deepcopy(self._data[sourcekey])
         else:
             print 'Warning: Deepcopy only implemented for dict type!'
 
@@ -106,28 +119,28 @@ class ImageProcessing:
     # Image processing
 
     def anytask(self, function, ids, *args, **kwargs):
-        if type(self._image) is dict:
+        if type(self._data) is dict:
             if ids is None:
-                for id in self._image:
-                    self._image[id] = function(self._image[id], *args, **kwargs)
+                for id in self._data:
+                    self._data[id] = function(self._data[id], *args, **kwargs)
             else:
                 for id in ids:
-                    self._image[id] = function(self._image[id], *args, **kwargs)
+                    self._data[id] = function(self._data[id], *args, **kwargs)
         else:
-            self._image = function(self._image, *args, **kwargs)
+            self._data = function(self._data, *args, **kwargs)
 
     def anytask_rtrn(self, function, ids, *args, **kwargs):
-        if type(self._image) is dict:
+        if type(self._data) is dict:
             returndict = {}
             if ids is None:
-                for id in self._image:
-                    returndict[id] = function(self._image[id], *args, **kwargs)
+                for id in self._data:
+                    returndict[id] = function(self._data[id], *args, **kwargs)
             else:
                 for id in ids:
-                    returndict[id] = function(self._image[id], *args, **kwargs)
+                    returndict[id] = function(self._data[id], *args, **kwargs)
             return returndict
         else:
-            return function(self._image, *args, **kwargs)
+            return function(self._data, *args, **kwargs)
 
     def invert_image(self, ids=None):
         self.anytask(invert_image, ids)
@@ -159,52 +172,112 @@ class ImageFileProcessing:
     _imagePath = None
     _imageFile = None
     _imageFileName = None
-    _imageName = None
-    _imageID = 0
+    _imageNames = None
+    _imageIds = 0
     _data = None
     _boundaries = None
 
-    def __init__(self, image_path, image_file, image_name, image_id):
-        self.set_file(image_path, image_file, image_name, image_id)
-        self.load_h5()
+    def __init__(self, image_path, image_file, image_names=None, image_ids=None, asdict=True, keys=None):
+        self.set_file(image_path, image_file, image_names, image_ids)
+        self.load_h5(image_path + image_file, im_ids=image_ids, im_names=image_names,
+                     asdict=asdict, keys=keys)
 
     @classmethod
     def empty(cls):
         """ Empty construction is intended for debugging purposes """
-        return cls(None, None, None, None)
+        return cls(None, None)
 
-    def set_file(self, image_path, image_file, image_name, image_id):
+    def set_file(self, image_path, image_file, image_names, image_id):
         self._imagePath = image_path
         self._imageFile = image_file
-        self._imageName = image_name
+        self._imageNames = image_names
         self._imageID = image_id
         if self._imageFile is not None:
             self._imageFileName = re.sub('\.h5$', '', self._imageFile)
 
-    def load_h5(self, im_file=None, im_id=None, im_name=None):
+    def load_h5(self, im_file, im_ids=None, im_names=None, asdict=False, keys=None, append=False):
+        """
+        :type str
+        :param im_file: Full path to h5 file
 
-        if self._imagePath is not None:
-            if im_file is None:
-                f = h5py.File(self._imagePath + self._imageFile)
-                if self._imageName is None:
-                    self._imageName = f.keys()[self._imageID]
-                self._data = ImageProcessing(np.array(f.get(self._imageName)))
-                f.close()
-                return self._data
+        :type list<int> or int
+        :param im_ids: ID(s) of images to load
+
+        :type list<str> or str
+        :param im_names: Name(s) of images to load
+
+        :type bool
+        :param asdict: Load images as dictionary (True)
+
+        :type: list<str>
+        :param keys: Dictionary keys, the names within the h5 file are used if not specified
+
+        :type ImageProcessing
+        :return: Image processing object containing the h5 image contents
+
+        EXAMPLES
+
+        load_h5(self, '~/location/sample.h5',
+                im_ids=0, im_names=None, asdict=False, keys=None)
+        -> Loads one image in sample.h5
+
+        load_h5(self, '~/location/sample.h5',
+                im_ids=None, im_names=None, asdict=True, keys=None)
+        -> Loads all images in sample.h5 as dictionary
+
+        load_h5(self, '~/location/sample.h5',
+                im_ids=None, im_names=('a', 'b', 'c'), asdict=True, keys=('bar', 'foo', 'baz'))
+        -> Loads three images a, b, and c in sample.h5, assigning the keys bar, foo, and baz, respectively
+        """
+
+        # im_file must not be None!
+        if im_file is None:
+            return
+
+        # Open the stream
+        f = h5py.File(im_file)
+
+        # Make sure im_names is not None
+        # Return if this is not possible
+        if im_names is None:
+            im_names = f.keys()
+            if im_ids is not None:
+                im_names = [im_names[x] for x in im_ids]
+            if im_names is None:
+                return
+
+        # Take the first entry if we do not want a dictionary
+        if not asdict and type(im_names) is list:
+            im_names = im_names[0]
+
+        print im_names
+
+        # Make sure keys is not None
+        if keys is None:
+            keys = im_names
+
+        if asdict:
+            # Initialize as dict ...
+
+            images = {}
+
+            i = 0
+            for n in im_names:
+
+                images[keys[i]] = np.array(f.get(n))
+                i += 1
+
+            if append:
+                self._data.set_data_dict(images, append=True)
             else:
-                print "Loading file..."
-                print im_file
-                f = h5py.File(im_file)
-                if im_name is None:
-                    im_name = f.keys()[im_id]
-                data = np.array(f.get(im_name))
-                f.close()
-                return data
+                self._data = ImageProcessing(images, key=None)
 
         else:
-            print 'ImageFileProcessing: Empty construction.'
-            self._data = ImageProcessing.empty()
-            return None
+            # ... or as single image
+            if append:
+                pass
+            else:
+                self._data = ImageProcessing(np.array(f.get(im_names)), key=None)
 
     def get_filename(self):
         return self._imageFileName + '.h5'
@@ -212,23 +285,23 @@ class ImageFileProcessing:
     def addtoname(self, addstr):
         self._imageFileName += addstr
 
-    def deepcopy(self, sourcekey, targetkey):
-        self._data.deepcopy(sourcekey, targetkey)
+    def deepcopy_entry(self, sourcekey, targetkey):
+        self._data.deepcopy_entry(sourcekey, targetkey)
 
     ###########################################################################################
     # Data operations
 
-    def set_image(self, image):
-        self._data.set_image(image)
+    def set_data(self, data):
+        self._data.set_data(data)
 
-    def get_image(self):
-        return self._data.get_image()
+    def get_data(self):
+        return self._data.get_data()
 
     def converttodict(self, name):
         self._data.converttodict(name)
 
-    def addtodict(self, image, name):
-        self._data.addtodict(image, name)
+    def addtodict(self, data, name):
+        self._data.addtodict(data, name)
 
     ###########################################################################################
     # Image processing
@@ -336,9 +409,9 @@ class ImageFileProcessing:
             Default: None (everything is written)
         """
         if filename is None:
-            self.write_h5(self._imageFileName + '.h5', self._data.get_image(), dict_ids=dict_ids)
+            self.write_h5(self._imageFileName + '.h5', self._data.get_data(), dict_ids=dict_ids)
         else:
-            self.write_h5(filename, self._data.get_image(), dict_ids=dict_ids)
+            self.write_h5(filename, self._data.get_data(), dict_ids=dict_ids)
 
 # _____________________________________________________________________________________________
 
@@ -365,7 +438,7 @@ if __name__ == "__main__":
     ifp.anytask(plusx, '.plus5', 5)
 
     # Getter functions
-    print ifp.get_image().shape
+    print ifp.get_data().shape
     print ifp.get_filename()
 
     # # Write the result (File name is automatically generated depending on the performed operations)
