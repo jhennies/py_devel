@@ -2,10 +2,12 @@
 import numpy as np
 import vigra
 from image_processing import ImageProcessing, ImageFileProcessing
+import image_processing
 from scipy import ndimage
 import copy
 import sys
 from skimage.feature import peak_local_max
+from skimage.morphology import watershed
 
 __author__ = 'jhennies'
 
@@ -41,11 +43,11 @@ if __name__ == "__main__":
     tapering_tolerance = 5
     object = 191
 
-    if False:
+    if True:
 
         ifp = ImageFileProcessing(
             "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
-            "multicut_segmentation.h5", image_names=None, image_ids=None, asdict=True, keys=None)
+            "multicut_segmentation.h5", image_names=None, image_ids=None, asdict=True, keys=('disttransf',))
 
         # Start with one object only
         ifp.getlabel(object)
@@ -128,7 +130,7 @@ if __name__ == "__main__":
 
     # ifp.converttodict('disttransf')
 
-    if False:
+    if True:
         max_disttransf = int(ifp.amax(('disttransf',))['disttransf'])
         print max_disttransf
 
@@ -142,15 +144,13 @@ if __name__ == "__main__":
             asdict=True
         )
 
-
-    # ifp.load_h5(im_file='/media/julian/Daten/neuraldata/data_crop/probabilities_test.h5',
-    #             im_id=0, asdict=True, key='probs')
     ifp.load_h5(im_file='/media/julian/Daten/neuraldata/isbi_2013/data_crop/probabilities_test.h5',
-                im_ids=None, im_names=None, asdict=True, keys=('mempred',), append=True)
-    ifp.anytask(vigra.analysis.watersheds, '', ('mempred',),
-                neighborhood=26, seeds=ifp.get_data()['conncomp'],
-                methods='RegionGrowing', terminate=None, threshold=0, out=None)
-    ifp.write('test.h5')
+                im_ids=None, im_names=None, asdict=True, keys=('ws',), append=True)
+
+    ifp.anytask(watershed, '', ('ws',), ifp.get_data()['conncomp'], mask=ifp.get_data()['disttransf']>0)
+
+    ifp.write(filename='test.h5')
+
 
     sys.exit()
 

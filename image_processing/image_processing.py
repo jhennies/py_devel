@@ -56,6 +56,10 @@ def getlabel(image, label):
 def amax(image):
     return np.amax(image)
 
+
+def astype(image, dtype):
+    return image.astype(dtype=dtype)
+
 # _____________________________________________________________________________________________
 
 
@@ -164,7 +168,8 @@ class ImageProcessing:
     def amax(self, ids=None):
         return self.anytask_rtrn(amax, ids=ids)
 
-
+    def astype(self, dtype, ids=None):
+        self.anytask(astype, ids, dtype)
 # _____________________________________________________________________________________________
 
 
@@ -370,6 +375,9 @@ class ImageFileProcessing:
 
     def amax(self, ids=None):
         return self._data.amax(ids=ids)
+
+    def astype(self, dtype, ids=None):
+        self._data.astype(dtype, ids=ids)
 
     ###########################################################################################
     # Write h5 files
