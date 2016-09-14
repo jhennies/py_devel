@@ -37,120 +37,135 @@ def settozero(img, maxvalue):
     return img
 
 
+def delobj(img, label):
+    img[img == label] = 0
+    return img
+
+
 if __name__ == "__main__":
 
     # Parameters
-    tapering_tolerance = 5
-    object = 191
+    tapering_tolerance = 10
+    # object = 191
 
-    if True:
+    ifp = ImageFileProcessing(
+        "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
+        "multicut_segmentation.h5", image_names=None, image_ids=None, asdict=True, keys=('labels',))
 
-        ifp = ImageFileProcessing(
-            "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
-            "multicut_segmentation.h5", image_names=None, image_ids=None, asdict=True, keys=('disttransf',))
+    # for obj in [191]:
+    for obj in xrange(1, ifp.amax(ids=('labels',))['labels'] + 1):
 
-        # Start with one object only
-        ifp.getlabel(object)
-        if ifp.amax() == 0:
-            print 'Terminating scirpt: No object found.'
-            sys.exit()
-        ifp.write()
+        ifp.deepcopy_entry('labels', 'disttransf')
 
-        # Distance transform
-        ifp.invert_image()
-        ifp.resize([1, 1, 5], 'nearest')
-        ifp.anytask(distancetransform, '', None)
-        ifp.resize([1, 1, 0.2], 'nearest')
-        ifp.write(filename='multicut_segmentation.lbl_' + str(object) + '.disttransf.h5')
+        if True:
 
-    else:
-        ifp = ImageFileProcessing(
-            "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
-            "multicut_segmentation.lbl_" + str(object) + ".disttransf.h5",
-            asdict=True, keys=('disttransf',)
-        )
+            # Start with one object only
+            ifp.getlabel(obj, ids=('disttransf',))
+            if ifp.amax(ids=('disttransf',)) == 0:
+                print 'Skiping object ' + str(obj) + ': Not found.'
+                # sys.exit()
+                break
+            # ifp.write()
 
-    # #########################################################################################
-    # # The local maximum algorithm: Fast but imprecise
-    # # -------------------------------------------------
-    # # Using the vigra max filter and local maxima
-    # # Yet it somehow won't do the trick
-    # ifp.anytask(vigra.filters.discRankOrderFilter, '.maxfilt', tapering_tolerance, 1)
-    # # ifp.write()
-    # ifp.anytask(vigra.analysis.extendedLocalMaxima3D, '.locmax', neighborhood=26)
-    #
-    # # # Lets try the skimage library
-    # # # ifp.anytask(ndimage.maximum_filter, size=20, mode='constant')
-    # # ifp.anytask(peak_local_max, '.locmax_skimage', min_distance=tapering_tolerance)
-    # # # ifp.write()
-    # # print ifp.get_image().shape
-    #
-    # locmaxs = ifp.get_image()
-    # print len(locmaxs[locmaxs > 0])
-    # conncomps = conncomp(locmaxs, neighborhood='indirect')
-    # print 'Number of objects: ' + str(np.amax(conncomps))
+            # Distance transform
+            ifp.invert_image(ids=('disttransf',))
+            ifp.resize([1, 1, 5], 'nearest', ids=('disttransf',))
+            ifp.anytask(distancetransform, '', ids=('disttransf',))
+            ifp.resize([1, 1, 0.2], 'nearest', ids=('disttransf',))
+            ifp.write(filename='multicut_segmentation.lbl_' + str(obj) + '.disttransf.h5', dict_ids=('labels', 'disttransf'))
 
-    # ifp.write()
+        else:
+            ifp = ImageFileProcessing(
+                "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
+                "multicut_segmentation.lbl_" + str(obj) + ".disttransf.h5",
+                asdict=True, keys=('disttransf',)
+            )
 
-    # #########################################################################################
-    # The erosion algorithm:
-    # ----------------------
-    def splittingcandidate_by_erosion(start, stop, ifp):
+        # #########################################################################################
+        # # The local maximum algorithm: Fast but imprecise
+        # # -------------------------------------------------
+        # # Using the vigra max filter and local maxima
+        # # Yet it somehow won't do the trick
+        # ifp.anytask(vigra.filters.discRankOrderFilter, '.maxfilt', tapering_tolerance, 1)
+        # # ifp.write()
+        # ifp.anytask(vigra.analysis.extendedLocalMaxima3D, '.locmax', neighborhood=26)
+        #
+        # # # Lets try the skimage library
+        # # # ifp.anytask(ndimage.maximum_filter, size=20, mode='constant')
+        # # ifp.anytask(peak_local_max, '.locmax_skimage', min_distance=tapering_tolerance)
+        # # # ifp.write()
+        # # print ifp.get_image().shape
+        #
+        # locmaxs = ifp.get_image()
+        # print len(locmaxs[locmaxs > 0])
+        # conncomps = conncomp(locmaxs, neighborhood='indirect')
+        # print 'Number of objects: ' + str(np.amax(conncomps))
 
-        for i in xrange(start, stop):
-            print 'i = ' + str(i)
+        # ifp.write()
 
-            # Create connected components
-            ifp.deepcopy_entry('disttransf', 'conncomp')
-            ifp.anytask(binarize, '', ('conncomp',), i)
-            ifp.anytask(conncomp, '', ('conncomp',), neighborhood='indirect')
+        # #########################################################################################
+        # The erosion algorithm:
+        # ----------------------
+        def splittingcandidate_by_erosion(start, stop, ifp):
 
-            print 'Number of objects: ' + str(ifp.amax(('conncomp',))['conncomp'])
+            for i in xrange(start, stop):
+                print 'i = ' + str(i)
 
-            # Check potential candidates according to tapering tolerance
-            if ifp.amax(('conncomp',))['conncomp'] > 1:
+                # Create connected components
+                ifp.deepcopy_entry('disttransf', 'conncomp')
+                ifp.anytask(binarize, '', ('conncomp',), i)
+                ifp.anytask(conncomp, '', ('conncomp',), neighborhood='indirect')
 
-                mainarbors = 0
+                print 'Number of objects: ' + str(ifp.amax(('conncomp',))['conncomp'])
 
-                for l in xrange(1, ifp.amax(('conncomp',))['conncomp']+1):
+                # Check potential candidates according to tapering tolerance
+                if ifp.amax(('conncomp',))['conncomp'] > 1:
 
-                    distinobj = ifp.get_data()['disttransf'][ifp.get_data()['conncomp'] == l]
-                    # print distinobj
-                    print 'Maximum distance in object ' + str(l) + ': ' + str(np.amax(distinobj) - i)
+                    mainarbors = 0
 
-                    if np.amax(distinobj) - i > tapering_tolerance:
-                        mainarbors += 1
+                    for l in xrange(1, ifp.amax(('conncomp',))['conncomp']+1):
 
-                if mainarbors > 1:
+                        distinobj = ifp.get_data()['disttransf'][ifp.get_data()['conncomp'] == l]
+                        # print distinobj
+                        print 'Maximum distance in object ' + str(l) + ': ' + str(np.amax(distinobj) - i)
 
-                    ifp.write(filename='tapering_violation.lbl_' + str(object) + '.i_' + str(i) + '.h5')
-                    print 'Tapering violation detected! ' + str(mainarbors) + ' objects found.'
+                        if np.amax(distinobj) - i > tapering_tolerance:
+                            mainarbors += 1
+                        else:
+                            ifp.anytask(delobj, '', ('conncomp',), l)
 
-                    break
+                    if mainarbors > 1:
 
-    # ifp.converttodict('disttransf')
+                        ifp.write(filename='tapering_violation.lbl_' + str(obj) + '.i_' + str(i) + '.h5')
+                        print 'Tapering violation detected! ' + str(mainarbors) + ' objects found.'
 
-    if True:
-        max_disttransf = int(ifp.amax(('disttransf',))['disttransf'])
-        print max_disttransf
+                        return i
 
-        splittingcandidate_by_erosion(1, max_disttransf, ifp)
+            return None
 
-    else:
-        i = 29
-        ifp = ImageFileProcessing(
-            '/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/',
-            'tapering_violation.lbl_' + str(object) + '.i_' + str(i) + '.h5',
-            asdict=True
-        )
+        # ifp.converttodict('disttransf')
 
-    ifp.load_h5(im_file='/media/julian/Daten/neuraldata/isbi_2013/data_crop/probabilities_test.h5',
-                im_ids=None, im_names=None, asdict=True, keys=('ws',), append=True)
+        if True:
+            max_disttransf = int(ifp.amax(('disttransf',))['disttransf'])
+            print max_disttransf
 
-    ifp.anytask(watershed, '', ('ws',), ifp.get_data()['conncomp'], mask=ifp.get_data()['disttransf']>0)
+            erosiondepth = splittingcandidate_by_erosion(1, max_disttransf, ifp)
 
-    ifp.write(filename='test.h5')
+        else:
+            i = 29
+            ifp = ImageFileProcessing(
+                '/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/',
+                'tapering_violation.lbl_' + str(obj) + '.i_' + str(i) + '.h5',
+                asdict=True
+            )
+
+        if erosiondepth is not None:
+            ifp.load_h5(im_file='/media/julian/Daten/neuraldata/isbi_2013/data_crop/probabilities_test.h5',
+                        im_ids=None, im_names=None, asdict=True, keys=('ws',), append=True)
+
+            ifp.anytask(watershed, '', ('ws',), ifp.get_data()['conncomp'], mask=ifp.get_data()['disttransf']>0)
+
+            ifp.write(filename='ws.lbl_' + str(obj) + '.i_' + str(erosiondepth) + '.h5')
 
 
-    sys.exit()
 
