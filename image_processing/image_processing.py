@@ -206,8 +206,9 @@ class ImageFileProcessing:
 
     def __init__(self, image_path, image_file, image_names=None, image_ids=None, asdict=True, keys=None):
         self.set_file(image_path, image_file, image_names, image_ids)
-        self.load_h5(image_path + image_file, im_ids=image_ids, im_names=image_names,
-                     asdict=asdict, keys=keys)
+        if image_file is not None:
+            self.load_h5(image_path + image_file, im_ids=image_ids, im_names=image_names,
+                         asdict=asdict, keys=keys)
 
     @classmethod
     def empty(cls):
@@ -314,6 +315,25 @@ class ImageFileProcessing:
 
     def deepcopy_entry(self, sourcekey, targetkey):
         self._data.deepcopy_entry(sourcekey, targetkey)
+
+    ###########################################################################################
+    # Log file operations
+
+    _logger = None
+
+    def startlogger(self, filename=None):
+        if filename is not None:
+            self._logger = open(filename, 'a')
+
+    def logging(self, format, *args):
+        print format.format(*args)
+        format += "\n"
+        if self._logger is not None:
+            self._logger.write(format.format(*args))
+
+    def stoplogger(self):
+        if self._logger is not None:
+            self._logger.close()
 
     ###########################################################################################
     # Data operations
