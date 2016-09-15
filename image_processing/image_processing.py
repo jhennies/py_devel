@@ -5,6 +5,8 @@ import re
 import vigra
 import scipy
 from scipy import ndimage, misc
+from skimage.morphology import watershed
+import time
 import random
 import copy
 
@@ -63,6 +65,42 @@ def astype(image, dtype):
 
 def distance_transform(image, pixel_pitch=()):
     return vigra.filters.distanceTransform(image, pixel_pitch=pixel_pitch)
+
+
+def filter_values(image, value, type='se', setto=0):
+
+    if type == 's':
+        image[image < value] = setto
+    elif type == 'se':
+        image[image <= value] = setto
+    elif type == 'eq':
+        image[image == value] = setto
+    elif type == 'le':
+        image[image >= value] = setto
+    elif type == 'l':
+        image[image > value] = setto
+
+    return image
+
+
+def binarize(image, value, type='l'):
+
+    if type == 's':
+        returnimg = (image < value)
+    elif type == 'se':
+        returnimg = (image <= value)
+    elif type == 'eq':
+        returnimg = (image == value)
+    elif type == 'le':
+        returnimg = (image >= value)
+    elif type == 'l':
+        returnimg = (image > value)
+
+    return returnimg
+
+
+def conncomp(image, neighborhood='direct', background_value=0):
+    return vigra.analysis.labelMultiArrayWithBackground(image, neighborhood=neighborhood, background_value=background_value)
 
 # _____________________________________________________________________________________________
 
@@ -191,6 +229,20 @@ class ImageProcessing:
     def distance_transform(self, pixel_pitch=(), ids=None):
         self.anytask(distance_transform, ids, pixel_pitch=pixel_pitch)
 
+    def filter_values(self, value, type='se', setto=0, ids=None):
+        self.anytask(filter_values, ids, value, type=type, setto=setto)
+
+    def binarize(self, value, type='l', ids=None):
+        self.anytask(binarize, ids, value, type=type)
+
+    def conncomp(self, neighborhood='direct', background_value=0, ids=None):
+        self.anytask(conncomp, ids, neighborhood=neighborhood, background_value=background_value)
+
+    def skimage_watershed(self, markers, connectivity=1, offset=None, mask=None,
+                          compactness=0, ids=None):
+        self.anytask(watershed, ids, markers, connectivity=connectivity,
+                     offset=offset, mask=mask, compactness=compactness)
+
 # _____________________________________________________________________________________________
 
 
@@ -278,7 +330,7 @@ class ImageFileProcessing:
         if not asdict and type(im_names) is list:
             im_names = im_names[0]
 
-        print im_names
+        # print im_names
 
         # Make sure keys is not None
         if keys is None:
@@ -321,9 +373,12 @@ class ImageFileProcessing:
 
     _logger = None
 
-    def startlogger(self, filename=None):
+    def startlogger(self, filename=None, type='a'):
+
         if filename is not None:
-            self._logger = open(filename, 'a')
+            self._logger = open(filename, type)
+
+        self.logging("Logger started: {}\n".format(time.strftime('%X %z on %b %d, %Y')))
 
     def logging(self, format, *args):
         print format.format(*args)
@@ -332,6 +387,9 @@ class ImageFileProcessing:
             self._logger.write(format.format(*args))
 
     def stoplogger(self):
+
+        self.logging("Logger stopped: {}".format(time.strftime('%X %z on %b %d, %Y')))
+
         if self._logger is not None:
             self._logger.close()
 
@@ -427,12 +485,33 @@ class ImageFileProcessing:
         self._data.distance_transform(pixel_pitch=pixel_pitch, ids=ids)
         self._imageFileName += '.dt'
 
+    def filter_values(self, value, type='se', setto=0, ids=None):
+        self._data.filter_values(value, type=type, setto=setto, ids=None)
+        self._imageFileName += '.filt_{}_{}'.format(type, value)
+
+    def binarize(self, value, type='l', ids=None):
+        self._data.binarize(value, type=type, ids=ids)
+        self._imageFileName += '.bin_{}_{}'.format(type, value)
+
+    def conncomp(self, neighborhood='direct', background_value=0, ids=None):
+        self._data.conncomp(neighborhood=neighborhood, background_value=background_value, ids=ids)
+        self._imageFileName += '.conncomp'
+
+    def skimage_watershed(self, markers, connectivity=1, offset=None, mask=None,
+                          compactness=0, ids=None):
+        self._data.skimage_watershed(markers, connectivity=connectivity, offset=offset,
+                                     mask=mask, compactness=compactness, ids=ids)
+        self._imageFileName += '.ws'
+
+
     ###########################################################################################
     # Write h5 files
 
     def write_h5(self, nfile, data, image_names=None, dict_ids=None):
-        print "Writing..."
+        # print "Writing..."
         of = h5py.File(self._imagePath + nfile)
+
+        self.logging("Writing to file: {}".format(self._imagePath + nfile))
 
         if type(data) is dict:
 
