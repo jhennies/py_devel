@@ -60,6 +60,10 @@ def amax(image):
 def astype(image, dtype):
     return image.astype(dtype=dtype)
 
+
+def distance_transform(image, pixel_pitch=()):
+    return vigra.filters.distanceTransform(image, pixel_pitch=pixel_pitch)
+
 # _____________________________________________________________________________________________
 
 
@@ -97,6 +101,19 @@ class ImageProcessing:
 
     def get_data(self):
         return self._data
+
+    def get_image(self, id=None):
+
+        if id is None:
+            if type(self._data) is dict:
+                return None
+            else:
+                return self._data
+        else:
+            if type(self._data) is dict:
+                return self._data[id]
+            else:
+                return None
 
     def converttodict(self, name):
         if type(self._data) is dict:
@@ -170,6 +187,10 @@ class ImageProcessing:
 
     def astype(self, dtype, ids=None):
         self.anytask(astype, ids, dtype)
+
+    def distance_transform(self, pixel_pitch=(), ids=None):
+        self.anytask(distance_transform, ids, pixel_pitch=pixel_pitch)
+
 # _____________________________________________________________________________________________
 
 
@@ -303,6 +324,9 @@ class ImageFileProcessing:
     def get_data(self):
         return self._data.get_data()
 
+    def get_image(self, id=None):
+        return self._data.get_image(id=id)
+
     def converttodict(self, name):
         self._data.converttodict(name)
 
@@ -378,6 +402,10 @@ class ImageFileProcessing:
 
     def astype(self, dtype, ids=None):
         self._data.astype(dtype, ids=ids)
+
+    def distance_transform(self, pixel_pitch=(), ids=None):
+        self._data.distance_transform(pixel_pitch=pixel_pitch, ids=ids)
+        self._imageFileName += '.dt'
 
     ###########################################################################################
     # Write h5 files

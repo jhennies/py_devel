@@ -17,7 +17,7 @@ __author__ = 'jhennies'
 
 
 def distancetransform(img):
-    return vigra.filters.distanceTransform(img)
+    return vigra.filters.distanceTransform(img, pixel_pitch=[5, 5, 30])
     # return ndimage.distance_transform_edt(img)
 
 
@@ -42,18 +42,33 @@ def delobj(img, label):
     return img
 
 
+def calc_taperingtolerance(it, d, type):
+    if type == 'd-it':
+        return d - it
+    elif type == 'it/d':
+        return it / d
+
+
 if __name__ == "__main__":
 
+    sys.stdout = open('/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/log.txt', "a")
+
     # Parameters
-    tapering_tolerance = 10
+    tapering_tolerance_rel = 0.5
+    tapering_tolerance_abs = 5
     # object = 191
 
     ifp = ImageFileProcessing(
         "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
-        "multicut_segmentation.h5", image_names=None, image_ids=None, asdict=True, keys=('labels',))
+        "multicut_segmentation.h5", asdict=True, keys=('labels',))
 
     # for obj in [191]:
     for obj in xrange(1, ifp.amax(ids=('labels',))['labels'] + 1):
+
+        sys.stdout = open('/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/log.txt', "a")
+
+        print '_____________________________________________________________________'
+        print 'Object label: ' + str(obj)
 
         ifp.deepcopy_entry('labels', 'disttransf')
 
@@ -69,9 +84,7 @@ if __name__ == "__main__":
 
             # Distance transform
             ifp.invert_image(ids=('disttransf',))
-            ifp.resize([1, 1, 5], 'nearest', ids=('disttransf',))
-            ifp.anytask(distancetransform, '', ids=('disttransf',))
-            ifp.resize([1, 1, 0.2], 'nearest', ids=('disttransf',))
+            ifp.distance_transform(pixel_pitch=(5,5,30), ids=('disttransf',))
             ifp.write(filename='multicut_segmentation.lbl_' + str(obj) + '.disttransf.h5', dict_ids=('labels', 'disttransf'))
 
         else:
@@ -109,17 +122,19 @@ if __name__ == "__main__":
         def splittingcandidate_by_erosion(start, stop, ifp):
 
             for i in xrange(start, stop):
-                print 'i = ' + str(i)
+                # print 'i = ' + str(i)
 
                 # Create connected components
                 ifp.deepcopy_entry('disttransf', 'conncomp')
                 ifp.anytask(binarize, '', ('conncomp',), i)
                 ifp.anytask(conncomp, '', ('conncomp',), neighborhood='indirect')
 
-                print 'Number of objects: ' + str(ifp.amax(('conncomp',))['conncomp'])
+                # print 'Number of objects: ' + str(ifp.amax(('conncomp',))['conncomp'])
 
                 # Check potential candidates according to tapering tolerance
                 if ifp.amax(('conncomp',))['conncomp'] > 1:
+
+                    print 'i = ' + str(i)
 
                     mainarbors = 0
 
@@ -127,9 +142,12 @@ if __name__ == "__main__":
 
                         distinobj = ifp.get_data()['disttransf'][ifp.get_data()['conncomp'] == l]
                         # print distinobj
-                        print 'Maximum distance in object ' + str(l) + ': ' + str(np.amax(distinobj) - i)
+                        print 'Object ' + str(l) + ': ' + str(np.amax(distinobj) - i) + ' (abs), ' \
+                                + str(calc_taperingtolerance(i, np.amax(distinobj), 'it/d')) + ' (rel)'
 
-                        if np.amax(distinobj) - i > tapering_tolerance:
+                        if (calc_taperingtolerance(i, np.amax(distinobj), 'it/d') < tapering_tolerance_rel) \
+                                and \
+                                (calc_taperingtolerance(i, np.amax(distinobj), 'd-it') > tapering_tolerance_abs):
                             mainarbors += 1
                         else:
                             ifp.anytask(delobj, '', ('conncomp',), l)
@@ -167,5 +185,4 @@ if __name__ == "__main__":
 
             ifp.write(filename='ws.lbl_' + str(obj) + '.i_' + str(erosiondepth) + '.h5')
 
-
-
+        sys.stdout.close()
