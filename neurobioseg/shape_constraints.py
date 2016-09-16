@@ -1,6 +1,8 @@
 from image_processing import ImageFileProcessing
 import numpy as np
 from skimage.feature import peak_local_max
+import vigra
+import scipy
 
 def calc_taperingtolerance(it, d, type):
     if type == 'd-it':
@@ -9,14 +11,52 @@ def calc_taperingtolerance(it, d, type):
         return it / d
 
 
-def splittingcandidate_by_localminima(ifp, start, stop, step, tolerance_rel, tolerance_abs, obj):
+# Doesn't work: its not local minima but saddle points!
+# Possible approach: A watershed based on the distancetransform splits at saddle points!
+#
+# def splittingcandidate_by_localminima(ifp, start, stop, step, tolerance_rel, tolerance_abs, obj):
+#
+#     ifp.deepcopy_entry('disttransf', 'localmin')
+#     ifp.invert_image(ids=('localmin',))
+#
+#     # ifp.anytask(peak_local_max, '', ('localmin',), min_distance=5)
+#
+#     ifp.anytask(vigra.filters.discRankOrderFilter, '', ('localmin',), 5, 1)
+#     ifp.anytask(vigra.analysis.extendedLocalMaxima3D, '', ('localmin',), neighborhood=26)
+#     print ifp.amax(ids=('localmin',))
+#
+#     ifp.write(filename='localmin.{}.h5'.format(obj), ids=('localmin', 'disttransf'))
+#
+#
+#     return None
 
-    ifp.deepcopy_entry('disttransf', 'localmin')
-    ifp.invert_image(ids=('localmin',))
-    ifp.anytask(peak_local_max, '', ('localmin',), min_distance=5)
-
-    return None
-
+# Doesn't work: I'm missing information on the saddle point inbetween two maxima.
+# The currently best approach remains the splitting_candidate_by_erosion
+# def splitting_by_localmax(ifp, obj):
+#
+#     # IDEA: Equivalent algorithm to splittingcandidate_by_erosion
+#     #   Using local maxima as candidates and using the same constraints to exclude or keep them
+#
+#     ifp.deepcopy_entry('disttransf', 'ws')
+#     ifp.invert_image(ids=('ws',))
+#     ifp.deepcopy_entry('disttransf', 'locmax')
+#     # ifp.anytask(peak_local_max, '', ('locmax',), min_distance=5)
+#
+#     # ifp.anytask(vigra.filters.discRankOrderFilter, '', ('locmax',), 3, 1)
+#     ifp.anytask(scipy.ndimage.maximum_filter, '', ('locmax',), size=(10, 10, 10))
+#     ifp.anytask(vigra.analysis.extendedLocalMaxima3D, '', ('locmax',), neighborhood=26)
+#     ifp.conncomp('indirect', 0, ids=('locmax',))
+#     print ifp.amax(ids=('locmax',))
+#
+#     ifp.skimage_watershed(markers=ifp.get_image('locmax'),
+#                                   mask=ifp.get_image('disttransf')>0,
+#                                   ids=('ws',))
+#     # ifp.anytask(watershed, '', ('ws',), ifp.get_data()['conncomp'], mask=ifp.get_data()['disttransf'] > 0)
+#
+#     ifp.write(filename='ws.{}.h5'.format(obj))
+#
+#
+#     return None
 
 
 # The erosion algorithm:
@@ -70,9 +110,33 @@ def splittingcandidate_by_erosion(ifp, start, stop, step, tolerance_rel, toleran
     return None
 
 
+def split_candidate(ifp, obj, type='wsonprobs'):
+
+    if type == 'wsonprobs':
+        ifp.load_h5(im_file='/media/julian/Daten/neuraldata/isbi_2013/data_crop/probabilities_test.h5',
+                    im_ids=None, im_names=None, asdict=True, keys=('ws',), append=True)
+
+        ifp.skimage_watershed(markers=ifp.get_image('conncomp'),
+                              mask=ifp.get_image('disttransf'),
+                              ids=('ws',))
+        # ifp.anytask(watershed, '', ('ws',), ifp.get_data()['conncomp'], mask=ifp.get_data()['disttransf'] > 0)
+    elif type == 'wsondisttransf':
+        ifp.deepcopy_entry('disttransf', 'ws')
+        ifp.invert_image(('ws',))
+        ifp.skimage_watershed(markers=ifp.get_image('conncomp'),
+                              mask=ifp.get_image('disttransf'),
+                              ids=('ws',))
+
+
+    ifp.write(filename='split.lbl_{}.h5'.format(obj))
+
+
 def tapering_violation_detection(ifp, tolerance_rel=0.5, tolerance_abs=5, pixel_pitch=()):
 
-    for obj in xrange(1, ifp.amax(ids=('labels',))['labels'] + 1):
+    # TODO: Write function to find a list of present labels
+    # TODO: Or convert label image to contain all labels
+
+    for obj in xrange(1, int(ifp.amax(ids=('labels',))['labels'] + 1)):
 
         ifp.logging('_____________________________________________________________________')
         ifp.logging('Object label: {}'.format(obj))
@@ -81,57 +145,64 @@ def tapering_violation_detection(ifp, tolerance_rel=0.5, tolerance_abs=5, pixel_
 
         # Start with one object only
         ifp.getlabel(obj, ids=('disttransf',))
-        if ifp.amax(ids=('disttransf',)) == 0:
+        if ifp.amax(ids=('disttransf',))['disttransf'] > 0:
+
+            # # -------------------------------
+            # # Write the selected label image
+            ifp.write(filename='getlabel.{}.h5'.format(obj), ids=('disttransf',))
+
+            # Distance transform
+            ifp.invert_image(ids=('disttransf',))
+            ifp.distance_transform(pixel_pitch=pixel_pitch, ids=('disttransf',))
+
+            # # ------------------------------
+            # # Write the distance transform
+            # ifp.write(filename='multicut_segmentation.lbl_' + str(obj) + '.disttransf.h5',
+            #           ids=('labels', 'disttransf'))
+
+            # ifp.converttodict('disttransf')
+
+            max_disttransf = int(ifp.amax(('disttransf',))['disttransf'])
+            ifp.logging('max_disttransf = {}'.format(max_disttransf))
+            # print max_disttransf
+
+            step = int(max_disttransf / 24) + 1
+            tolerance_abs_in = tolerance_abs * step
+            erosiondepth = splittingcandidate_by_erosion(ifp, 1, max_disttransf, step, tolerance_rel, tolerance_abs_in,
+                                                         obj)
+            # erosiondepth = splitting_by_localmax(ifp, obj)
+
+            if erosiondepth is not None:
+                split_candidate(ifp, obj, type='wsondisttransf')
+
+            ifp.write(filename='object_{}.h5'.format(obj))
+
+        else:
+
             ifp.logging('Skiping object {}: Not found.'.format(obj))
             # sys.exit()
-            break
 
-        # # -------------------------------
-        # # Write the selected label image
-        # ifp.write(filename='getlabel.{}.h5'.format(obj), ids=('disttransf',))
 
-        # Distance transform
-        ifp.invert_image(ids=('disttransf',))
-        ifp.distance_transform(pixel_pitch=pixel_pitch, ids=('disttransf',))
 
-        # # ------------------------------
-        # # Write the distance transform
-        # ifp.write(filename='multicut_segmentation.lbl_' + str(obj) + '.disttransf.h5',
-        #           ids=('labels', 'disttransf'))
-
-        # ifp.converttodict('disttransf')
-
-        max_disttransf = int(ifp.amax(('disttransf',))['disttransf'])
-        ifp.logging('max_disttransf = {}'.format(max_disttransf))
-        # print max_disttransf
-
-        step = int(max_disttransf / 24) + 1
-        tolerance_abs_in = tolerance_abs * step
-        # erosiondepth = splittingcandidate_by_erosion(ifp, 1, max_disttransf, step, tolerance_rel, tolerance_abs_in, obj)
-        erosiondepth = splittingcandidate_by_localminima(ifp, 1, max_disttransf, step, tolerance_rel, tolerance_abs_in, obj)
-
-        if erosiondepth is not None:
-            ifp.load_h5(im_file='/media/julian/Daten/neuraldata/isbi_2013/data_crop/probabilities_test.h5',
-                        im_ids=None, im_names=None, asdict=True, keys=('ws',), append=True)
-
-            ifp.skimage_watershed(markers=ifp.get_image('conncomp'),
-                                  mask=ifp.get_image('disttransf'),
-                                  ids=('ws',))
-            # ifp.anytask(watershed, '', ('ws',), ifp.get_data()['conncomp'], mask=ifp.get_data()['disttransf'] > 0)
-
-            ifp.write(filename='ws.lbl_' + str(obj) + '.i_' + str(erosiondepth) + '.h5')
 
 if __name__ == "__main__":
 
-    ifp = ImageFileProcessing(
-        "/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/",
-        "multicut_segmentation.h5", asdict=True, keys=('labels',))
+    folder = '/media/julian/Daten/neuraldata/cremi_2016/'
+    file = 'cremi.splA.raw_neurons.crop.h5'
+    names = ('neuron_ids',)
+    keys = ('labels',)
 
     tolerance_rel = 0.5
     tolerance_abs = 5
-    pixel_pitch = (1, 1, 6)
+    pixel_pitch = (1, 1, 10)
 
-    ifp.startlogger('/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/test.log', type='w')
+    ifp = ImageFileProcessing(
+        folder,
+        file, asdict=True,
+        image_names=names,
+        keys=keys)
+
+    ifp.startlogger('{}tapering.log'.format(folder), type='w')
 
     ifp.logging("######################################################")
     ifp.logging('# Starting tapering_violation_detection with:        #')

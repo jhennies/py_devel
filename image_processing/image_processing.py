@@ -256,7 +256,8 @@ class ImageFileProcessing:
     _data = None
     _boundaries = None
 
-    def __init__(self, image_path, image_file, image_names=None, image_ids=None, asdict=True, keys=None):
+    def __init__(self, image_path, image_file, image_names=None, image_ids=None,
+                 asdict=True, keys=None):
         self.set_file(image_path, image_file, image_names, image_ids)
         if image_file is not None:
             self.load_h5(image_path + image_file, im_ids=image_ids, im_names=image_names,
