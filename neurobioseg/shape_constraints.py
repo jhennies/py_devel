@@ -1,6 +1,6 @@
 from image_processing import ImageFileProcessing
 import numpy as np
-
+from skimage.feature import peak_local_max
 
 def calc_taperingtolerance(it, d, type):
     if type == 'd-it':
@@ -8,13 +8,25 @@ def calc_taperingtolerance(it, d, type):
     elif type == 'it/d':
         return it / d
 
-# TODO: Speed this up by increasing chop-off at each iteration!
+
+def splittingcandidate_by_localminima(ifp, start, stop, step, tolerance_rel, tolerance_abs, obj):
+
+    ifp.deepcopy_entry('disttransf', 'localmin')
+    ifp.invert_image(ids=('localmin',))
+    ifp.anytask(peak_local_max, '', ('localmin',), min_distance=5)
+
+    return None
+
+
+
 # The erosion algorithm:
 # ----------------------
-def splittingcandidate_by_erosion(ifp, start, stop, tolerance_rel, tolerance_abs, obj):
-    for i in xrange(start, stop):
-        # print 'i = ' + str(i)
+def splittingcandidate_by_erosion(ifp, start, stop, step, tolerance_rel, tolerance_abs, obj):
 
+    for i in xrange(start, stop, step):
+
+        # print 'i = ' + str(i)
+        # ifp.logging("i = {}".format(i))
         # Create connected components
         ifp.deepcopy_entry('disttransf', 'conncomp')
         ifp.binarize(i, type='l', ids=('conncomp',))
@@ -40,7 +52,7 @@ def splittingcandidate_by_erosion(ifp, start, stop, tolerance_rel, tolerance_abs
                 #       + str(calc_taperingtolerance(i, np.amax(distinobj), 'it/d')) + ' (rel)'
                 tt_abs = calc_taperingtolerance(i, np.amax(distinobj), 'd-it')
                 tt_rel = calc_taperingtolerance(i, np.amax(distinobj), 'it/d')
-                ifp.logging('Object: {0} (abs), {1} (rel)'.format(tt_rel, tt_abs))
+                ifp.logging('Object: {0} (abs), {1} (rel)'.format(tt_abs, tt_rel))
 
                 if (tt_rel < tolerance_rel) and (tt_abs > tolerance_abs):
                     mainarbors += 1
@@ -61,7 +73,6 @@ def splittingcandidate_by_erosion(ifp, start, stop, tolerance_rel, tolerance_abs
 def tapering_violation_detection(ifp, tolerance_rel=0.5, tolerance_abs=5, pixel_pitch=()):
 
     for obj in xrange(1, ifp.amax(ids=('labels',))['labels'] + 1):
-        pass
 
         ifp.logging('_____________________________________________________________________')
         ifp.logging('Object label: {}'.format(obj))
@@ -74,13 +85,19 @@ def tapering_violation_detection(ifp, tolerance_rel=0.5, tolerance_abs=5, pixel_
             ifp.logging('Skiping object {}: Not found.'.format(obj))
             # sys.exit()
             break
-        # ifp.write()
+
+        # # -------------------------------
+        # # Write the selected label image
+        # ifp.write(filename='getlabel.{}.h5'.format(obj), ids=('disttransf',))
 
         # Distance transform
         ifp.invert_image(ids=('disttransf',))
         ifp.distance_transform(pixel_pitch=pixel_pitch, ids=('disttransf',))
-        ifp.write(filename='multicut_segmentation.lbl_' + str(obj) + '.disttransf.h5',
-                  dict_ids=('labels', 'disttransf'))
+
+        # # ------------------------------
+        # # Write the distance transform
+        # ifp.write(filename='multicut_segmentation.lbl_' + str(obj) + '.disttransf.h5',
+        #           ids=('labels', 'disttransf'))
 
         # ifp.converttodict('disttransf')
 
@@ -88,7 +105,10 @@ def tapering_violation_detection(ifp, tolerance_rel=0.5, tolerance_abs=5, pixel_
         ifp.logging('max_disttransf = {}'.format(max_disttransf))
         # print max_disttransf
 
-        erosiondepth = splittingcandidate_by_erosion(ifp, 1, max_disttransf, tolerance_rel, tolerance_abs, obj)
+        step = int(max_disttransf / 24) + 1
+        tolerance_abs_in = tolerance_abs * step
+        # erosiondepth = splittingcandidate_by_erosion(ifp, 1, max_disttransf, step, tolerance_rel, tolerance_abs_in, obj)
+        erosiondepth = splittingcandidate_by_localminima(ifp, 1, max_disttransf, step, tolerance_rel, tolerance_abs_in, obj)
 
         if erosiondepth is not None:
             ifp.load_h5(im_file='/media/julian/Daten/neuraldata/isbi_2013/data_crop/probabilities_test.h5',
@@ -109,7 +129,7 @@ if __name__ == "__main__":
 
     tolerance_rel = 0.5
     tolerance_abs = 5
-    pixel_pitch = (5, 5, 30)
+    pixel_pitch = (1, 1, 6)
 
     ifp.startlogger('/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/test.log', type='w')
 

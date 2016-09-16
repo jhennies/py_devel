@@ -51,7 +51,7 @@ def calc_taperingtolerance(it, d, type):
 
 if __name__ == "__main__":
 
-    sys.stdout = open('/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/log.txt', "a")
+    # sys.stdout = open('/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/log.txt', "a")
 
     # Parameters
     tapering_tolerance_rel = 0.5
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     # for obj in [191]:
     for obj in xrange(1, ifp.amax(ids=('labels',))['labels'] + 1):
 
-        sys.stdout = open('/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/log.txt', "a")
+        # sys.stdout = open('/media/julian/Daten/neuraldata/isbi_2013/mc_crop_cache/log.txt', "a")
 
         print '_____________________________________________________________________'
         print 'Object label: ' + str(obj)
@@ -84,8 +84,8 @@ if __name__ == "__main__":
 
             # Distance transform
             ifp.invert_image(ids=('disttransf',))
-            ifp.distance_transform(pixel_pitch=(5,5,30), ids=('disttransf',))
-            ifp.write(filename='multicut_segmentation.lbl_' + str(obj) + '.disttransf.h5', dict_ids=('labels', 'disttransf'))
+            ifp.distance_transform(pixel_pitch=(1,1,6), ids=('disttransf',))
+            ifp.write(filename='multicut_segmentation.lbl_' + str(obj) + '.disttransf.h5', ids=('labels', 'disttransf'))
 
         else:
             ifp = ImageFileProcessing(
@@ -120,7 +120,7 @@ if __name__ == "__main__":
         # The erosion algorithm:
         # ----------------------
         def splittingcandidate_by_erosion(start, stop, ifp):
-
+            stop = 2
             for i in xrange(start, stop):
                 # print 'i = ' + str(i)
 
@@ -185,4 +185,4 @@ if __name__ == "__main__":
 
             ifp.write(filename='ws.lbl_' + str(obj) + '.i_' + str(erosiondepth) + '.h5')
 
-        sys.stdout.close()
+        # sys.stdout.close()

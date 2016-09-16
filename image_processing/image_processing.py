@@ -486,7 +486,7 @@ class ImageFileProcessing:
         self._imageFileName += '.dt'
 
     def filter_values(self, value, type='se', setto=0, ids=None):
-        self._data.filter_values(value, type=type, setto=setto, ids=None)
+        self._data.filter_values(value, type=type, setto=setto, ids=ids)
         self._imageFileName += '.filt_{}_{}'.format(type, value)
 
     def binarize(self, value, type='l', ids=None):
@@ -537,17 +537,17 @@ class ImageFileProcessing:
 
         of.close()
 
-    def write(self, dict_ids=None, filename=None):
+    def write(self, ids=None, filename=None):
         """
         :type list
-        :param dict_ids: Set only if data is a dict!
+        :param ids: Set only if data is a dict!
             Use to specify which entries in the data dictionary are written to file
             Default: None (everything is written)
         """
         if filename is None:
-            self.write_h5(self._imageFileName + '.h5', self._data.get_data(), dict_ids=dict_ids)
+            self.write_h5(self._imageFileName + '.h5', self._data.get_data(), dict_ids=ids)
         else:
-            self.write_h5(filename, self._data.get_data(), dict_ids=dict_ids)
+            self.write_h5(filename, self._data.get_data(), dict_ids=ids)
 
 # _____________________________________________________________________________________________
 
