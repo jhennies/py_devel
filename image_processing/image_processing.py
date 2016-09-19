@@ -191,6 +191,17 @@ class ImageProcessing:
             self._data = function(self._data, *args, **kwargs)
 
     def anytask_rtrn(self, function, ids, *args, **kwargs):
+        """
+        :type function
+        :param function:
+            A function in the form: func(image, *args, **kwargs)
+            Note that the first parameter is fixed to the currently loaded image
+
+        :type list
+        :param ids:
+            list of keys denoting the dictionary entries in self._data._image which will be processed
+            Set to None if self._data is not a dictionary or for processing of all entries
+        """
         if type(self._data) is dict:
             returndict = {}
             if ids is None:
@@ -244,99 +255,103 @@ class ImageProcessing:
         self.anytask(watershed, ids, markers, connectivity=connectivity,
                      offset=offset, mask=mask, compactness=compactness)
 
+    ###########################################################################################
+    # Iterators
+
+    def label_iterator(self):
+
+        for i in range(3):
+
+            yield i
+
+
+
 # _____________________________________________________________________________________________
 
 
-class ImageFileProcessing:
+class ImageFileProcessing(ImageProcessing):
 
     _imagePath = None
     _imageFile = None
     _imageFileName = None
     _imageNames = None
     _imageIds = 0
-    _data = None
+    # _data = None
     _boundaries = None
 
     def __init__(self, image_path, image_file, image_names=None, image_ids=None,
                  asdict=True, keys=None):
+
+        if image_path is not None and image_file is not None:
+            data = self.load_h5(image_path + image_file, image_ids, image_names,
+                                asdict, keys)
+        else:
+            data = None
+
+        ImageProcessing.__init__(self, data)
+
         self.set_file(image_path, image_file, image_names, image_ids)
-        if image_file is not None:
-            self.load_h5(image_path + image_file, im_ids=image_ids, im_names=image_names,
-                         asdict=asdict, keys=keys)
 
-    @classmethod
-    def empty(cls):
-        """ Empty construction is intended for debugging purposes """
-        return cls(None, None)
-
-    def set_file(self, image_path, image_file, image_names, image_id):
-        self._imagePath = image_path
-        self._imageFile = image_file
-        self._imageNames = image_names
-        self._imageID = image_id
-        if self._imageFile is not None:
-            self._imageFileName = re.sub('\.h5$', '', self._imageFile)
-
-    def load_h5(self, im_file, im_ids=None, im_names=None, asdict=False, keys=None, append=False):
-        """
-        :type str
-        :param im_file: Full path to h5 file
-
-        :type list<int> or int
-        :param im_ids: ID(s) of images to load
-
-        :type list<str> or str
-        :param im_names: Name(s) of images to load
-
-        :type bool
-        :param asdict: Load images as dictionary (True)
-
-        :type: list<str>
-        :param keys: Dictionary keys, the names within the h5 file are used if not specified
-
-        :type ImageProcessing
-        :return: Image processing object containing the h5 image contents
-
-        EXAMPLES
-
-        load_h5(self, '~/location/sample.h5',
-                im_ids=0, im_names=None, asdict=False, keys=None)
-        -> Loads one image in sample.h5
-
-        load_h5(self, '~/location/sample.h5',
-                im_ids=None, im_names=None, asdict=True, keys=None)
-        -> Loads all images in sample.h5 as dictionary
-
-        load_h5(self, '~/location/sample.h5',
-                im_ids=None, im_names=('a', 'b', 'c'), asdict=True, keys=('bar', 'foo', 'baz'))
-        -> Loads three images a, b, and c in sample.h5, assigning the keys bar, foo, and baz, respectively
-        """
+    def load_h5(self, im_file, ids=None, names=None, asdict=False, keys=None):
+        #     """
+        #     :type str
+        #     :param im_file: Full path to h5 file
+        #
+        #     :type list<int> or int
+        #     :param im_ids: ID(s) of images to load
+        #
+        #     :type list<str> or str
+        #     :param im_names: Name(s) of images to load
+        #
+        #     :type bool
+        #     :param asdict: Load images as dictionary (True)
+        #
+        #     :type: list<str>
+        #     :param keys: Dictionary keys, the names within the h5 file are used if not specified
+        #
+        #     :type ImageProcessing
+        #     :return: Image processing object containing the h5 image contents
+        #
+        #     EXAMPLES
+        #
+        #     load_h5(self, '~/location/sample.h5',
+        #             im_ids=0, im_names=None, asdict=False, keys=None)
+        #     -> Loads one image in sample.h5
+        #
+        #     load_h5(self, '~/location/sample.h5',
+        #             im_ids=None, im_names=None, asdict=True, keys=None)
+        #     -> Loads all images in sample.h5 as dictionary
+        #
+        #     load_h5(self, '~/location/sample.h5',
+        #             im_ids=None, im_names=('a', 'b', 'c'), asdict=True, keys=('bar', 'foo', 'baz'))
+        #     -> Loads three images a, b, and c in sample.h5, assigning the keys bar, foo, and baz, respectively
+        #     """
 
         # im_file must not be None!
         if im_file is None:
-            return
+            return None
 
         # Open the stream
         f = h5py.File(im_file)
 
         # Make sure im_names is not None
         # Return if this is not possible
-        if im_names is None:
-            im_names = f.keys()
-            if im_ids is not None:
-                im_names = [im_names[x] for x in im_ids]
-            if im_names is None:
-                return
+        if names is None:
+            names = f.keys()
+            if ids is not None:
+                names = [names[x] for x in ids]
+            if names is None:
+                return None
 
         # Take the first entry if we do not want a dictionary
-        if not asdict and type(im_names) is list:
-            im_names = im_names[0]
+        if not asdict and type(names) is list:
+            names = names[0]
 
-        # print im_names
+        # print names
 
         # Make sure keys is not None
         if keys is None:
-            keys = im_names
+            keys = names
 
         if asdict:
             # Initialize as dict ...
@@ -344,22 +359,29 @@ class ImageFileProcessing:
             images = {}
 
             i = 0
-            for n in im_names:
+            for n in names:
 
                 images[keys[i]] = np.array(f.get(n))
                 i += 1
 
-            if append:
-                self._data.set_data_dict(images, append=True)
-            else:
-                self._data = ImageProcessing(images, key=None)
+            return images
 
         else:
-            # ... or as single image
-            if append:
-                pass
-            else:
-                self._data = ImageProcessing(np.array(f.get(im_names)), key=None)
+
+            return np.array(f.get(names))
+
+    @classmethod
+    def empty(cls):
+        """ Empty construction is intended for debugging purposes """
+        return cls(None, None)
+
+    def set_file(self, image_path, image_file, image_names, image_ids):
+        self._imagePath = image_path
+        self._imageFile = image_file
+        self._imageNames = image_names
+        self._imageIds = image_ids
+        if self._imageFile is not None:
+            self._imageFileName = re.sub('\.h5$', '', self._imageFile)
 
     def get_filename(self):
         return self._imageFileName + '.h5'
@@ -367,8 +389,8 @@ class ImageFileProcessing:
     def addtoname(self, addstr):
         self._imageFileName += addstr
 
-    def deepcopy_entry(self, sourcekey, targetkey):
-        self._data.deepcopy_entry(sourcekey, targetkey)
+    # def deepcopy_entry(self, sourcekey, targetkey):
+    #     self._data.deepcopy_entry(sourcekey, targetkey)
 
     ###########################################################################################
     # Log file operations
@@ -394,24 +416,25 @@ class ImageFileProcessing:
 
         if self._logger is not None:
             self._logger.close()
-
-    ###########################################################################################
-    # Data operations
-
-    def set_data(self, data):
-        self._data.set_data(data)
-
-    def get_data(self):
-        return self._data.get_data()
-
-    def get_image(self, id=None):
-        return self._data.get_image(id=id)
-
-    def converttodict(self, name):
-        self._data.converttodict(name)
-
-    def addtodict(self, data, name):
-        self._data.addtodict(data, name)
+    #
+    # ###########################################################################################
+    # # Data operations
+    #
+    # def set_data(self, data):
+    #     self._data.set_data(data)
+    #
+    # def get_data(self):
+    #     return self._data.get_data()
+    #
+    # def get_image(self, id=None):
+    #     return self._data.get_image(id=id)
+    #
+    # def converttodict(self, name):
+    #     self._data.converttodict(name)
+    #
+    # def addtodict(self, data, name):
+    #     self._data.addtodict(data, name)
+    #
 
     ###########################################################################################
     # Image processing
@@ -433,78 +456,58 @@ class ImageFileProcessing:
             list of keys denoting the dictionary entries in self._data._image which will be processed
             Set to None if self._data is not a dictionary or for processing of all entries
         """
-        self._data.anytask(function, ids, *args, **kwargs)
+        ImageProcessing.anytask(self, function, ids, *args, **kwargs)
+        # self._data.anytask(function, ids, *args, **kwargs)
         if addtofilename is not None:
             self._imageFileName += addtofilename
         else:
             self._imageFileName += '.modified'
 
-    def anytask_rtrn(self, function, ids, *args, **kwargs):
-        """
-        :type function
-        :param function:
-            A function in the form: func(image, *args, **kwargs)
-            Note that the first parameter is fixed to the currently loaded image
-
-        :type list
-        :param ids:
-            list of keys denoting the dictionary entries in self._data._image which will be processed
-            Set to None if self._data is not a dictionary or for processing of all entries
-        """
-        return self._data.anytask_rtrn(function, ids, *args, **kwargs)
-
     def invert_image(self, ids=None):
-        self._data.invert_image(ids=ids)
+        ImageProcessing.invert_image(self, ids=ids)
         self._imageFileName += '.inv'
 
     def swapaxes(self, axis1, axis2, ids=None):
-        self._data.swapaxes(axis1, axis2, ids=ids)
+        ImageProcessing.swapaxes(self, axis1, axis2, ids=ids)
         self._imageFileName += '.swpxs_' + str(axis1) + '_' + str(axis2)
 
     def rollaxis(self, axis, start=0, ids=None):
-        self._data.rollaxis(axis, start, ids=ids)
+        ImageProcessing.rollaxis(self, axis, start, ids=ids)
         self._imageFileName += '.rllxs_' + str(axis) + '_' + str(start)
 
     def resize(self, zoom, mode, ids=None):
-        self._data.resize(zoom, mode, ids=ids)
+        ImageProcessing.resize(self, zoom, mode, ids=ids)
         self._imageFileName += '.resize'
 
     def resize_z_nearest(self, z, ids=None):
-        self._data.resize_z_nearest(z, ids=ids)
+        ImageProcessing.resize_z_nearest(self, z, ids=ids)
         self._imageFileName += '.resizez_' + str(z)
 
     def getlabel(self, label, ids=None):
-        self._data.getlabel(label, ids=ids)
+        ImageProcessing.getlabel(self, label, ids=ids)
         self._imageFileName += '.lbl_' + str(label)
 
-    def amax(self, ids=None):
-        return self._data.amax(ids=ids)
-
-    def astype(self, dtype, ids=None):
-        self._data.astype(dtype, ids=ids)
-
     def distance_transform(self, pixel_pitch=(), ids=None):
-        self._data.distance_transform(pixel_pitch=pixel_pitch, ids=ids)
+        ImageProcessing.distance_transform(self, pixel_pitch=pixel_pitch, ids=ids)
         self._imageFileName += '.dt'
 
     def filter_values(self, value, type='se', setto=0, ids=None):
-        self._data.filter_values(value, type=type, setto=setto, ids=ids)
+        ImageProcessing.filter_values(self, value, type=type, setto=setto, ids=ids)
         self._imageFileName += '.filt_{}_{}'.format(type, value)
 
     def binarize(self, value, type='l', ids=None):
-        self._data.binarize(value, type=type, ids=ids)
+        ImageProcessing.binarize(self, value, type=type, ids=ids)
         self._imageFileName += '.bin_{}_{}'.format(type, value)
 
     def conncomp(self, neighborhood='direct', background_value=0, ids=None):
-        self._data.conncomp(neighborhood=neighborhood, background_value=background_value, ids=ids)
+        ImageProcessing.conncomp(self, neighborhood=neighborhood, background_value=background_value, ids=ids)
         self._imageFileName += '.conncomp'
 
     def skimage_watershed(self, markers, connectivity=1, offset=None, mask=None,
                           compactness=0, ids=None):
-        self._data.skimage_watershed(markers, connectivity=connectivity, offset=offset,
+        ImageProcessing.skimage_watershed(self, markers, connectivity=connectivity, offset=offset,
                                      mask=mask, compactness=compactness, ids=ids)
         self._imageFileName += '.ws'
-
 
     ###########################################################################################
     # Write h5 files
