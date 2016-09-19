@@ -127,7 +127,6 @@ def split_candidate(ifp, obj, type='wsonprobs'):
                               mask=ifp.get_image('disttransf'),
                               ids=('ws',))
 
-
     ifp.write(filename='split.lbl_{}.h5'.format(obj))
 
 
@@ -135,6 +134,7 @@ def tapering_violation_detection(ifp, tolerance_rel=0.5, tolerance_abs=5, pixel_
 
     # TODO: Write function to find a list of present labels
     # TODO: Or convert label image to contain all labels
+    # TODO: Or create a label iterator (probably the most elegant solution?)
 
     for obj in xrange(1, int(ifp.amax(ids=('labels',))['labels'] + 1)):
 

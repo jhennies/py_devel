@@ -102,6 +102,7 @@ def binarize(image, value, type='l'):
 def conncomp(image, neighborhood='direct', background_value=0):
     return vigra.analysis.labelMultiArrayWithBackground(image, neighborhood=neighborhood, background_value=background_value)
 
+
 # _____________________________________________________________________________________________
 
 
