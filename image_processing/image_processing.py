@@ -103,6 +103,9 @@ def conncomp(image, neighborhood='direct', background_value=0):
     return vigra.analysis.labelMultiArrayWithBackground(image, neighborhood=neighborhood, background_value=background_value)
 
 
+def crop(image, start, stop):
+    return image[start[0]:stop[0], start[1]:stop[1], start[2]:stop[2]]
+
 # _____________________________________________________________________________________________
 
 
@@ -254,6 +257,9 @@ class ImageProcessing:
                           compactness=0, ids=None):
         self.anytask(watershed, ids, markers, connectivity=connectivity,
                      offset=offset, mask=mask, compactness=compactness)
+
+    def crop(self, start, stop, ids=None):
+        self.anytask(crop, ids, start, stop)
 
     ###########################################################################################
     # Iterators
@@ -489,6 +495,10 @@ class ImageFileProcessing(ImageProcessing):
         ImageProcessing.skimage_watershed(self, markers, connectivity=connectivity, offset=offset,
                                      mask=mask, compactness=compactness, ids=ids)
         self._imageFileName += '.ws'
+
+    def crop(self, start, stop, ids=None):
+        ImageProcessing.crop(self, start, stop, ids=ids)
+        self._imageFileName += '.crop_{}-{}-{}_{}-{}-{}'.format(start[0], start[1], start[2], stop[0], stop[1], stop[2])
 
     ###########################################################################################
     # Write h5 files
