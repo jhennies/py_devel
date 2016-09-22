@@ -106,6 +106,10 @@ def conncomp(image, neighborhood='direct', background_value=0):
 def crop(image, start, stop):
     return image[start[0]:stop[0], start[1]:stop[1], start[2]:stop[2]]
 
+
+def shape(image):
+    return image.shape
+
 # _____________________________________________________________________________________________
 
 
@@ -184,12 +188,15 @@ class ImageProcessing:
 
     def anytask(self, function, ids, *args, **kwargs):
         if type(self._data) is dict:
-            if ids is None:
-                for id in self._data:
-                    self._data[id] = function(self._data[id], *args, **kwargs)
+            if type(ids) is tuple:
+                if ids is None:
+                    for id in self._data:
+                        self._data[id] = function(self._data[id], *args, **kwargs)
+                else:
+                    for id in ids:
+                        self._data[id] = function(self._data[id], *args, **kwargs)
             else:
-                for id in ids:
-                    self._data[id] = function(self._data[id], *args, **kwargs)
+                self._data[ids] = function(self._data[ids], *args, **kwargs)
         else:
             self._data = function(self._data, *args, **kwargs)
 
@@ -206,14 +213,17 @@ class ImageProcessing:
             Set to None if self._data is not a dictionary or for processing of all entries
         """
         if type(self._data) is dict:
-            returndict = {}
-            if ids is None:
-                for id in self._data:
-                    returndict[id] = function(self._data[id], *args, **kwargs)
+            if type(ids) is tuple:
+                returndict = {}
+                if ids is None:
+                    for id in self._data:
+                        returndict[id] = function(self._data[id], *args, **kwargs)
+                else:
+                    for id in ids:
+                        returndict[id] = function(self._data[id], *args, **kwargs)
+                return returndict
             else:
-                for id in ids:
-                    returndict[id] = function(self._data[id], *args, **kwargs)
-            return returndict
+                return function(self._data[ids], *args, **kwargs)
         else:
             return function(self._data, *args, **kwargs)
 
@@ -260,6 +270,9 @@ class ImageProcessing:
 
     def crop(self, start, stop, ids=None):
         self.anytask(crop, ids, start, stop)
+
+    def shape(self, ids=None):
+        return self.anytask_rtrn(shape, ids=ids)
 
     ###########################################################################################
     # Iterators
