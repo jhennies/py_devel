@@ -1,5 +1,6 @@
 
 from image_processing import ImageProcessing, ImageFileProcessing
+import numpy as np
 
 __author__ = 'jhennies'
 
@@ -11,8 +12,8 @@ __author__ = 'jhennies'
 # TODO: For the above: Implement randomly merged objects within the ground truth
 
 # Specific TODOs
-# TODO: Re-implement image_processing: ImageFileProcessing should inherit ImageProcessing!
-# TODO: Implement generator to iterate over each label in the image data
+# Done: Re-implement image_processing: ImageFileProcessing should inherit ImageProcessing!
+# Done: Implement generator to iterate over each label in the image data
 
 if __name__ == '__main__':
 
@@ -29,18 +30,27 @@ if __name__ == '__main__':
         image_names=names,
         keys=keys)
 
-    print ifp.get_image('labels')[0,0,0]
+    ifp.startlogger(filename=None, type='w')
 
-    def plus1(image):
+    ifp.logging('ifp.get_image = {}', ifp.get_image('labels')[0, 0, 0])
+    ifp.logging('ifp.amax = {}\n', ifp.amax(('labels',)))
 
-        return image + 1
+    # for lbl in ifp.label_iterator('labels'):
+    #     ifp.logging('label_iterator: {}', lbl)
 
-    ifp.anytask(plus1, '', ('labels',))
+    c = 0
+    for lbl in ifp.label_image_iterator('labels', 'currentlabel'):
+        ifp.logging('Current label = {}', lbl)
+        # ifp.write(filename='test_{}.h5'.format(c))
 
-    print ifp.get_image('labels')[0,0,0]
 
-    print ifp.amax(('labels',))
+        c += 1
+        if c == 20:
+            break
 
+    ifp.logging('')
+
+    ifp.stoplogger()
 
     # for i in ifp.label_iterator():
     #     print i

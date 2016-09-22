@@ -258,14 +258,17 @@ class ImageProcessing:
     ###########################################################################################
     # Iterators
 
-    def label_iterator(self):
+    def label_iterator(self, id=None):
 
-        for i in range(3):
+        for lbl in np.unique(self.get_image(id)):
+            yield lbl
 
-            yield i
+    def label_image_iterator(self, from_id, to_id):
 
-
-
+        for lbl in self.label_iterator(id=from_id):
+            self.deepcopy_entry(from_id, to_id)
+            self.getlabel(lbl, (to_id,))
+            yield lbl
 # _____________________________________________________________________________________________
 
 
@@ -389,9 +392,6 @@ class ImageFileProcessing(ImageProcessing):
     def addtoname(self, addstr):
         self._imageFileName += addstr
 
-    # def deepcopy_entry(self, sourcekey, targetkey):
-    #     self._data.deepcopy_entry(sourcekey, targetkey)
-
     ###########################################################################################
     # Log file operations
 
@@ -416,30 +416,11 @@ class ImageFileProcessing(ImageProcessing):
 
         if self._logger is not None:
             self._logger.close()
-    #
-    # ###########################################################################################
-    # # Data operations
-    #
-    # def set_data(self, data):
-    #     self._data.set_data(data)
-    #
-    # def get_data(self):
-    #     return self._data.get_data()
-    #
-    # def get_image(self, id=None):
-    #     return self._data.get_image(id=id)
-    #
-    # def converttodict(self, name):
-    #     self._data.converttodict(name)
-    #
-    # def addtodict(self, data, name):
-    #     self._data.addtodict(data, name)
-    #
 
     ###########################################################################################
     # Image processing
 
-    def anytask(self, function, addtofilename, ids, *args, **kwargs):
+    def anytask_fp(self, function, addtofilename, ids, *args, **kwargs):
         """
         :type function
         :param function:
@@ -550,9 +531,9 @@ class ImageFileProcessing(ImageProcessing):
             Default: None (everything is written)
         """
         if filename is None:
-            self.write_h5(self._imageFileName + '.h5', self._data.get_data(), dict_ids=ids)
+            self.write_h5(self._imageFileName + '.h5', self.get_data(), dict_ids=ids)
         else:
-            self.write_h5(filename, self._data.get_data(), dict_ids=ids)
+            self.write_h5(filename, self.get_data(), dict_ids=ids)
 
 # _____________________________________________________________________________________________
 
