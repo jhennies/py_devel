@@ -29,21 +29,21 @@ def find_local_maxima(ifp):
     ifp.deepcopy_entry('currentlabel', 'locmax')
 
     # Distance transform
-    ifp.invert_image(('locmax',))
-    ifp.distance_transform(pixel_pitch=anisotropy, ids=('locmax',))
+    ifp.invert_image('locmax')
+    ifp.distance_transform(pixel_pitch=anisotropy, ids='locmax')
 
     # Smoothing
-    ifp.anytask(gaussian_smoothing, ('locmax',), anisotropy/10)
+    ifp.anytask(gaussian_smoothing, 'locmax', anisotropy/10)
 
     # Local maxima
-    ifp.anytask(vigra.analysis.extendedLocalMaxima3D, ('locmax',), neighborhood=26)
+    ifp.anytask(vigra.analysis.extendedLocalMaxima3D, 'locmax', neighborhood=26)
 
 
 def find_shortest_path(ifp):
 
     gridgr = graphs.gridGraph(ifp.shape('labels'))
-    ifp.logging('ifp.shape(tuple) = {}', ifp.shape(('labels',)))
-    ifp.logging('ifp.shape(str) = {}', ifp.shape('labels'))
+
+
     pass
 
 
@@ -74,10 +74,7 @@ if __name__ == '__main__':
 
 
     ifp.logging('ifp.get_image = {}', ifp.get_image('labels')[0, 0, 0])
-    ifp.logging('ifp.amax = {}\n', ifp.amax(('labels',)))
-
-    # for lbl in ifp.label_iterator('labels'):
-    #     ifp.logging('label_iterator: {}', lbl)
+    ifp.logging('ifp.amax = {}\n', ifp.amax('labels'))
 
     c = 0
     for lbl in ifp.label_image_iterator('labels', 'currentlabel'):

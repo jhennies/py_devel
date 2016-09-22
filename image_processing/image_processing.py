@@ -188,15 +188,16 @@ class ImageProcessing:
 
     def anytask(self, function, ids, *args, **kwargs):
         if type(self._data) is dict:
-            if type(ids) is tuple:
-                if ids is None:
-                    for id in self._data:
-                        self._data[id] = function(self._data[id], *args, **kwargs)
-                else:
-                    for id in ids:
-                        self._data[id] = function(self._data[id], *args, **kwargs)
-            else:
+            if ids is None:
+                for id in self._data:
+                    self._data[id] = function(self._data[id], *args, **kwargs)
+            elif type(ids) is tuple:
+                for id in ids:
+                    self._data[id] = function(self._data[id], *args, **kwargs)
+            elif type(ids) is str:
                 self._data[ids] = function(self._data[ids], *args, **kwargs)
+            else:
+                pass
         else:
             self._data = function(self._data, *args, **kwargs)
 
@@ -213,17 +214,18 @@ class ImageProcessing:
             Set to None if self._data is not a dictionary or for processing of all entries
         """
         if type(self._data) is dict:
-            if type(ids) is tuple:
-                returndict = {}
-                if ids is None:
-                    for id in self._data:
-                        returndict[id] = function(self._data[id], *args, **kwargs)
-                else:
-                    for id in ids:
-                        returndict[id] = function(self._data[id], *args, **kwargs)
-                return returndict
-            else:
+            returndict = {}
+            if ids is None:
+                for id in self._data:
+                    returndict[id] = function(self._data[id], *args, **kwargs)
+            elif type(ids) is tuple:
+                for id in ids:
+                    returndict[id] = function(self._data[id], *args, **kwargs)
+            elif type(ids) is str:
                 return function(self._data[ids], *args, **kwargs)
+            else:
+                return None
+            return returndict
         else:
             return function(self._data, *args, **kwargs)
 
