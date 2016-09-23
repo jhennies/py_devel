@@ -135,7 +135,7 @@ class ImageProcessing:
         if key is None:
             self._data = data
         else:
-            self._data = {key, data}
+            self._data = {key: data}
 
     def set_data_dict(self, data, append=False):
 

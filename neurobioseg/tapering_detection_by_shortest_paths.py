@@ -34,16 +34,19 @@ def find_local_maxima(ifp):
     ifp.distance_transform(pixel_pitch=anisotropy, ids='disttransf')
 
     # Smoothing
-    ifp.deepcopy_entry('disttransf', 'locmax')
-    ifp.anytask(gaussian_smoothing, 'locmax', anisotropy/10)
+    ifp.deepcopy_entry('disttransf', 'smoothed')
+    ifp.anytask(gaussian_smoothing, 'smoothed', 20/anisotropy)
 
     # Local maxima
+    ifp.deepcopy_entry('smoothed', 'locmax')
     ifp.anytask(vigra.analysis.extendedLocalMaxima3D, 'locmax', neighborhood=26)
     # ifp.anytask(filters.maximum_filter, 'locmax', 5)
 
 
 def find_shortest_path(ifp):
 
+    ifp.invert_image(ids='disttransf')
+    ifp.filter_values(ifp.amax('disttransf'), type='eq', setto=np.inf, ids='disttransf')
     indicator = ifp.get_image('disttransf')
     gridgr = graphs.gridGraph(ifp.shape('labels'))
 
@@ -55,28 +58,39 @@ def find_shortest_path(ifp):
     # print instance
 
     # Get two local maxima
-    # labeled, numobjects = sp.ndimage.label(ifp.get_image('locmax'))
-    # print numobjects
-    # slices = sp.ndimage.find_objects(labeled)
-    # print slices
     indices = np.where(ifp.get_image('locmax') == 1)
     coords = zip(indices[0], indices[1], indices[2])
     ifp.logging('Local maxima coordinates: {}'.format(coords))
 
-    source = coords[0]
-    target = coords[1]
+    # ifp.deepcopy_entry('locmax', 'paths')
+    ifp.set_data_dict({'paths': np.zeros(ifp.get_image('locmax').shape)}, append=True)
 
-    targetNode = gridgr.coordinateToNode(target)
-    sourceNode = gridgr.coordinateToNode(source)
+    ifp.logging('len(coords) = {}'.format(len(coords)))
+    for i in xrange(0, len(coords)-1):
 
-    ifp.logging('Source = {}'.format(source))
-    ifp.logging('Target = {}'.format(target))
+        for j in xrange(i+1, len(coords)):
 
-    instance.run(gridgr_edgeind, sourceNode, target=targetNode)
-    path = instance.path(pathType='coordinates')
+            ifp.logging('---')
+            ifp.logging('i = {0}; j = {1}'.format(i, j))
 
-    print path
+            source = coords[i]
+            target = coords[j]
 
+            targetNode = gridgr.coordinateToNode(target)
+            sourceNode = gridgr.coordinateToNode(source)
+
+            ifp.logging('Source = {}'.format(source))
+            ifp.logging('Target = {}'.format(target))
+
+            instance.run(gridgr_edgeind, sourceNode, target=targetNode)
+            path = instance.path(pathType='coordinates')
+
+            # for coords in path:
+            #     # ifp.logging('coords = {}'.format(coords))
+            #     pass
+
+            pathindices = np.swapaxes(path, 0, 1)
+            ifp.get_image('paths')[pathindices[0], pathindices[1], pathindices[2]] = i
 
 if __name__ == '__main__':
 
@@ -91,7 +105,7 @@ if __name__ == '__main__':
     names = ('neuron_ids',)
     keys = ('labels',)
 
-    if False:
+    if True:
 
         ifp = ImageFileProcessing(
         folder,
@@ -139,14 +153,14 @@ if __name__ == '__main__':
     else:
         lbl = 10230
         ifp = ImageFileProcessing(
-            folder + 'test/',
-            'after_local_maxima_10230.h5',
+            folder,
+            'test/after_local_maxima_10230.h5',
             asdict=True
         )
 
     if True:
         find_shortest_path(ifp)
-        # ifp.write(filename='test/after_shortest_path_{}.h5'.format(lbl))
+        ifp.write(filename='test/after_shortest_path_{}.h5'.format(lbl))
     else:
         ifp = ImageFileProcessing(
             folder + 'test/',
