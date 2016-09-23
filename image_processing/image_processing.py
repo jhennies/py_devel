@@ -110,6 +110,10 @@ def crop(image, start, stop):
 def shape(image):
     return image.shape
 
+
+def concatenate(image1, image2):
+    return [image1, image2]
+
 # _____________________________________________________________________________________________
 
 
@@ -178,8 +182,8 @@ class ImageProcessing:
 
     def deepcopy_entry(self, sourcekey, targetkey):
         if type(self._data) is dict:
-            # self._data[targetkey] = copy.deepcopy(self._data[sourcekey])
-            self._data[targetkey] = self._data[sourcekey]
+            self._data[targetkey] = copy.deepcopy(self._data[sourcekey])
+            # self._data[targetkey] = self._data[sourcekey]
         else:
             print 'Warning: Deepcopy only implemented for dict type!'
 
@@ -275,6 +279,12 @@ class ImageProcessing:
 
     def shape(self, ids=None):
         return self.anytask_rtrn(shape, ids=ids)
+
+    def concatenate(self, id1, id2, target=None):
+        if target is not None:
+            self.set_data_dict({target: concatenate(self.get_image(id1), self.get_image(id2))}, append=True)
+        else:
+            self.set_data_dict({id1: concatenate(self.get_image(id1), self.get_image(id2))}, append=True)
 
     ###########################################################################################
     # Iterators
