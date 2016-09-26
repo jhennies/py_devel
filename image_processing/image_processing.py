@@ -190,7 +190,27 @@ class ImageProcessing:
     ###########################################################################################
     # Image processing
 
-    def anytask(self, function, ids, *args, **kwargs):
+    def anytask(self, function, *args, **kwargs):
+        """
+        :param function: The function which will be executed (has to take an image as first argument
+        :param ids=None: The images (respective ids) which will be used for calculation
+        :param targetids=None: Target image (respective id) where the result will be stored
+        :param ids1=None:
+        :param ids2=None:
+        :param args: remaining arguments of function
+        :param kwargs: remaining keyword arguments of funtion
+        :return:
+        """
+        # Done: pop ids out of kwargs...
+        # TODO: introduce targetids, ids1, and ids2
+
+        # Defaults
+        ids = None
+
+        # Get keyword arguments
+        if 'ids' in kwargs.keys():
+            ids = kwargs.pop('ids')
+
         if type(self._data) is dict:
             if ids is None:
                 for id in self._data:
@@ -205,7 +225,7 @@ class ImageProcessing:
         else:
             self._data = function(self._data, *args, **kwargs)
 
-    def anytask_rtrn(self, function, ids, *args, **kwargs):
+    def anytask_rtrn(self, function, *args, **kwargs):
         """
         :type function
         :param function:
@@ -213,10 +233,18 @@ class ImageProcessing:
             Note that the first parameter is fixed to the currently loaded image
 
         :type list
-        :param ids:
+        :param ids=None:
             list of keys denoting the dictionary entries in self._data._image which will be processed
             Set to None if self._data is not a dictionary or for processing of all entries
         """
+
+        # Defaults
+        ids = None
+
+        # Get keyword arguments
+        if 'ids' in kwargs.keys():
+            ids = kwargs.pop('ids')
+
         if type(self._data) is dict:
             returndict = {}
             if ids is None:
@@ -234,48 +262,48 @@ class ImageProcessing:
             return function(self._data, *args, **kwargs)
 
     def invert_image(self, ids=None):
-        self.anytask(invert_image, ids)
+        self.anytask(invert_image, ids=ids)
 
     def swapaxes(self, axis1, axis2, ids=None):
-        self.anytask(swapaxes, ids, axis1, axis2)
+        self.anytask(swapaxes, axis1, axis2, ids=ids)
 
     def rollaxis(self, axis, start=0, ids=None):
-        self.anytask(rollaxis, ids, axis, start=start)
+        self.anytask(rollaxis, axis, start=start, ids=ids)
 
     def resize(self, zoom, mode, ids=None):
-        self.anytask(resize, ids, zoom, mode)
+        self.anytask(resize, zoom, mode, ids=ids)
 
     def resize_z_nearest(self, z, ids=None):
-        self.anytask(resize_z_nearest, ids, z)
+        self.anytask(resize_z_nearest, z, ids=ids)
 
     def getlabel(self, label, ids=None):
-        self.anytask(getlabel, ids, label)
+        self.anytask(getlabel, label, ids=ids)
 
     def amax(self, ids=None):
         return self.anytask_rtrn(amax, ids=ids)
 
     def astype(self, dtype, ids=None):
-        self.anytask(astype, ids, dtype)
+        self.anytask(astype, dtype, ids=ids)
 
     def distance_transform(self, pixel_pitch=(), ids=None):
-        self.anytask(distance_transform, ids, pixel_pitch=pixel_pitch)
+        self.anytask(distance_transform, pixel_pitch=pixel_pitch, ids=ids)
 
     def filter_values(self, value, type='se', setto=0, ids=None):
-        self.anytask(filter_values, ids, value, type=type, setto=setto)
+        self.anytask(filter_values, value, type=type, setto=setto, ids=ids)
 
     def binarize(self, value, type='l', ids=None):
-        self.anytask(binarize, ids, value, type=type)
+        self.anytask(binarize, value, type=type, ids=ids)
 
     def conncomp(self, neighborhood='direct', background_value=0, ids=None):
-        self.anytask(conncomp, ids, neighborhood=neighborhood, background_value=background_value)
+        self.anytask(conncomp, neighborhood=neighborhood, background_value=background_value, ids=ids)
 
     def skimage_watershed(self, markers, connectivity=1, offset=None, mask=None,
                           compactness=0, ids=None):
-        self.anytask(watershed, ids, markers, connectivity=connectivity,
-                     offset=offset, mask=mask, compactness=compactness)
+        self.anytask(watershed, markers, connectivity=connectivity,
+                     offset=offset, mask=mask, compactness=compactness, ids=ids)
 
     def crop(self, start, stop, ids=None):
-        self.anytask(crop, ids, start, stop)
+        self.anytask(crop, start, stop, ids=ids)
 
     def shape(self, ids=None):
         return self.anytask_rtrn(shape, ids=ids)
@@ -451,7 +479,7 @@ class ImageFileProcessing(ImageProcessing):
     ###########################################################################################
     # Image processing
 
-    def anytask_fp(self, function, addtofilename, ids, *args, **kwargs):
+    def anytask(self, function, *args, **kwargs):
         """
         :type function
         :param function:
@@ -459,16 +487,24 @@ class ImageFileProcessing(ImageProcessing):
             Note that the first parameter is fixed to the currently loaded image
 
         :type str
-        :param addtofilename:
+        :param addtofilename=None:
             Extension to the output file name; defaults to '.modified' when set to None
             If no extension is desired supply as empty string ('')
 
         :type list
-        :param ids:
+        :param ids=None:
             list of keys denoting the dictionary entries in self._data._image which will be processed
             Set to None if self._data is not a dictionary or for processing of all entries
         """
-        ImageProcessing.anytask(self, function, ids, *args, **kwargs)
+
+        # Defaults
+        addtofilename = None
+
+        # Get keyword arguments
+        if 'addtofilename' in kwargs.keys():
+            addtofilename = kwargs.pop('addtofilename')
+
+        ImageProcessing.anytask(self, function, *args, **kwargs)
         # self._data.anytask(function, ids, *args, **kwargs)
         if addtofilename is not None:
             self._imageFileName += addtofilename

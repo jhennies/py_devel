@@ -39,11 +39,11 @@ def find_local_maxima(ifp):
 
     # Smoothing
     ifp.deepcopy_entry('disttransf', 'smoothed')
-    ifp.anytask(gaussian_smoothing, 'smoothed', 20/anisotropy)
+    ifp.anytask(gaussian_smoothing, 20/anisotropy, ids='smoothed')
 
     # Local maxima
     ifp.deepcopy_entry('smoothed', 'locmax')
-    ifp.anytask(vigra.analysis.extendedLocalMaxima3D, 'locmax', neighborhood=26)
+    ifp.anytask(vigra.analysis.extendedLocalMaxima3D, neighborhood=26, ids='locmax')
     # ifp.anytask(filters.maximum_filter, 'locmax', 5)
 
 
@@ -57,7 +57,7 @@ def find_shortest_path(ifp):
         return image * value
     def pow(image, value):
         return np.power(image, value)
-    ifp.anytask(pow, 'disttransf_inf', 10)
+    ifp.anytask(pow, 10, ids='disttransf_inf')
     # indicator = copy.deepcopy(ifp.get_image('gradmag'))
     # disttransf = ifp.get_image('disttransf')
     # indicator[disttransf == np.amax(disttransf)] = np.inf
@@ -115,7 +115,7 @@ def find_shortest_path(ifp):
     ifp.astype(np.uint8, ('paths', 'locmax'))
     # ifp.anytask(vigra.filters.multiBinaryDilation, ('paths', 'locmax'), 3)
     ifp.swapaxes(0, 2, ids=('paths', 'locmax', 'disttransf'))
-    ifp.anytask(vigra.filters.discDilation, ('paths', 'locmax'), 3)
+    ifp.anytask(vigra.filters.discDilation, 3, ids=('paths', 'locmax'))
     ifp.set_data_dict({'paths_over_dist': np.array([ifp.get_image('paths'), ifp.get_image('locmax'), ifp.get_image('disttransf')])}, append=True)
 
 
