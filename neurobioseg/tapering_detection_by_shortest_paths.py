@@ -11,6 +11,7 @@ __author__ = 'jhennies'
 # General TODOs
 # Done: Find local maxima, maybe after gaussian smoothing (or other smoothing)
 # Done: Determine shortest paths pairwise between maxima
+# TODO: Optimize paths such that they follow the center of processes
 # TODO: Extract features along path (e.g., distance transform values)
 # TODO: What do these features look like along correctly segmented backbones and what they look like at false merges
 # TODO: For the above: Implement randomly merged objects within the ground truth
@@ -19,7 +20,7 @@ __author__ = 'jhennies'
 # Done: Re-implement image_processing: ImageFileProcessing should inherit ImageProcessing!
 # Done: Implement generator to iterate over each label in the image data
 # Done: Implement cropping to ImageFileProcessing and ImageProcessing
-# TODO: Overlay images -> or just save as multiple channels
+# Done: Overlay images -> or just save as multiple channels
 
 
 def gaussian_smoothing(image, sigma, roi=None):
@@ -96,9 +97,10 @@ def find_shortest_path(ifp):
 
     # ifp.concatenate('disttransf', 'paths', target='paths_over_dist')
     ifp.astype(np.uint8, ('paths', 'locmax'))
-    ifp.anytask(vigra.filters.multiBinaryDilation, 'paths', 3)
-    ifp.anytask(vigra.filters.multiBinaryDilation, 'locmax', 3)
-    ifp.set_data_dict({'paths_over_dist': [ifp.get_image('paths'), ifp.get_image('locmax'), ifp.get_image('disttransf')]}, append=True)
+    # ifp.anytask(vigra.filters.multiBinaryDilation, ('paths', 'locmax'), 3)
+    ifp.swapaxes(0, 2, ids=('paths', 'locmax', 'disttransf'))
+    ifp.anytask(vigra.filters.discDilation, ('paths', 'locmax'), 3)
+    ifp.set_data_dict({'paths_over_dist': np.array([ifp.get_image('paths'), ifp.get_image('locmax'), ifp.get_image('disttransf')])}, append=True)
 
 
 if __name__ == '__main__':
