@@ -5,13 +5,14 @@ import vigra
 import sys
 from vigra import graphs
 import scipy as sp
+import copy
 
 __author__ = 'jhennies'
 
 # General TODOs
 # Done: Find local maxima, maybe after gaussian smoothing (or other smoothing)
 # Done: Determine shortest paths pairwise between maxima
-# TODO: Optimize paths such that they follow the center of processes
+# Done: Optimize paths such that they follow the center of processes
 # TODO: Extract features along path (e.g., distance transform values)
 # TODO: What do these features look like along correctly segmented backbones and what they look like at false merges
 # TODO: For the above: Implement randomly merged objects within the ground truth
@@ -21,6 +22,7 @@ __author__ = 'jhennies'
 # Done: Implement generator to iterate over each label in the image data
 # Done: Implement cropping to ImageFileProcessing and ImageProcessing
 # Done: Overlay images -> or just save as multiple channels
+# TODO: Optimize code: anytask function should be able to compute results depending on multiple images
 
 
 def gaussian_smoothing(image, sigma, roi=None):
@@ -49,7 +51,21 @@ def find_shortest_path(ifp):
 
     ifp.invert_image(ids='disttransf')
     ifp.deepcopy_entry('disttransf', 'disttransf_inf')
+    # ifp.anytask(vigra.filters.gaussianGradientMagnitude, 'gradmag', [0.1, 1, 1])
     ifp.filter_values(ifp.amax('disttransf_inf'), type='eq', setto=np.inf, ids='disttransf_inf')
+    def mult(image, value):
+        return image * value
+    def pow(image, value):
+        return np.power(image, value)
+    ifp.anytask(pow, 'disttransf_inf', 10)
+    # indicator = copy.deepcopy(ifp.get_image('gradmag'))
+    # disttransf = ifp.get_image('disttransf')
+    # indicator[disttransf == np.amax(disttransf)] = np.inf
+    # ifp.set_data_dict({'gradmag_inf': indicator}, append=True)
+    # indicator = ifp.get_image('gradmag_inf')
+
+    # ifp.invert_image(ids='smoothed')
+
     indicator = ifp.get_image('disttransf_inf')
     gridgr = graphs.gridGraph(ifp.shape('labels'))
 
@@ -171,7 +187,7 @@ if __name__ == '__main__':
 
     if True:
         find_shortest_path(ifp)
-        ifp.write(filename='test/after_shortest_path_{}.h5'.format(lbl), ids=('disttransf', 'currentlabel', 'paths', 'locmax', 'smoothed'))
+        ifp.write(filename='test/after_shortest_path_{}.h5'.format(lbl), ids=('disttransf', 'currentlabel', 'paths', 'locmax', 'smoothed', 'disttransf_inf'))
         ifp.write(filename='test/paths_over_dist_{}.h5'.format(lbl), ids=('paths_over_dist',))
     else:
         ifp = ImageFileProcessing(
