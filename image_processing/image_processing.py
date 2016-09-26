@@ -190,45 +190,85 @@ class ImageProcessing:
     ###########################################################################################
     # Image processing
 
-    def anytask(self, function, *args, **kwargs):
+    def anytask(self, task, *args, **kwargs):
         """
-        :param function: The function which will be executed (has to take an image as first argument
+        :param task: The function which will be executed (has to take an image as first argument or first two arguments)
         :param ids=None: The images (respective ids) which will be used for calculation
         :param targetids=None: Target image (respective id) where the result will be stored
-        :param ids1=None:
-        :param ids2=None:
-        :param args: remaining arguments of function
-        :param kwargs: remaining keyword arguments of funtion
-        :return:
+        :param ids2=None: Images (respective ids) which will be passed as the second argument to task
+        :param args: Remaining arguments of task
+        :param kwargs: Remaining keyword arguments of task
+
+        EXAMPLES:
+
+        # Run the function mult which accepts one image and a value as arguments on the images with ids 'key1' and
+        # 'key2' and write them to the dictionary entries 'target1' and 'target2', respectively.
+        def mult(image, value):
+            return image * value
+        anytask(mult, 10, ids=('key1', 'key2'), targetids=('target1', 'target2'))
+
+        # Run the function add2ims which accepts two images as arguments on the images with keys 'key1' and 'key2' and
+        # write the result to the dictionary entry 'target'.
+        def add2ims(image1, image2):
+            return image1 + image2
+        anytask(add2ims, ids='key1', ids2='key2', targetids='target')
+
         """
-        # Done: pop ids out of kwargs...
-        # TODO: introduce targetids, ids1, and ids2
-
-        # Defaults
-        ids = None
-
-        # Get keyword arguments
-        if 'ids' in kwargs.keys():
-            ids = kwargs.pop('ids')
 
         if type(self._data) is dict:
-            if ids is None:
-                for id in self._data:
-                    self._data[id] = function(self._data[id], *args, **kwargs)
-            elif type(ids) is tuple:
-                for id in ids:
-                    self._data[id] = function(self._data[id], *args, **kwargs)
-            elif type(ids) is str:
-                self._data[ids] = function(self._data[ids], *args, **kwargs)
-            else:
-                pass
-        else:
-            self._data = function(self._data, *args, **kwargs)
 
-    def anytask_rtrn(self, function, *args, **kwargs):
+            # Defaults
+            ids = None
+            ids2 = None
+            targetids = None
+
+            # Get keyword arguments
+            if 'ids' in kwargs.keys():
+                ids = kwargs.pop('ids')
+                if type(ids) is str:
+                    ids = (ids,)
+
+            if ids is None:
+                ids = self._data.keys()
+
+            if 'ids2' in kwargs.keys():
+                ids2 = kwargs.pop('ids2')
+                if type(ids2) is str:
+                    ids2 = (ids2,)
+
+            if 'targetids' in kwargs.keys():
+                targetids = kwargs.pop('targetids')
+                if type(targetids) is str:
+                    targetids = (targetids,)
+                if len(targetids) != len(ids):
+                    print 'Warning: len(targetids) is not equal to len(ids)! Nothing was computed.'
+                    return
+
+            if targetids is None:
+                targetids = ids
+
+            if ids2 is None:
+                allids = zip(ids, targetids)
+            else:
+                allids = zip(ids, ids2, targetids)
+
+            for allid in allids:
+                if len(allid) == 2:
+                    self._data[allid[1]] = task(self._data[allid[0]], *args, **kwargs)
+                else:
+                    self._data[allid[2]] = task(self._data[allid[0]], self._data[allid[1]], *args, **kwargs)
+
+        else:
+
+            self._data = task(self._data, *args, **kwargs)
+
+    def anytask_rtrn(self, task, *args, **kwargs):
         """
+        Works like anytask, with the difference that a value will be returned instead of written to the data dictionary
+        of this class.
+
         :type function
-        :param function:
+        :param task:
             A function in the form: func(image, *args, **kwargs)
             Note that the first parameter is fixed to the currently loaded image
 
@@ -238,28 +278,42 @@ class ImageProcessing:
             Set to None if self._data is not a dictionary or for processing of all entries
         """
 
-        # Defaults
-        ids = None
-
-        # Get keyword arguments
-        if 'ids' in kwargs.keys():
-            ids = kwargs.pop('ids')
-
         if type(self._data) is dict:
-            returndict = {}
+
+            # Defaults
+            ids = None
+            ids2 = None
+
+            # Get keyword arguments
+            if 'ids' in kwargs.keys():
+                ids = kwargs.pop('ids')
+                if type(ids) is str:
+                    ids = (ids,)
+
             if ids is None:
-                for id in self._data:
-                    returndict[id] = function(self._data[id], *args, **kwargs)
-            elif type(ids) is tuple:
-                for id in ids:
-                    returndict[id] = function(self._data[id], *args, **kwargs)
-            elif type(ids) is str:
-                return function(self._data[ids], *args, **kwargs)
+                ids = self._data.keys()
+
+            if 'ids2' in kwargs.keys():
+                ids2 = kwargs.pop('ids2')
+                if type(ids2) is str:
+                    ids2 = (ids2,)
+
+            if ids2 is None:
+                allids = zip(ids,)
             else:
-                return None
+                allids = zip(ids, ids2)
+
+            returndict = {}
+            for allid in allids:
+                if len(allid) == 1:
+                    returndict[allid[0]] = task(self._data[allid[0]], *args, **kwargs)
+                else:
+                    returndict[allid[0]] = task(self._data[allid[0]], self._data[allid[1]], *args, **kwargs)
             return returndict
+
         else:
-            return function(self._data, *args, **kwargs)
+
+            return task(self._data, *args, **kwargs)
 
     def invert_image(self, ids=None):
         self.anytask(invert_image, ids=ids)
