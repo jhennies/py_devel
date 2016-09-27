@@ -276,9 +276,17 @@ class ImageProcessing:
 
             for allid in allids:
                 if len(allid) == 2:
-                    self._data[allid[1]] = task(self._data[allid[0]], *args, **kwargs)
+                    if allid[1] != allid[0]:
+                        self.deepcopy_entry(allid[0], allid[1])
+                        self._data[allid[1]] = task(self._data[allid[1]], *args, **kwargs)
+                    else:
+                        self._data[allid[1]] = task(self._data[allid[0]], *args, **kwargs)
                 else:
-                    self._data[allid[2]] = task(self._data[allid[0]], self._data[allid[1]], *args, **kwargs)
+                    if allid[2] != allid[0]:
+                        self.deepcopy_entry(allid[0], allid[2])
+                        self._data[allid[2]] = task(self._data[allid[2]], self._data[allid[1]], *args, **kwargs)
+                    else:
+                        self._data[allid[2]] = task(self._data[allid[0]], self._data[allid[1]], *args, **kwargs)
 
         else:
 
@@ -331,7 +339,10 @@ class ImageProcessing:
                     returndict[allid[0]] = task(self._data[allid[0]], *args, **kwargs)
                 else:
                     returndict[allid[0]] = task(self._data[allid[0]], self._data[allid[1]], *args, **kwargs)
-            return returndict
+            if len(returndict) == 1:
+                return returndict[returndict.keys()[0]]
+            else:
+                return returndict
 
         else:
 
@@ -740,7 +751,7 @@ if __name__ == "__main__":
         image_names=names,
         keys=keys)
 
-    # Modify the image...
+    # Modify the image(s)...
 
     # ... with some pre-defined operations
     ifp.invert_image()
@@ -752,12 +763,17 @@ if __name__ == "__main__":
         return array + x
     ifp.anytask_fp(plusx, 5, addtofilename='.plus5', ids='labels', targetids='labelsplus5')
 
-    # Getter functions
-    print ifp.get_data().keys()
-    print ifp.get_filename()
+    # Functions taking two images as argument
+    ifp.concatenate(ids='labels', ids2='labelsplus5', targetids='concated')
+    ifp.add2im(ids='labels', ids2='labelsplus5', targetids='added')
+    ifp.mult2im(ids='labels', ids2='labelsplus5', targetids='multed')
 
-    # Return functions
-    print ifp.amax()
+    # Getter functions
+    print 'ifp.get_data().keys() = {}'.format(ifp.get_data().keys())
+    print 'ifp.get_filename() = {}'.format(ifp.get_filename())
+
+    # Return functions (These type of functions do not change the involved image(s))
+    print 'Maximum values = {}'.format(ifp.amax())
 
     # # Write the result (File name is automatically generated depending on the performed operations)
     # ifp.write()
