@@ -7,7 +7,7 @@ import scipy
 from scipy import ndimage, misc
 from skimage.morphology import watershed
 import time
-import random
+# import random
 import copy
 
 __author__ = 'jhennies'
@@ -52,7 +52,7 @@ def resize_z_nearest(image, z):
 
 
 def getlabel(image, label):
-    return (image == label).astype(np.uint32)
+    return np.array((image == label)).astype(np.uint32)
 
 
 def amax(image):
@@ -85,6 +85,7 @@ def filter_values(image, value, type='se', setto=0):
 
 def binarize(image, value, type='l'):
 
+    returnimg = np.array()
     if type == 's':
         returnimg = (image < value)
     elif type == 'se':
@@ -109,6 +110,26 @@ def crop(image, start, stop):
 
 def shape(image):
     return image.shape
+
+
+def power(image, value):
+    return np.power(image, value)
+
+
+def mult(image, value):
+    return image * value
+
+
+def mult2im(image1, image2):
+    return image1 * image2
+
+
+def add(image, value):
+    return image + value
+
+
+def add2im(image1, image2):
+    return image1 + image2
 
 
 def concatenate(image1, image2):
@@ -315,58 +336,70 @@ class ImageProcessing:
 
             return task(self._data, *args, **kwargs)
 
-    def invert_image(self, ids=None):
-        self.anytask(invert_image, ids=ids)
+    def invert_image(self, ids=None, targetids=None):
+        self.anytask(invert_image, ids=ids, targetids=targetids)
 
-    def swapaxes(self, axis1, axis2, ids=None):
-        self.anytask(swapaxes, axis1, axis2, ids=ids)
+    def swapaxes(self, axis1, axis2, ids=None, targetids=None):
+        self.anytask(swapaxes, axis1, axis2, ids=ids, targetids=targetids)
 
-    def rollaxis(self, axis, start=0, ids=None):
-        self.anytask(rollaxis, axis, start=start, ids=ids)
+    def rollaxis(self, axis, start=0, ids=None, targetids=None):
+        self.anytask(rollaxis, axis, start=start, ids=ids, targetids=targetids)
 
-    def resize(self, zoom, mode, ids=None):
-        self.anytask(resize, zoom, mode, ids=ids)
+    def resize(self, zoom, mode, ids=None, targetids=None):
+        self.anytask(resize, zoom, mode, ids=ids, targetids=targetids)
 
-    def resize_z_nearest(self, z, ids=None):
-        self.anytask(resize_z_nearest, z, ids=ids)
+    def resize_z_nearest(self, z, ids=None, targetids=None):
+        self.anytask(resize_z_nearest, z, ids=ids, targetids=targetids)
 
-    def getlabel(self, label, ids=None):
-        self.anytask(getlabel, label, ids=ids)
+    def getlabel(self, label, ids=None, targetids=None):
+        self.anytask(getlabel, label, ids=ids, targetids=targetids)
 
     def amax(self, ids=None):
         return self.anytask_rtrn(amax, ids=ids)
 
-    def astype(self, dtype, ids=None):
-        self.anytask(astype, dtype, ids=ids)
+    def astype(self, dtype, ids=None, targetids=None):
+        self.anytask(astype, dtype, ids=ids, targetids=targetids)
 
-    def distance_transform(self, pixel_pitch=(), ids=None):
-        self.anytask(distance_transform, pixel_pitch=pixel_pitch, ids=ids)
+    def distance_transform(self, pixel_pitch=(), ids=None, targetids=None):
+        self.anytask(distance_transform, pixel_pitch=pixel_pitch, ids=ids, targetids=targetids)
 
-    def filter_values(self, value, type='se', setto=0, ids=None):
-        self.anytask(filter_values, value, type=type, setto=setto, ids=ids)
+    def filter_values(self, value, type='se', setto=0, ids=None, targetids=None):
+        self.anytask(filter_values, value, type=type, setto=setto, ids=ids, targetids=targetids)
 
-    def binarize(self, value, type='l', ids=None):
-        self.anytask(binarize, value, type=type, ids=ids)
+    def binarize(self, value, type='l', ids=None, targetids=None):
+        self.anytask(binarize, value, type=type, ids=ids, targetids=targetids)
 
-    def conncomp(self, neighborhood='direct', background_value=0, ids=None):
-        self.anytask(conncomp, neighborhood=neighborhood, background_value=background_value, ids=ids)
+    def conncomp(self, neighborhood='direct', background_value=0, ids=None, targetids=None):
+        self.anytask(conncomp, neighborhood=neighborhood, background_value=background_value, ids=ids, targetids=targetids)
 
     def skimage_watershed(self, markers, connectivity=1, offset=None, mask=None,
-                          compactness=0, ids=None):
+                          compactness=0, ids=None, targetids=None):
         self.anytask(watershed, markers, connectivity=connectivity,
-                     offset=offset, mask=mask, compactness=compactness, ids=ids)
+                     offset=offset, mask=mask, compactness=compactness, ids=ids, targetids=targetids)
 
-    def crop(self, start, stop, ids=None):
-        self.anytask(crop, start, stop, ids=ids)
+    def crop(self, start, stop, ids=None, targetids=None):
+        self.anytask(crop, start, stop, ids=ids, targetids=targetids)
 
     def shape(self, ids=None):
         return self.anytask_rtrn(shape, ids=ids)
 
-    def concatenate(self, id1, id2, target=None):
-        if target is not None:
-            self.set_data_dict({target: concatenate(self.get_image(id1), self.get_image(id2))}, append=True)
-        else:
-            self.set_data_dict({id1: concatenate(self.get_image(id1), self.get_image(id2))}, append=True)
+    def power(self, value, ids=None, targetids=None):
+        self.anytask(power, value, ids=ids, targetids=targetids)
+
+    def mult(self, value, ids=None, targetids=None):
+        self.anytask(mult, value, ids=ids, targetids=targetids)
+
+    def mult2im(self, ids=None, ids2=None, targetids=None):
+        self.anytask(mult2im, ids=ids, ids2=ids2, targetids=targetids)
+
+    def add(self, value, ids=None, targetids=None):
+        self.anytask(add, value, ids=ids, targetids=targetids)
+
+    def add2im(self, ids=None, ids2=None, targetids=None):
+        self.anytask(add2im, ids=ids, ids2=ids2, targetids=targetids)
+
+    def concatenate(self, ids, ids2, targetids=None):
+        self.anytask(concatenate, ids=ids, ids2=ids2, targetids=targetids)
 
     ###########################################################################################
     # Iterators
@@ -533,7 +566,7 @@ class ImageFileProcessing(ImageProcessing):
     ###########################################################################################
     # Image processing
 
-    def anytask(self, function, *args, **kwargs):
+    def anytask_fp(self, function, *args, **kwargs):
         """
         :type function
         :param function:
@@ -565,55 +598,79 @@ class ImageFileProcessing(ImageProcessing):
         else:
             self._imageFileName += '.modified'
 
-    def invert_image(self, ids=None):
-        ImageProcessing.invert_image(self, ids=ids)
+    def invert_image(self, ids=None, targetids=None):
+        ImageProcessing.invert_image(self, ids=ids, targetids=targetids)
         self._imageFileName += '.inv'
 
-    def swapaxes(self, axis1, axis2, ids=None):
-        ImageProcessing.swapaxes(self, axis1, axis2, ids=ids)
+    def swapaxes(self, axis1, axis2, ids=None, targetids=None):
+        ImageProcessing.swapaxes(self, axis1, axis2, ids=ids, targetids=targetids)
         self._imageFileName += '.swpxs_' + str(axis1) + '_' + str(axis2)
 
-    def rollaxis(self, axis, start=0, ids=None):
-        ImageProcessing.rollaxis(self, axis, start, ids=ids)
+    def rollaxis(self, axis, start=0, ids=None, targetids=None):
+        ImageProcessing.rollaxis(self, axis, start, ids=ids, targetids=targetids)
         self._imageFileName += '.rllxs_' + str(axis) + '_' + str(start)
 
-    def resize(self, zoom, mode, ids=None):
-        ImageProcessing.resize(self, zoom, mode, ids=ids)
+    def resize(self, zoom, mode, ids=None, targetids=None):
+        ImageProcessing.resize(self, zoom, mode, ids=ids, targetids=targetids)
         self._imageFileName += '.resize'
 
-    def resize_z_nearest(self, z, ids=None):
-        ImageProcessing.resize_z_nearest(self, z, ids=ids)
+    def resize_z_nearest(self, z, ids=None, targetids=None):
+        ImageProcessing.resize_z_nearest(self, z, ids=ids, targetids=targetids)
         self._imageFileName += '.resizez_' + str(z)
 
-    def getlabel(self, label, ids=None):
-        ImageProcessing.getlabel(self, label, ids=ids)
+    def getlabel(self, label, ids=None, targetids=None):
+        ImageProcessing.getlabel(self, label, ids=ids, targetids=targetids)
         self._imageFileName += '.lbl_' + str(label)
 
-    def distance_transform(self, pixel_pitch=(), ids=None):
-        ImageProcessing.distance_transform(self, pixel_pitch=pixel_pitch, ids=ids)
+    def distance_transform(self, pixel_pitch=(), ids=None, targetids=None):
+        ImageProcessing.distance_transform(self, pixel_pitch=pixel_pitch, ids=ids, targetids=targetids)
         self._imageFileName += '.dt'
 
-    def filter_values(self, value, type='se', setto=0, ids=None):
-        ImageProcessing.filter_values(self, value, type=type, setto=setto, ids=ids)
+    def filter_values(self, value, type='se', setto=0, ids=None, targetids=None):
+        ImageProcessing.filter_values(self, value, type=type, setto=setto, ids=ids, targetids=targetids)
         self._imageFileName += '.filt_{}_{}'.format(type, value)
 
-    def binarize(self, value, type='l', ids=None):
-        ImageProcessing.binarize(self, value, type=type, ids=ids)
+    def binarize(self, value, type='l', ids=None, targetids=None):
+        ImageProcessing.binarize(self, value, type=type, ids=ids, targetids=targetids)
         self._imageFileName += '.bin_{}_{}'.format(type, value)
 
-    def conncomp(self, neighborhood='direct', background_value=0, ids=None):
-        ImageProcessing.conncomp(self, neighborhood=neighborhood, background_value=background_value, ids=ids)
+    def conncomp(self, neighborhood='direct', background_value=0, ids=None, targetids=None):
+        ImageProcessing.conncomp(self, neighborhood=neighborhood, background_value=background_value, ids=ids, targetids=targetids)
         self._imageFileName += '.conncomp'
 
     def skimage_watershed(self, markers, connectivity=1, offset=None, mask=None,
-                          compactness=0, ids=None):
+                          compactness=0, ids=None, targetids=None):
         ImageProcessing.skimage_watershed(self, markers, connectivity=connectivity, offset=offset,
-                                     mask=mask, compactness=compactness, ids=ids)
+                                     mask=mask, compactness=compactness, ids=ids, targetids=targetids)
         self._imageFileName += '.ws'
 
-    def crop(self, start, stop, ids=None):
-        ImageProcessing.crop(self, start, stop, ids=ids)
+    def crop(self, start, stop, ids=None, targetids=None):
+        ImageProcessing.crop(self, start, stop, ids=ids, targetids=targetids)
         self._imageFileName += '.crop_{}-{}-{}_{}-{}-{}'.format(start[0], start[1], start[2], stop[0], stop[1], stop[2])
+
+    def power(self, value, ids=None, targetids=None):
+        ImageProcessing.power(self, value, ids=ids, targetids=targetids)
+        self._imageFileName += '.power_{}'.format(value)
+
+    def mult(self, value, ids=None, targetids=None):
+        ImageProcessing.mult(self, value, ids=ids, targetids=targetids)
+        self._imageFileName += '.mult_{}'.format(value)
+
+    def mult2im(self, ids=None, ids2=None, targetids=None):
+        ImageProcessing.mult2im(self, ids=ids, ids2=ids2, targetids=targetids)
+        self._imageFileName += '.mult2im'
+
+    def add(self, value, ids=None, targetids=None):
+        ImageProcessing.add(self, value, ids=ids, targetids=targetids)
+        self._imageFileName += '.add_{}'.format(value)
+
+    def add2im(self, ids=None, ids2=None, targetids=None):
+        ImageProcessing.add2im(self, ids=ids, ids2=ids2, targetids=targetids)
+        self._imageFileName += '.add2im'
+
+    def concatenate(self, ids, ids2, targetids=None):
+        ImageProcessing.concatenate(self, ids, ids2, targetids=targetids)
+        self._imageFileName += '.conced'
 
     ###########################################################################################
     # Write h5 files
@@ -642,7 +699,7 @@ class ImageFileProcessing(ImageProcessing):
         else:
 
             if image_names is None:
-                of.create_dataset(self._imageName, data=data)
+                of.create_dataset(self._imageNames, data=data)
             else:
                 of.create_dataset(image_names, data=data)
 
@@ -650,10 +707,13 @@ class ImageFileProcessing(ImageProcessing):
 
     def write(self, ids=None, filename=None):
         """
-        :type list
+        :type ids: list
         :param ids: Set only if data is a dict!
             Use to specify which entries in the data dictionary are written to file
             Default: None (everything is written)
+
+        :type filename: str
+        :param filename: If not set the generated file name within this class is used
         """
         if filename is None:
             self.write_h5(self._imageFileName + '.h5', self.get_data(), dict_ids=ids)
@@ -667,10 +727,17 @@ if __name__ == "__main__":
 
     ### EXAMPLE ###
 
+    folder = '/media/julian/Daten/neuraldata/cremi_2016/'
+    filename = 'cremi.splA.raw_neurons.crop.h5'
+    names = ('neuron_ids',)
+    keys = ('labels',)
+
     # Create object and define image file
     ifp = ImageFileProcessing(
-        "/media/julian/Daten/neuraldata/isbi_2013/data/",
-        "probabilities_test.h5", None, 0)
+        folder,
+        filename, asdict=True,
+        image_names=names,
+        keys=keys)
 
     # Modify the image...
 
@@ -682,10 +749,10 @@ if __name__ == "__main__":
     # ... with an arbitrary function
     def plusx(array, x):
         return array + x
-    ifp.anytask(plusx, '.plus5', 5)
+    ifp.anytask_fp(plusx, 5, addtofilename='.plus5')
 
     # Getter functions
-    print ifp.get_data().shape
+    print ifp.get_data().keys()
     print ifp.get_filename()
 
     # # Write the result (File name is automatically generated depending on the performed operations)
