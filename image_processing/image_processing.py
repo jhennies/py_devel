@@ -259,11 +259,12 @@ class ImageProcessing:
 
             if 'targetids' in kwargs.keys():
                 targetids = kwargs.pop('targetids')
-                if type(targetids) is str:
-                    targetids = (targetids,)
-                if len(targetids) != len(ids):
-                    print 'Warning: len(targetids) is not equal to len(ids)! Nothing was computed.'
-                    return
+                if targetids is not None:
+                    if type(targetids) is str:
+                        targetids = (targetids,)
+                    if len(targetids) != len(ids):
+                        print 'Warning: len(targetids) is not equal to len(ids)! Nothing was computed.'
+                        return
 
             if targetids is None:
                 targetids = ids
@@ -749,11 +750,14 @@ if __name__ == "__main__":
     # ... with an arbitrary function
     def plusx(array, x):
         return array + x
-    ifp.anytask_fp(plusx, 5, addtofilename='.plus5')
+    ifp.anytask_fp(plusx, 5, addtofilename='.plus5', ids='labels', targetids='labelsplus5')
 
     # Getter functions
     print ifp.get_data().keys()
     print ifp.get_filename()
+
+    # Return functions
+    print ifp.amax()
 
     # # Write the result (File name is automatically generated depending on the performed operations)
     # ifp.write()
