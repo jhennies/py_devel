@@ -22,7 +22,7 @@ __author__ = 'jhennies'
 # Done: Implement generator to iterate over each label in the image data
 # Done: Implement cropping to ImageFileProcessing and ImageProcessing
 # Done: Overlay images -> or just save as multiple channels
-# TODO: Optimize code: anytask function should be able to compute results depending on multiple images
+# Done: Optimize code: anytask function should be able to compute results depending on multiple images
 
 
 def gaussian_smoothing(image, sigma, roi=None):
@@ -31,33 +31,34 @@ def gaussian_smoothing(image, sigma, roi=None):
 
 def find_local_maxima(ifp):
 
-    ifp.deepcopy_entry('currentlabel', 'disttransf')
+    # ifp.deepcopy_entry('currentlabel', 'disttransf')
 
     # Distance transform
-    ifp.invert_image('disttransf')
+    ifp.invert_image(ids='currentlabel', targetids='disttransf')
     ifp.distance_transform(pixel_pitch=anisotropy, ids='disttransf')
 
     # Smoothing
-    ifp.deepcopy_entry('disttransf', 'smoothed')
-    ifp.anytask(gaussian_smoothing, 20/anisotropy, ids='smoothed')
+    # ifp.deepcopy_entry('disttransf', 'smoothed')
+    ifp.anytask(gaussian_smoothing, 20/anisotropy, ids='disttransf', targetids='smoothed')
 
     # Local maxima
-    ifp.deepcopy_entry('smoothed', 'locmax')
-    ifp.anytask(vigra.analysis.extendedLocalMaxima3D, neighborhood=26, ids='locmax')
+    # ifp.deepcopy_entry('smoothed', 'locmax')
+    ifp.anytask(vigra.analysis.extendedLocalMaxima3D, neighborhood=26, ids='smoothed', targetids='locmax')
     # ifp.anytask(filters.maximum_filter, 'locmax', 5)
 
 
 def find_shortest_path(ifp):
 
     ifp.invert_image(ids='disttransf')
-    ifp.deepcopy_entry('disttransf', 'disttransf_inf')
+    # ifp.deepcopy_entry('disttransf', 'disttransf_inf')
     # ifp.anytask(vigra.filters.gaussianGradientMagnitude, 'gradmag', [0.1, 1, 1])
-    ifp.filter_values(ifp.amax('disttransf_inf'), type='eq', setto=np.inf, ids='disttransf_inf')
-    def mult(image, value):
-        return image * value
-    def pow(image, value):
-        return np.power(image, value)
-    ifp.anytask(pow, 10, ids='disttransf_inf')
+    ifp.filter_values(ifp.amax('disttransf'), type='eq', setto=np.inf, ids='disttransf', targetids='disttransf_inf')
+    # def mult(image, value):
+    #     return image * value
+    # def pow(image, value):
+    #     return np.power(image, value)
+    # ifp.anytask(pow, 10, ids='disttransf_inf')
+    ifp.power(10, ids='disttransf_inf')
     # indicator = copy.deepcopy(ifp.get_image('gradmag'))
     # disttransf = ifp.get_image('disttransf')
     # indicator[disttransf == np.amax(disttransf)] = np.inf
@@ -132,7 +133,7 @@ if __name__ == '__main__':
     names = ('neuron_ids',)
     keys = ('labels',)
 
-    if False:
+    if True:
 
         ifp = ImageFileProcessing(
         folder,
@@ -147,7 +148,6 @@ if __name__ == '__main__':
             ifp.crop([10, 200, 200], [110, 712, 712])
 
             # ifp.write()
-
 
         ifp.logging('ifp.get_image = {}', ifp.get_image('labels')[0, 0, 0])
         ifp.logging('ifp.amax = {}\n', ifp.amax('labels'))
@@ -171,8 +171,9 @@ if __name__ == '__main__':
         # it = ifp.label_image_iterator('labels', 'currentlabel')
         # lbl = it.next()
         lbl = 10230
-        ifp.deepcopy_entry('labels', 'currentlabel')
-        ifp.getlabel(10230, ('currentlabel',))
+        # ifp.deepcopy_entry('labels', 'currentlabel')
+        # ifp.getlabel(10230, ('currentlabel',))
+        ifp.getlabel(10230, ids='labels', targetids='currentlabel')
         ifp.logging('Current label = {}', lbl)
 
         find_local_maxima(ifp)
