@@ -117,7 +117,7 @@ def power(image, value):
 
 
 def mult(image, value):
-    return image * value
+    return np.multiply(image, value)
 
 
 def mult2im(image1, image2):
@@ -427,6 +427,7 @@ class ImageProcessing:
             self.deepcopy_entry(from_id, to_id)
             self.getlabel(lbl, (to_id,))
             yield lbl
+
 # _____________________________________________________________________________________________
 
 

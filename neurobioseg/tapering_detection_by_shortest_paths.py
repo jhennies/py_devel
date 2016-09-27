@@ -58,7 +58,11 @@ def find_shortest_path(ifp):
     # def pow(image, value):
     #     return np.power(image, value)
     # ifp.anytask(pow, 10, ids='disttransf_inf')
+
+    # Increase the value difference between pixels near the boundaries and pixels central within the processes
+    # This increases the likelihood of the paths to follow the center of processes, thus avoiding short-cuts
     ifp.power(10, ids='disttransf_inf')
+
     # indicator = copy.deepcopy(ifp.get_image('gradmag'))
     # disttransf = ifp.get_image('disttransf')
     # indicator[disttransf == np.amax(disttransf)] = np.inf
@@ -116,7 +120,7 @@ def find_shortest_path(ifp):
     ifp.astype(np.uint8, ('paths', 'locmax'))
     # ifp.anytask(vigra.filters.multiBinaryDilation, ('paths', 'locmax'), 3)
     ifp.swapaxes(0, 2, ids=('paths', 'locmax', 'disttransf'))
-    ifp.anytask(vigra.filters.discDilation, 3, ids=('paths', 'locmax'))
+    ifp.anytask(vigra.filters.discDilation, 2, ids=('paths', 'locmax'))
     ifp.set_data_dict({'paths_over_dist': np.array([ifp.get_image('paths'), ifp.get_image('locmax'), ifp.get_image('disttransf')])}, append=True)
 
 
@@ -141,7 +145,7 @@ if __name__ == '__main__':
         image_names=names,
         keys=keys)
 
-        ifp.startlogger(filename=None, type='w')
+        ifp.startlogger(filename='/media/julian/Daten/neuraldata/cremi_2016/develop/160927_determine_shortest_paths/160927_pthsovrdist_pow10_morelabels/160927.log', type='w')
 
         # Cropping
         if crop:
@@ -152,32 +156,43 @@ if __name__ == '__main__':
         ifp.logging('ifp.get_image = {}', ifp.get_image('labels')[0, 0, 0])
         ifp.logging('ifp.amax = {}\n', ifp.amax('labels'))
 
-    # # For multiple labels
-    # c = 0
-    # for lbl in ifp.label_image_iterator('labels', 'currentlabel'):
-    #     ifp.logging('Current label = {}', lbl)
-    #
-    #     find_local_maxima(ifp)
-    #     find_shortest_path(ifp)
-    #
-    #     ifp.write(filename='test/test_{}.h5'.format(c))
-    #
-    #     c += 1
-    #     if c == 2:
-    #         break
+        # For multiple labels
+        ifp.logging('Starting label iterator for {} labels', len(ifp.anytask_rtrn(np.unique, ids='labels')))
+        c = 0
+        for lbl in ifp.label_image_iterator('labels', 'currentlabel'):
+
+            ifp.logging('------------\nCurrent label {} in iteration {}', lbl, c)
+
+            find_local_maxima(ifp)
+
+            if ifp.amax('locmax') != 0:
+                find_shortest_path(ifp)
+                ifp.write(
+                    filename='develop/160927_determine_shortest_paths/160927_pthsovrdist_pow10_morelabels/after_shortest_path_{}.h5'.format(
+                        lbl), ids=('disttransf', 'currentlabel', 'paths', 'locmax', 'smoothed', 'disttransf_inf'))
+                ifp.write(
+                    filename='develop/160927_determine_shortest_paths/160927_pthsovrdist_pow10_morelabels/paths_over_dist_{}.h5'.format(
+                        lbl), ids=('paths_over_dist',))
+            else:
+                ifp.logging('Non maxima found!')
 
 
-        # DEBUG: For one label only
-        # it = ifp.label_image_iterator('labels', 'currentlabel')
-        # lbl = it.next()
-        lbl = 10230
-        # ifp.deepcopy_entry('labels', 'currentlabel')
-        # ifp.getlabel(10230, ('currentlabel',))
-        ifp.getlabel(10230, ids='labels', targetids='currentlabel')
-        ifp.logging('Current label = {}', lbl)
+            c += 1
+            # if c == 10:
+            #     break
 
-        find_local_maxima(ifp)
-        ifp.write(filename='test/after_local_maxima_{}.h5'.format(lbl))
+        # # DEBUG: For one label only
+        # # it = ifp.label_image_iterator('labels', 'currentlabel')
+        # # lbl = it.next()
+        # lbl = 10230
+        # # ifp.deepcopy_entry('labels', 'currentlabel')
+        # # ifp.getlabel(10230, ('currentlabel',))
+        # ifp.getlabel(10230, ids='labels', targetids='currentlabel')
+        # ifp.logging('Current label = {}', lbl)
+        #
+        # find_local_maxima(ifp)
+        # ifp.write(filename='test/after_local_maxima_{}.h5'.format(lbl))
+
     else:
         lbl = 10230
         ifp = ImageFileProcessing(
@@ -186,16 +201,16 @@ if __name__ == '__main__':
             asdict=True
         )
 
-    if True:
-        find_shortest_path(ifp)
-        ifp.write(filename='test/after_shortest_path_{}.h5'.format(lbl), ids=('disttransf', 'currentlabel', 'paths', 'locmax', 'smoothed', 'disttransf_inf'))
-        ifp.write(filename='test/paths_over_dist_{}.h5'.format(lbl), ids=('paths_over_dist',))
-    else:
-        ifp = ImageFileProcessing(
-            folder + 'test/',
-            'after_shortest_path_{}.h5'.format(lbl),
-            asdict=True
-        )
+    # if True:
+    #     find_shortest_path(ifp)
+    #     ifp.write(filename='test/after_shortest_path_{}.h5'.format(lbl), ids=('disttransf', 'currentlabel', 'paths', 'locmax', 'smoothed', 'disttransf_inf'))
+    #     ifp.write(filename='test/paths_over_dist_{}.h5'.format(lbl), ids=('paths_over_dist',))
+    # else:
+    #     ifp = ImageFileProcessing(
+    #         folder + 'test/',
+    #         'after_shortest_path_{}.h5'.format(lbl),
+    #         asdict=True
+    #     )
 
     ifp.logging('')
 
