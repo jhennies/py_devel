@@ -63,8 +63,8 @@ def astype(image, dtype):
     return image.astype(dtype=dtype)
 
 
-def distance_transform(image, pixel_pitch=()):
-    return vigra.filters.distanceTransform(image, pixel_pitch=pixel_pitch)
+def distance_transform(image, pixel_pitch=(), background=True):
+    return vigra.filters.distanceTransform(image, pixel_pitch=pixel_pitch, background=background)
 
 
 def filter_values(image, value, type='se', setto=0):
@@ -134,6 +134,43 @@ def add2im(image1, image2):
 
 def concatenate(image1, image2):
     return [image1, image2]
+
+
+def find_bounding_rect(image):
+
+    # Bands
+    bnds = np.flatnonzero(image.sum(axis=0).sum(axis=0))
+    # Rows
+    rows = np.flatnonzero(image.sum(axis=1).sum(axis=1))
+    # Columns
+    cols = np.flatnonzero(image.sum(axis=2).sum(axis=0))
+
+    return (rows.min(), rows.max()+1), (cols.min(), cols.max()+1), (bnds.min(), bnds.max()+1)
+
+
+def crop_bounding_rect(image, bounds=None):
+
+    if bounds is None:
+        bounds = find_bounding_rect(image)
+
+    return image[bounds[0][0]:bounds[0][1], bounds[1][0]:bounds[1][1], bounds[2][0]:bounds[2][1]]
+
+
+def replace_subimage(image, rplimage, position=None, bounds=None, ignore=None):
+
+    # Make sure bounds is not None
+    if bounds is None and position is None:
+        bounds = ((0, 0), (0, 0), (0, 0))
+    if bounds is None and position is not None:
+        bounds = ((position[0], rplimage.shape[0]), (position[1], rplimage.shape[1]), (position[2], rplimage.shape[2]))
+
+    if ignore is None:
+        image[bounds[0][0]:bounds[0][1], bounds[1][0]:bounds[1][1], bounds[2][0]:bounds[2][1]] = rplimage
+    else:
+        image[bounds[0][0]:bounds[0][1], bounds[1][0]:bounds[1][1], bounds[2][0]:bounds[2][1]][rplimage != ignore] = rplimage[rplimage != ignore]
+
+    return image
+
 
 # _____________________________________________________________________________________________
 
@@ -372,8 +409,8 @@ class ImageProcessing:
     def astype(self, dtype, ids=None, targetids=None):
         self.anytask(astype, dtype, ids=ids, targetids=targetids)
 
-    def distance_transform(self, pixel_pitch=(), ids=None, targetids=None):
-        self.anytask(distance_transform, pixel_pitch=pixel_pitch, ids=ids, targetids=targetids)
+    def distance_transform(self, pixel_pitch=(), background=True, ids=None, targetids=None):
+        self.anytask(distance_transform, pixel_pitch=pixel_pitch, background=background, ids=ids, targetids=targetids)
 
     def filter_values(self, value, type='se', setto=0, ids=None, targetids=None):
         self.anytask(filter_values, value, type=type, setto=setto, ids=ids, targetids=targetids)
@@ -412,6 +449,16 @@ class ImageProcessing:
 
     def concatenate(self, ids, ids2, targetids=None):
         self.anytask(concatenate, ids=ids, ids2=ids2, targetids=targetids)
+
+    def find_bounding_rect(self, ids=None):
+        return self.anytask_rtrn(find_bounding_rect, ids=ids)
+
+    def crop_bounding_rect(self, bounds=None, ids=None, targetids=None):
+        self.anytask(crop_bounding_rect, bounds=bounds, ids=ids, targetids=targetids)
+
+    def replace_subimage(self, position=None, bounds=None, ignore=None, ids=None, ids2=None, targetids=None):
+        self.anytask(replace_subimage, position=position, bounds=bounds, ignore=ignore, ids=ids, ids2=ids2, targetids=targetids)
+
 
     ###########################################################################################
     # Iterators
@@ -635,8 +682,8 @@ class ImageFileProcessing(ImageProcessing):
         ImageProcessing.getlabel(self, label, ids=ids, targetids=targetids)
         self._imageFileName += '.lbl_' + str(label)
 
-    def distance_transform(self, pixel_pitch=(), ids=None, targetids=None):
-        ImageProcessing.distance_transform(self, pixel_pitch=pixel_pitch, ids=ids, targetids=targetids)
+    def distance_transform(self, pixel_pitch=(), background=True, ids=None, targetids=None):
+        ImageProcessing.distance_transform(self, pixel_pitch=pixel_pitch, background=background, ids=ids, targetids=targetids)
         self._imageFileName += '.dt'
 
     def filter_values(self, value, type='se', setto=0, ids=None, targetids=None):
@@ -684,6 +731,14 @@ class ImageFileProcessing(ImageProcessing):
     def concatenate(self, ids, ids2, targetids=None):
         ImageProcessing.concatenate(self, ids, ids2, targetids=targetids)
         self._imageFileName += '.conced'
+
+    def crop_bounding_rect(self, bounds=None, ids=None, targetids=None):
+        ImageProcessing.crop_bounding_rect(self, bounds=bounds, ids=ids, targetids=targetids)
+        self._imageFileName += '.crop_bounds'
+
+    def replace_subimage(self, position=None, bounds=None, ignore=None, ids=None, ids2=None, targetids=None):
+        ImageProcessing.replace_subimage(self, position=position, bounds=bounds, ignore=ignore, ids=ids, ids2=ids2, targetids=targetids)
+        self._imageFileName += '.rplsubim'
 
     ###########################################################################################
     # Write h5 files
