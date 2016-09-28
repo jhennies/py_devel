@@ -11,21 +11,22 @@ def ifp_boundary_distance_transform(ifp, inid, outid, pixel_pitch=()):
     # ifp.deepcopy_entry('labels', 'disttransf')
     ifp.set_data_dict({'disttransf': np.zeros(ifp.shape(ids='labels'))}, append=True)
 
-    # c = 0
+    c = 0
     for lbl in ifp.label_image_iterator(inid, 'currentlabel'):
 
-        ifp.logging('lbl = {}', lbl)
+        ifp.logging('---')
+        ifp.logging('lbl {} in iteration {}', lbl, c)
 
         bounds = ifp.find_bounding_rect(ids='currentlabel')
 
-        ifp.logging('bounds = {}'.format(bounds))
+        ifp.logging('bounds = {}', bounds)
         ifp.crop_bounding_rect(bounds=bounds, ids='currentlabel')
 
         ifp.distance_transform(pixel_pitch=pixel_pitch, ids='currentlabel', background=False)
 
         ifp.replace_subimage(ids='disttransf', ids2='currentlabel', bounds=bounds, ignore=0)
 
-        # c += 1
+        c += 1
         # if c == 10:
         #     break
 
@@ -89,7 +90,9 @@ if __name__ == '__main__':
 
     ifp_boundary_distance_transform(ifp, 'labels', 'disttransf', pixel_pitch=anisotropy)
 
-    print ifp.shape()
+
+    ifp.logging('ifp.shape() = {}', ifp.shape())
+
     ifp.write(filename='cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.disttransf.h5', ids=('labels', 'disttransf'))
 
     ifp.logging('')
