@@ -176,6 +176,10 @@ def mask_image(image, mask, maskvalue=False, value=0):
     image[mask == maskvalue] = value
     return image
 
+
+def unique(image):
+    return np.unique(image)
+
 # _____________________________________________________________________________________________
 
 
@@ -474,6 +478,9 @@ class ImageProcessing:
     def mask_image(self, maskvalue=False, value=0, ids=None, ids2=None, targetids=None):
         self.anytask(mask_image, maskvalue=maskvalue, value=value, ids=ids, ids2=ids2, targetids=targetids)
 
+    def unique(self, ids=None):
+        return self.anytask_rtrn(unique, ids=ids)
+
     ###########################################################################################
     # Iterators
 
@@ -490,31 +497,11 @@ class ImageProcessing:
             yield lbl
 
     def label_bounds_iterator(self, labelid, targetid, ids=None, targetids=None,
-                              maskvalue=0, value=np.nan, minsize=None):
+                              maskvalue=0, value=np.nan):
 
         for lbl in self.label_image_iterator(labelid, targetid):
 
             bounds = self.find_bounding_rect(ids=targetid)
-
-            # def checkforminsize(bounds, minsize):
-            #
-            #     for i in xrange(0,3):
-            #         print minsize[i]
-            #         if (bounds[i][1] - bounds[i][0]) < minsize[i]:
-            #             t = bounds[i][0] - (minsize[i] - (bounds[i][1] - bounds[i][0])) / 2
-            #             bounds[i][1] += (minsize[i] - (bounds[i][1] - bounds[i][0])) / 2
-            #             bounds[i][0] = t
-            #             if bounds[i][0] < 0:
-            #                 bounds[i][1] -= bounds[i][0]
-            #                 bounds[i][0] = 0
-            #             if bounds[i][1] >= self.get_image(labelid).shape[i]:
-            #                 bounds[i][0] -=
-            #             print bounds[i]
-            #
-            #     return bounds
-
-            # if minsize is not None:
-            #     bounds = checkforminsize(bounds, minsize)
 
             self.crop_bounding_rect(bounds, ids=targetid)
 

@@ -13,8 +13,8 @@ __author__ = 'jhennies'
 # Done: Find local maxima, maybe after gaussian smoothing (or other smoothing)
 # Done: Determine shortest paths pairwise between maxima
 # Done: Optimize paths such that they follow the center of processes
-# TODO: Extract features along path (e.g., distance transform values)
-# TODO: What do these features look like along correctly segmented backbones and what they look like at false merges
+# TODO: Extract features along path (e.g., distance transform values, image features around maxima)
+# TODO: What do these features look like along correctly segmented backbones and what they look like at false merges?
 # TODO: For the above: Implement randomly merged objects within the ground truth
 # TODO: Random Forest to classify paths between two maxima either as correct or false merge
 
@@ -24,7 +24,7 @@ __author__ = 'jhennies'
 # Done: Implement cropping to ImageFileProcessing and ImageProcessing
 # Done: Overlay images -> or just save as multiple channels
 # Done: Optimize code: anytask function should be able to compute results depending on multiple images
-# TODO: Rewrite to load distance transform from hard disk
+# Done: Rewrite to load distance transform from hard disk
 
 
 def gaussian_smoothing(image, sigma, roi=None):
@@ -140,10 +140,10 @@ if __name__ == '__main__':
     if True:
 
         ifp = ImageFileProcessing(
-        folder,
-        file, asdict=True,
-        image_names=names,
-        keys=keys)
+            folder,
+            file, asdict=True,
+            image_names=names,
+            keys=keys)
 
         ifp.startlogger(filename='/media/julian/Daten/neuraldata/cremi_2016/develop/160927_determine_shortest_paths/160929_pthsovrdist_pow10/160929.log', type='a')
 
@@ -163,7 +163,7 @@ if __name__ == '__main__':
 
         c = 0
         for lblo in ifp.label_bounds_iterator('labels', 'curlabel', ids='disttransf', targetids='curdisttransf',
-                                              maskvalue=0, value=0, minsize=[10, 100, 100]):
+                                              maskvalue=0, value=0):
 
             ifp.logging('------------\nCurrent label {} in iteration {}', lblo['label'], c)
             ifp.logging('Bounding box = {}', lblo['bounds'])
