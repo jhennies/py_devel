@@ -623,7 +623,7 @@ class ImageFileProcessing(ImageProcessing):
     def addfromfile(self, filename, image_ids=0, image_names=None, ids=None):
         if type(self._data) is dict:
 
-            newdata = self.load_h5(filename, ids=image_ids, image_names=image_names, keys=ids)
+            newdata = self.load_h5(filename, ids=image_ids, names=image_names, keys=ids, asdict=True)
             self.set_data_dict(newdata, append=True)
 
         else:

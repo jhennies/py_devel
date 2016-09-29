@@ -10,10 +10,12 @@ def gaussian_smoothing(image, sigma, roi=None):
 def find_local_maxima(ifp):
 
     try:
+
         ifp.anytask(gaussian_smoothing, 20/anisotropy, ids='curdisttransf', targetids='smoothed')
 
-        ifp.astype(np.float32, ids='smoothed')
-        ifp.anytask(vigra.analysis.extendedLocalMaxima3D, neighborhood=26, ids='smoothed', targetids='locmax')
+        # # If the gaussian smoothing works this will probably work as well...
+        # ifp.astype(np.float32, ids='smoothed')
+        # ifp.anytask(vigra.analysis.extendedLocalMaxima3D, neighborhood=26, ids='smoothed', targetids='locmax')
 
     except:
 
@@ -71,10 +73,9 @@ if __name__ == '__main__':
 
             ifp.logging('Maxima detection not successful!')
 
-
         c += 1
-        if c == 10:
-            break
+        # if c == 10:
+        #     break
 
     ifp.write(filename='largeobjects.h5', ids=('largeobjects',))
 
