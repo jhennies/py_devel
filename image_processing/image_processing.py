@@ -145,7 +145,7 @@ def find_bounding_rect(image):
     # Columns
     cols = np.flatnonzero(image.sum(axis=2).sum(axis=0))
 
-    return (rows.min(), rows.max()+1), (cols.min(), cols.max()+1), (bnds.min(), bnds.max()+1)
+    return [[rows.min(), rows.max()+1], [cols.min(), cols.max()+1], [bnds.min(), bnds.max()+1]]
 
 
 def crop_bounding_rect(image, bounds=None):
@@ -171,6 +171,10 @@ def replace_subimage(image, rplimage, position=None, bounds=None, ignore=None):
 
     return image
 
+
+def mask_image(image, mask, maskvalue=False, value=0):
+    image[mask == maskvalue] = value
+    return image
 
 # _____________________________________________________________________________________________
 
@@ -294,14 +298,22 @@ class ImageProcessing:
                 if type(ids2) is str:
                     ids2 = (ids2,)
 
+            # ids and ids2 have to have the same length
+            if ids2 is not None:
+                if len(ids) != len(ids2):
+                    if len(ids2) == 1:
+                        ids2 *= len(ids)
+                    else:
+                        raise NameError('Error in ImageProcessing.anytask: len(ids2) is not equal len(ids) or 1.')
+
             if 'targetids' in kwargs.keys():
                 targetids = kwargs.pop('targetids')
                 if targetids is not None:
                     if type(targetids) is str:
                         targetids = (targetids,)
                     if len(targetids) != len(ids):
-                        print 'Warning: len(targetids) is not equal to len(ids)! Nothing was computed.'
-                        return
+                        # print 'Warning: len(targetids) is not equal to len(ids)! Nothing was computed.'
+                        raise NameError('Error in ImageProcessing.anytask: len(targetids) is not equal to len(ids)!')
 
             if targetids is None:
                 targetids = ids
@@ -459,6 +471,8 @@ class ImageProcessing:
     def replace_subimage(self, position=None, bounds=None, ignore=None, ids=None, ids2=None, targetids=None):
         self.anytask(replace_subimage, position=position, bounds=bounds, ignore=ignore, ids=ids, ids2=ids2, targetids=targetids)
 
+    def mask_image(self, maskvalue=False, value=0, ids=None, ids2=None, targetids=None):
+        self.anytask(mask_image, maskvalue=maskvalue, value=value, ids=ids, ids2=ids2, targetids=targetids)
 
     ###########################################################################################
     # Iterators
@@ -474,6 +488,41 @@ class ImageProcessing:
             self.deepcopy_entry(from_id, to_id)
             self.getlabel(lbl, (to_id,))
             yield lbl
+
+    def label_bounds_iterator(self, labelid, targetid, ids=None, targetids=None,
+                              maskvalue=0, value=np.nan, minsize=None):
+
+        for lbl in self.label_image_iterator(labelid, targetid):
+
+            bounds = self.find_bounding_rect(ids=targetid)
+
+            # def checkforminsize(bounds, minsize):
+            #
+            #     for i in xrange(0,3):
+            #         print minsize[i]
+            #         if (bounds[i][1] - bounds[i][0]) < minsize[i]:
+            #             t = bounds[i][0] - (minsize[i] - (bounds[i][1] - bounds[i][0])) / 2
+            #             bounds[i][1] += (minsize[i] - (bounds[i][1] - bounds[i][0])) / 2
+            #             bounds[i][0] = t
+            #             if bounds[i][0] < 0:
+            #                 bounds[i][1] -= bounds[i][0]
+            #                 bounds[i][0] = 0
+            #             if bounds[i][1] >= self.get_image(labelid).shape[i]:
+            #                 bounds[i][0] -=
+            #             print bounds[i]
+            #
+            #     return bounds
+
+            # if minsize is not None:
+            #     bounds = checkforminsize(bounds, minsize)
+
+            self.crop_bounding_rect(bounds, ids=targetid)
+
+            if ids is not None:
+                self.crop_bounding_rect(bounds, ids=ids, targetids=targetids)
+                self.mask_image(maskvalue=maskvalue, value=value, ids=targetids, ids2=targetid)
+
+            yield {'bounds': bounds, 'label': lbl}
 
 # _____________________________________________________________________________________________
 
@@ -583,6 +632,16 @@ class ImageFileProcessing(ImageProcessing):
     def empty(cls):
         """ Empty construction is intended for debugging purposes """
         return cls(None, None)
+
+    def addfromfile(self, filename, image_ids=0, image_names=None, ids=None):
+        if type(self._data) is dict:
+
+            newdata = self.load_h5(filename, ids=image_ids, image_names=image_names, keys=ids)
+            self.set_data_dict(newdata, append=True)
+
+        else:
+            ifp.logging('Warning: Convert to dict first, no file content was loaded.')
+            return
 
     def set_file(self, image_path, image_file, image_names, image_ids):
         self._imagePath = image_path
@@ -740,6 +799,10 @@ class ImageFileProcessing(ImageProcessing):
         ImageProcessing.replace_subimage(self, position=position, bounds=bounds, ignore=ignore, ids=ids, ids2=ids2, targetids=targetids)
         self._imageFileName += '.rplsubim'
 
+    def mask_image(self, maskvalue=False, value=0, ids=None, ids2=None, targetids=None):
+        ImageProcessing.mask_image(self, maskvalue=maskvalue, value=value, ids=ids, ids2=ids2, targetids=targetids)
+        self._imageFileName += '.masked'
+
     ###########################################################################################
     # Write h5 files
 
@@ -807,6 +870,8 @@ if __name__ == "__main__":
         image_names=names,
         keys=keys)
 
+    ifp.startlogger()
+
     # Modify the image(s)...
 
     # ... with some pre-defined operations
@@ -825,13 +890,15 @@ if __name__ == "__main__":
     ifp.mult2im(ids='labels', ids2='labelsplus5', targetids='multed')
 
     # Getter functions
-    print 'ifp.get_data().keys() = {}'.format(ifp.get_data().keys())
-    print 'ifp.get_filename() = {}'.format(ifp.get_filename())
+    ifp.logging('ifp.get_data().keys() = {}', ifp.get_data().keys())
+    ifp.logging('ifp.get_filename() = {}', ifp.get_filename())
 
     # Return functions (These type of functions do not change the involved image(s))
-    print 'Maximum values = {}'.format(ifp.amax())
+    ifp.logging('Maximum values = {}', ifp.amax())
 
     # # Write the result (File name is automatically generated depending on the performed operations)
     # ifp.write()
+
+    ifp.stoplogger()
 
 
