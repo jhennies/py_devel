@@ -484,16 +484,26 @@ class ImageProcessing:
     ###########################################################################################
     # Iterators
 
-    def label_iterator(self, id=None):
+    def label_iterator(self, id=None, labellist=None):
 
-        for lbl in np.unique(self.get_image(id)):
+        if labellist is None:
+            labellist = self.unique(ids=id)
+
+        for lbl in labellist:
             yield lbl
 
-    def label_image_iterator(self, from_id, to_id):
+    def label_image_iterator(self, from_id, to_id, labellist=None, accumulate=False):
 
-        for lbl in self.label_iterator(id=from_id):
-            self.deepcopy_entry(from_id, to_id)
-            self.getlabel(lbl, (to_id,))
+        if accumulate:
+            self.addtodict(np.zeros(self.shape(from_id)), to_id)
+
+        for lbl in self.label_iterator(id=from_id, labellist=labellist):
+            if not accumulate:
+                self.getlabel(lbl, ids=from_id, targetids=to_id)
+            else:
+                newlabel = getlabel(lbl, self.get_image(from_id))
+                self.get_image(to_id)[newlabel == 1] = lbl
+
             yield lbl
 
     def label_bounds_iterator(self, labelid, targetid, ids=None, targetids=None,

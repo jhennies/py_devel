@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     ifp.startlogger(filename=None, type='a')
 
-    # TODO: Randomly select a label
+    # Done: Randomly select a label
     # TODO: Find adjacent objects
     # TODO: Randomly select an adjacent object for merging
     # TODO: Merge the two
@@ -30,7 +30,12 @@ if __name__ == '__main__':
 
     ifp.logging('keys = {}', ifp.get_data().keys())
 
-    labels = ifp.unique(ids='labels')
+    # # This get all the labels
+    # labels = ifp.unique(ids='labels')
+
+    # Get only the relevant labels
+    labels = ifp.get_image('largeobjects')
+
     ifp.logging('labels = {}', labels)
     random.seed()
     ifp.logging('Choice: {}', random.choice(labels))
