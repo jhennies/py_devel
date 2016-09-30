@@ -15,7 +15,7 @@ if __name__ == '__main__':
     file = 'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.largeobjects.h5'
     names = ('largeobjects',)
     keys = ('labels',)
-    resultfolder = 'develop/160927_determine_shortest_paths/160929_pthsovrdist_pow10/'
+    targetfolder = 'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712_merges/'
 
     ifp = ImageFileProcessing(
         folder,
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # Done: Find adjacent objects
     # Done: Extract both adjacent objects as an image (needed for subsequent learning)
     # TODO: Merge the objects
-    # TODO: Select edges by size? Small edges are more relevant for our algorithm
+    # Done: Select edges by size? Small edges are more relevant for our algorithm
 
     # # Find all relevant labels
     # ifp.addfromfile('{}largeobjects.h5'.format(folder), image_ids=(0,))
@@ -79,14 +79,26 @@ if __name__ == '__main__':
         edgelen_ids.pop(edge_id)
     #
     edge_ids = edgelen_ids.keys()
-    ifp.logging('IDs selected for merging due to size: {}', smallest_merge_ids)
+    ifp.logging('Edge IDs selected for merging due to size: {}', smallest_merge_ids)
 
     # Type 2:
     # Randomly choose edges
     random_merge_ids = random.sample(edge_ids, numberbyrandom)
-    ifp.logging('IDs randomly selected for merging: {}', random_merge_ids)
+    ifp.logging('Edge IDs randomly selected for merging: {}', random_merge_ids)
 
+    # Now get the label ids
+    smallest_merge_labelids_u = [rag.uId(rag.edgeFromId(x)) for x in smallest_merge_ids]
+    smallest_merge_labelids_v = [rag.vId(rag.edgeFromId(x)) for x in smallest_merge_ids]
+    smallest_merge_labelids = list(zip(smallest_merge_labelids_u, smallest_merge_labelids_v))
+    random_merge_labelids_u = [rag.uId(rag.edgeFromId(x)) for x in random_merge_ids]
+    random_merge_labelids_v = [rag.vId(rag.edgeFromId(x)) for x in random_merge_ids]
+    random_merge_labelids = list(zip(random_merge_labelids_u, random_merge_labelids_v))
+    ifp.logging('Label IDs selected for merging by size: {}', smallest_merge_labelids)
+    ifp.logging('Label IDs randomly selected for merging: {}', random_merge_labelids)
 
+    # Store this for later use
+    ifp.set_data_dict({'mergesmall': smallest_merge_labelids, 'mergerandom': random_merge_labelids}, append=True)
+    ifp.write(filename=targetfolder + 'mergeids.h5', ids=('mergesmall', 'mergerandom'))
 
     # # Detect the labels at either side of the merge edge
     # u = rag.u(merge_edge)
