@@ -8,6 +8,9 @@ __author__ = 'jhennies'
 
 if __name__ == '__main__':
 
+    numberbysize = 10
+    numberbyrandom = 5
+
     folder = '/media/julian/Daten/neuraldata/cremi_2016/'
     file = 'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.largeobjects.h5'
     names = ('largeobjects',)
@@ -54,27 +57,51 @@ if __name__ == '__main__':
     #
     # ifp.logging('Node ids: {}', rag.nodeIds())
 
-    # Randomly choose an edge
     ifp.astype(np.uint32, ids='labels')
     (grag, rag) = ifp.anytask_rtrn(graphs.gridRegionAdjacencyGraph, ignoreLabel=0, ids='labels')
-    merge_edge = rag.edgeFromId(random.choice(rag.edgeIds()))
-    ifp.logging('Edge ids: {}', rag.edgeIds())
-    ifp.logging('Merge edge: {}', rag.id(merge_edge))
+    edge_ids = rag.edgeIds()
+    ifp.logging('Edge ids: {}', edge_ids)
 
-    # Detect the labels at either side of the merge edge
-    u = rag.u(merge_edge)
-    v = rag.v(merge_edge)
-    uid = rag.id(u)
-    vid = rag.id(v)
-    ifp.logging('Merging u = {} and v = {}', uid, vid)
+    # Type 1:
+    # Select edges by size (smallest edges)
+    ifp.logging('Number of edgeLengths = {}', len(rag.edgeLengths()))
+    edgelen_ids = dict(zip(edge_ids, rag.edgeLengths()))
+    ifp.logging('edgelen_ids = {}', edgelen_ids)
+    sorted_edgelens = np.sort(rag.edgeLengths())
+    #
+    smallest_merge_lens = sorted_edgelens[0:numberbysize]
+    ifp.logging('Lengths selected for merging: {}', smallest_merge_lens)
+    #
+    smallest_merge_ids = []
+    for x in smallest_merge_lens:
+        edge_id = edgelen_ids.keys()[edgelen_ids.values().index(x)]
+        smallest_merge_ids.append(edge_id)
+        edgelen_ids.pop(edge_id)
+    #
+    edge_ids = edgelen_ids.keys()
+    ifp.logging('IDs selected for merging due to size: {}', smallest_merge_ids)
 
-    # Extract both candidates as own image (needed as ground truth for random forest training)
-    ifp.getlabel((uid, vid), ids='labels', targetids='merged')
-    ifp.write(filename='cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712/merged_{}_{}.h5'.format(uid, vid), ids=('merged',))
+    # Type 2:
+    # Randomly choose edges
+    random_merge_ids = random.sample(edge_ids, numberbyrandom)
+    ifp.logging('IDs randomly selected for merging: {}', random_merge_ids)
 
-    # Merge
-    ifp.filter_values(vid, type='eq', setto=uid, ids='labels', targetids='labels_merged')
-    ifp.write(filename='cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712/labels_merged.h5', ids=('labels', 'labels_merged'))
+
+
+    # # Detect the labels at either side of the merge edge
+    # u = rag.u(merge_edge)
+    # v = rag.v(merge_edge)
+    # uid = rag.id(u)
+    # vid = rag.id(v)
+    # ifp.logging('Merging u = {} and v = {}', uid, vid)
+    #
+    # # Extract both candidates as own image (needed as ground truth for random forest training)
+    # ifp.getlabel((uid, vid), ids='labels', targetids='merged')
+    # # ifp.write(filename='cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712/merged_{}_{}.h5'.format(uid, vid), ids=('merged',))
+    #
+    # # Merge
+    # ifp.filter_values(vid, type='eq', setto=uid, ids='labels', targetids='labels_merged')
+    # # ifp.write(filename='cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712/labels_merged.h5', ids=('labels', 'labels_merged'))
 
     ifp.logging('')
     ifp.stoplogger()
