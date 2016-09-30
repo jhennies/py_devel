@@ -52,7 +52,18 @@ def resize_z_nearest(image, z):
 
 
 def getlabel(image, label):
-    return np.array((image == label)).astype(np.uint32)
+
+    if type(label) is tuple:
+
+        lblim = np.zeros(image.shape, dtype=image.dtype)
+        for lbl in label:
+            lblim[image == lbl] = lbl
+
+        return lblim
+
+    else:
+
+        return np.array((image == label)).astype(np.uint32)
 
 
 def amax(image):
