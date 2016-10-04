@@ -9,6 +9,7 @@ from skimage.morphology import watershed
 import time
 # import random
 import copy
+import yaml
 
 __author__ = 'jhennies'
 
@@ -545,8 +546,73 @@ class ImageFileProcessing(ImageProcessing):
     # _data = None
     _boundaries = None
 
-    def __init__(self, image_path, image_file, image_names=None, image_ids=None,
-                 asdict=True, keys=None):
+    def __init__(self, image_path=None, image_file=None, image_names=None, image_ids=None,
+                 asdict=True, keys=None, yaml=None, yamlspec=None):
+        """
+        :param image_path:
+        :param image_file:
+        :param image_names:
+        :param image_ids:
+        :param asdict:
+        :param keys:
+
+        :type yaml: str
+        :param yaml: Filename of yaml configuration file
+            Can contain the fields image_path, image_file, image_names, image_ids, asdict, or keys
+            If other names for the respective fields are desired use yamlspec (see below)
+
+        :type yamlspec: dict
+        :param yamlspec: Translates field names in the configuration file to the respective variable names
+
+            EXAMPLES:
+
+            When using a yaml file like this:
+            ---YAML---
+            image_path: '~/data/'
+            image_file: 'mydatafile.h5'
+            ----------
+            yamlspec can be set to None.
+
+            If other keywords are desired within the yaml file yamlspec has to be set accordingly:
+            ---YAML---
+            datapath: '~/data/'
+            datafile: 'mydatafile.h5'
+            ----------
+            yamlspec={'image_path': 'datapath', 'image_file': 'datafile'}
+
+            Note that not every variable has to be set within the yaml file, it is then taken from the function
+            arguments.
+
+            If yamlspec is set, only the variables specified in yamlspec are actually read:
+            ---YAML---
+            datapath: '~/data/'
+            datafile: 'mydatafile.h5'
+            asdict: True
+            ----------
+            yamlspec={'image_path': 'datapath', 'image_file': 'datafile'}
+            --> asdict will be ignored and derived from the function arguments
+            solution:
+            yamlspec={'image_path': 'datapath', 'image_file': 'datafile', 'asdict': 'asdict'}
+
+        """
+
+        if yaml is not None:
+            yamldict = self.load_yaml(yaml)
+            if yamlspec is None:
+                if 'image_path' in yamldict.keys(): image_path = yamldict['image_path']
+                if 'image_file' in yamldict.keys(): image_file = yamldict['image_file']
+                if 'image_names' in yamldict.keys(): image_names = yamldict['image_names']
+                if 'image_ids' in yamldict.keys(): image_ids = yamldict['image_ids']
+                if 'asdict' in yamldict.keys(): asdict = yamldict['asdict']
+                if 'keys' in yamldict.keys(): keys = yamldict['keys']
+
+            else:
+                if 'image_path' in yamlspec.keys(): image_path = yamldict[yamlspec['image_path']]
+                if 'image_file' in yamlspec.keys(): image_file = yamldict[yamlspec['image_file']]
+                if 'image_names' in yamlspec.keys(): image_names = yamldict[yamlspec['image_names']]
+                if 'image_ids' in yamlspec.keys(): image_ids = yamldict[yamlspec['image_ids']]
+                if 'asdict' in yamlspec.keys(): asdict = yamldict[yamlspec['asdict']]
+                if 'keys' in yamlspec.keys(): keys = yamldict[yamlspec['keys']]
 
         if image_path is not None and image_file is not None:
             data = self.load_h5(image_path + image_file, image_ids, image_names,
@@ -557,6 +623,13 @@ class ImageFileProcessing(ImageProcessing):
         ImageProcessing.__init__(self, data)
 
         self.set_file(image_path, image_file, image_names, image_ids)
+
+    def load_yaml(self, filename):
+
+        with open(filename, 'r') as f:
+            readict = yaml.load(f)
+
+        return readict
 
     def load_h5(self, im_file, ids=None, names=None, asdict=False, keys=None):
         #     """
