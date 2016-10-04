@@ -545,6 +545,7 @@ class ImageFileProcessing(ImageProcessing):
     _imageIds = 0
     # _data = None
     _boundaries = None
+    _parameters = None
 
     def __init__(self, image_path=None, image_file=None, image_names=None, image_ids=None,
                  asdict=True, keys=None, yaml=None, yamlspec=None):
@@ -628,6 +629,8 @@ class ImageFileProcessing(ImageProcessing):
 
         with open(filename, 'r') as f:
             readict = yaml.load(f)
+
+        self._parameters = readict
 
         return readict
 
@@ -742,6 +745,9 @@ class ImageFileProcessing(ImageProcessing):
 
     def get_filename(self):
         return self._imageFileName + '.h5'
+
+    def get_params(self):
+        return self._parameters
 
     def addtoname(self, addstr):
         self._imageFileName += addstr
@@ -895,11 +901,17 @@ class ImageFileProcessing(ImageProcessing):
     ###########################################################################################
     # Write h5 files
 
-    def write_h5(self, nfile, data, image_names=None, dict_ids=None):
+    def write_h5(self, data, nfile=None, filepath=None, image_names=None, dict_ids=None):
         # print "Writing..."
-        of = h5py.File(self._imagePath + nfile)
 
-        self.logging("Writing to file: {}".format(self._imagePath + nfile))
+        if filepath is None and nfile is not None:
+            of = h5py.File(self._imagePath + nfile)
+            self.logging("Writing to file: {}".format(self._imagePath + nfile))
+        elif filepath is not None:
+            of = h5py.File(filepath)
+            self.logging("Writing to file: {}".format(filepath))
+        else:
+            raise NameError("Error in ImageFileProcessing.write_h5: File name missing!")
 
         if type(data) is dict:
 
@@ -925,7 +937,7 @@ class ImageFileProcessing(ImageProcessing):
 
         of.close()
 
-    def write(self, ids=None, filename=None):
+    def write(self, ids=None, filename=None, filepath=None):
         """
         :type ids: list
         :param ids: Set only if data is a dict!
@@ -935,10 +947,19 @@ class ImageFileProcessing(ImageProcessing):
         :type filename: str
         :param filename: If not set the generated file name within this class is used
         """
-        if filename is None:
-            self.write_h5(self._imageFileName + '.h5', self.get_data(), dict_ids=ids)
+        if filename is None and filepath is None:
+            self.write_h5(self.get_data(), nfile=self._imageFileName + '.h5', dict_ids=ids)
         else:
-            self.write_h5(filename, self.get_data(), dict_ids=ids)
+            self.write_h5(self.get_data(), nfile=filename, filepath=filepath, dict_ids=ids)
+
+        # elif filename is not None:
+        #     self.write_h5(filename, self.get_data(), dict_ids=ids)
+        #
+        #
+        # if filename is None:
+        #     self.write_h5(self._imageFileName + '.h5', self.get_data(), dict_ids=ids)
+        # else:
+        #     self.write_h5(filename, self.get_data(), dict_ids=ids)
 
 # _____________________________________________________________________________________________
 
