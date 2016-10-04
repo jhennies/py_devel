@@ -4,6 +4,7 @@ import random
 import vigra.graphs as graphs
 import numpy as np
 import os
+import inspect
 
 __author__ = 'jhennies'
 
@@ -33,7 +34,11 @@ if __name__ == '__main__':
         keys=('labels',)
     )
 
-    ifp.startlogger(filename=None, type='a')
+    ifp.startlogger(filename=ifp.get_params()['intermedfolder'] + 'merge_adjacent_objects.log', type='a')
+
+    ifp.code2log(__file__)
+    ifp.logging('')
+
     ifp.logging('yamlfile = {}', yamlfile)
     ifp.logging('ifp.get_data().keys() = {}', ifp.get_data().keys())
 

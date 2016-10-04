@@ -91,6 +91,8 @@ def filter_values(image, value, type='se', setto=0):
         image[image >= value] = setto
     elif type == 'l':
         image[image > value] = setto
+    elif type == 'ne':
+        image[image != value] = setto
 
     return image
 
@@ -776,6 +778,13 @@ class ImageFileProcessing(ImageProcessing):
 
         if self._logger is not None:
             self._logger.close()
+
+    def code2log(self, filename):
+        self.logging('>>> CODE >>>')
+        with open(filename) as f:
+            script = f.read()
+        self.logging('{}', script)
+        self.logging('<<< CODE <<<')
 
     ###########################################################################################
     # Image processing
