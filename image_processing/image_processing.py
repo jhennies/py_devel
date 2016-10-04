@@ -682,6 +682,11 @@ class ImageFileProcessing(ImageProcessing):
             if names is None:
                 return None
 
+        # Make sure names is a list
+        if asdict:
+            if type(names) is str:
+                names = (names,)
+
         # Take the first entry if we do not want a dictionary
         if not asdict and type(names) is list:
             names = names[0]
@@ -691,6 +696,9 @@ class ImageFileProcessing(ImageProcessing):
         # Make sure keys is not None
         if keys is None:
             keys = names
+        # Make sure keys is a list
+        if type(keys) is str:
+            keys = (keys,)
 
         if asdict:
             # Initialize as dict ...
