@@ -198,6 +198,11 @@ def unique(image):
 def gaussian_smoothing(image, sigma):
     return vigra.filters.gaussianSmoothing(image, sigma)
 
+
+def extended_local_maxima(image, neighborhood=26):
+    image = image.astype(np.float32)
+    return vigra.analysis.extendedLocalMaxima3D(image, neighborhood=neighborhood)
+
 # _____________________________________________________________________________________________
 
 
@@ -501,6 +506,9 @@ class ImageProcessing:
 
     def gaussian_smoothing(self, sigma, ids=None, targetids=None):
         self.anytask(gaussian_smoothing, sigma, ids=ids, targetids=targetids)
+
+    def extended_local_maxima(self, neighborhood=26, ids=None, targetids=None):
+        self.anytask(extended_local_maxima, neighborhood=neighborhood, ids=ids, targetids=targetids)
 
     ###########################################################################################
     # Iterators
@@ -917,6 +925,10 @@ class ImageFileProcessing(ImageProcessing):
     def gaussian_smoothing(self, sigma, ids=None, targetids=None):
         ImageProcessing.gaussian_smoothing(self, sigma, ids=ids, targetids=targetids)
         self._imageFileName += '.gaussian_{}'.format(sigma)
+
+    def extended_local_maxima(self, neighborhood=26, ids=None, targetids=None):
+        ImageProcessing.extended_local_maxima(self, neighborhood=neighborhood, ids=ids, targetids=targetids)
+        self._imageFileName += '.locmax'
 
     ###########################################################################################
     # Write h5 files
