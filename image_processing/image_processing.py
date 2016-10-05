@@ -671,7 +671,13 @@ class ImageFileProcessing(ImageProcessing):
             else:
                 if 'image_path' in yamlspec.keys(): image_path = yamldict[yamlspec['image_path']]
                 if 'image_file' in yamlspec.keys(): image_file = yamldict[yamlspec['image_file']]
-                if 'image_names' in yamlspec.keys(): image_names = yamldict[yamlspec['image_names']]
+                if 'image_names' in yamlspec.keys():
+                    if type(yamlspec['image_names']) is tuple:
+                        image_names = ()
+                        for i in xrange(1, len(yamlspec['image_names'])):
+                            image_names += (yamldict[yamlspec['image_names'][0]][yamlspec['image_names'][i]],)
+                    else:
+                        image_names = yamldict[yamlspec['image_names']]
                 if 'image_ids' in yamlspec.keys(): image_ids = yamldict[yamlspec['image_ids']]
                 if 'asdict' in yamlspec.keys(): asdict = yamldict[yamlspec['asdict']]
                 if 'keys' in yamlspec.keys(): keys = yamldict[yamlspec['keys']]
