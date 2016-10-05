@@ -194,6 +194,10 @@ def mask_image(image, mask, maskvalue=False, value=0):
 def unique(image):
     return np.unique(image)
 
+
+def gaussian_smoothing(image, sigma):
+    return vigra.filters.gaussianSmoothing(image, sigma)
+
 # _____________________________________________________________________________________________
 
 
@@ -494,6 +498,9 @@ class ImageProcessing:
 
     def unique(self, ids=None):
         return self.anytask_rtrn(unique, ids=ids)
+
+    def gaussian_smoothing(self, sigma, ids=None, targetids=None):
+        self.anytask(gaussian_smoothing, sigma, ids=ids, targetids=targetids)
 
     ###########################################################################################
     # Iterators
@@ -906,6 +913,10 @@ class ImageFileProcessing(ImageProcessing):
     def mask_image(self, maskvalue=False, value=0, ids=None, ids2=None, targetids=None):
         ImageProcessing.mask_image(self, maskvalue=maskvalue, value=value, ids=ids, ids2=ids2, targetids=targetids)
         self._imageFileName += '.masked'
+
+    def gaussian_smoothing(self, sigma, ids=None, targetids=None):
+        ImageProcessing.gaussian_smoothing(self, sigma, ids=ids, targetids=targetids)
+        self._imageFileName += '.gaussian_{}'.format(sigma)
 
     ###########################################################################################
     # Write h5 files
