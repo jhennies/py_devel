@@ -1,10 +1,28 @@
 datafolder: '/media/julian/Daten/neuraldata/cremi_2016/'
-labelfile: 'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.largeobjects.h5'
-labelname: 'largeobjects'
 resultfolder: '/media/julian/Daten/neuraldata/cremi_2016/develop/161005_locmax_paths_feature_extraction/'
 intermedfolder: '/media/julian/Daten/neuraldata/cremi_2016/develop/161005_locmax_paths_feature_extraction/intermediate/'
 createfolders: True
 
+labelsfile:     'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.h5'
+labelsname:     'labels'
+largeobjfile:   'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.largeobjects.h5'
+largeobjname:   'largeobjects'
+largeobjmfile:  'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.largeobjmerged.h5'
+largeobjmnames:
+    - 'largeobjects_merged'
+    - 'mergeids_small'
+    - 'mergeids_random'
+    - 'mergeids_all'
+locmaxfile:     'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.locmax.h5'
+locmaxnames:
+    - 'locmax'
+    - 'locmaxm'
+pathsfile:      'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.h5'
+pathnames:
+    - 'paths'
+    - 'paths_on_disttransf'
+featurefile:    'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.features.h5'
+
 merge_adjacent_objects:
     numberbysize: 10
-    numberbyrandom: 10
+    numberbyrandom: 5

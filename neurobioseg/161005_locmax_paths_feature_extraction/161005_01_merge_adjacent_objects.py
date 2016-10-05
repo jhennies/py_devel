@@ -4,32 +4,17 @@ import random
 import vigra.graphs as graphs
 import numpy as np
 import os
-import inspect
 
 __author__ = 'jhennies'
 
+
 if __name__ == '__main__':
-
-    # numberbysize = 10
-    # numberbyrandom = 10
-    #
-    # datafolder = '/media/julian/Daten/neuraldata/cremi_2016/'
-    # file = 'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.largeobjects.h5'
-    # names = ('largeobjects',)
-    # keys = ('labels',)
-    # targetfolder = 'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712_merges/'
-
-    # ifp = ImageFileProcessing(
-    #     datafolder,
-    #     file, asdict=True,
-    #     image_names=names,
-    #     keys=keys)
 
     yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters.yml'
 
     ifp = ImageFileProcessing(
         yaml=yamlfile,
-        yamlspec={'image_path': 'intermedfolder', 'image_file': 'labelfile', 'image_names': 'labelname'},
+        yamlspec={'image_path': 'intermedfolder', 'image_file': 'largeobjfile', 'image_names': 'largeobjname'},
         asdict=True,
         keys=('labels',)
     )
@@ -45,12 +30,8 @@ if __name__ == '__main__':
     numberbysize = ifp.get_params()['merge_adjacent_objects']['numberbysize']
     numberbyrandom = ifp.get_params()['merge_adjacent_objects']['numberbyrandom']
     targetfolder = ifp.get_params()['intermedfolder']
-
-    # Done: Randomly select an edge
-    # Done: Find adjacent objects
-    # Done: Extract both adjacent objects as an image (needed for subsequent learning)
-    # TODO: Merge the objects
-    # Done: Select edges by size? Small edges are more relevant for our algorithm
+    targetnames = ifp.get_params()['largeobjmnames']
+    targetfile = ifp.get_params()['largeobjmfile']
 
     # # Find all relevant labels
     # ifp.addfromfile('{}largeobjects.h5'.format(folder), image_ids=(0,))
@@ -110,16 +91,16 @@ if __name__ == '__main__':
     all_merge_labelids = smallest_merge_labelids + random_merge_labelids
 
     # Store this for later use
-    ifp.set_data_dict({'mergeids_small': smallest_merge_labelids, 'mergeids_random': random_merge_labelids, 'mergeids_all': all_merge_labelids}, append=True)
+    ifp.set_data_dict({targetnames[1]: smallest_merge_labelids, targetnames[2]: random_merge_labelids, targetnames[3]: all_merge_labelids}, append=True)
     # ifp.write(filepath=targetfolder + 'mergeids.h5', ids=('mergesmall', 'mergerandom', 'mergeall'))
 
     # Extract merged image
-    ifp.deepcopy_entry('labels', 'labels_merged')
+    ifp.deepcopy_entry('labels', targetnames[0])
     for x in all_merge_labelids:
-        ifp.filter_values(x[1], type='eq', setto=x[0], ids='labels_merged')
+        ifp.filter_values(x[1], type='eq', setto=x[0], ids=targetnames[0])
     #     ifp.getlabel(x, ids='labels', targetids='labels_merged_{}_{}'.format(x[0], x[1]))
     # ifp.getlabel(tuple(np.unique(all_merge_labelids)), ids='labels', targetids='get_labels_merged')
-    ifp.write(filepath=targetfolder + 'labels_merged.h5', ids=('labels_merged', 'mergeids_small', 'mergeids_random', 'mergeids_all'))
+    ifp.write(filepath=targetfolder + targetfile, ids=targetnames)
     # ifp.write(filepath=targetfolder + 'all_images.h5')
 
     ifp.logging('')
