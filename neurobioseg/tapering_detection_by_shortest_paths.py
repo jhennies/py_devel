@@ -15,7 +15,7 @@ __author__ = 'jhennies'
 # Done: Optimize paths such that they follow the center of processes
 # TODO: Extract features along path (e.g., distance transform values, image features around maxima)
 # TODO: What do these features look like along correctly segmented backbones and what they look like at false merges?
-# TODO: For the above: Implement randomly merged objects within the ground truth
+# Done: For the above: Implement randomly merged objects within the ground truth
 # TODO: Random Forest to classify paths between two maxima either as correct or false merge
 
 # Specific TODOs
