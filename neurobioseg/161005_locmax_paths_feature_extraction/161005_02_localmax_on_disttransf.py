@@ -8,8 +8,6 @@ import os
 __author__ = 'jhennies'
 
 
-
-
 if __name__ == '__main__':
 
     yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters.yml'
@@ -21,6 +19,7 @@ if __name__ == '__main__':
         keys=('largeobj',)
     )
     params = ifp.get_params()
+    thisparams = params['localmax_on_disttransf']
     ifp.addfromfile(params['intermedfolder']+params['largeobjmfile'], image_names=params['largeobjmnames'][0], ids='largeobjm')
 
     ifp.startlogger(filename=ifp.get_params()['intermedfolder'] + 'locmax_on_disttransf.log', type='a')
@@ -32,18 +31,32 @@ if __name__ == '__main__':
     ifp.logging('ifp.get_data().keys() = {}', ifp.get_data().keys())
     ifp.logging('ifp.shape() = {}', ifp.shape())
 
-    # Done: Boundary distance transform
-    # Done:     Boundaries
-    ifp.pixels_at_boundary(axes=(np.array(params['localmax_on_disttransf']['anisotropy']).astype(np.float32) ** -1).astype(np.uint8), ids='largeobj', targetids='largeobjboundaries')
-    ifp.astype(np.float32, ids='largeobjboundaries')
+    # Boundary distance transform
+    # a) Boundaries
+    ifp.logging('Finding boundaries ...')
+    ifp.pixels_at_boundary(
+        axes=(np.array(thisparams['anisotropy']).astype(np.float32) ** -1).astype(np.uint8)
+    )
+    ifp.astype(np.float32)
 
-    # Done:     Distance transform
-    ifp.distance_transform(pixel_pitch=params['localmax_on_disttransf']['anisotropy'], background=True, ids='largeobjboundaries', targetids='disttransf')
-    ifp.astype(np.uint8, ids='largeobjboundaries')
-    ifp.write(filename = 'test.h5')
+    # b) Distance transform
+    ifp.logging('Computing distance transform on boundaries ...')
+    ifp.distance_transform(
+        pixel_pitch=thisparams['anisotropy'],
+        background=True
+    )
 
-    # TODO: Gaussian smoothing
-    # TODO: Local maxima
+    # Gaussian smoothing
+    ifp.logging('Dragging Carl Friedrich over the image ...')
+    ifp.gaussian_smoothing(thisparams['sigma'] / np.array(thisparams['anisotropy']))
+
+    # Local maxima
+    ifp.logging('Discovering mountains ...')
+    ifp.extended_local_maxima(neighborhood=26)
+
+    # Write result
+    ifp.rename_entries(ids = ('largeobj', 'largeobjm'), targetids = params['locmaxnames'])
+    ifp.write(filename=params['locmaxfile'])
 
     ifp.logging('')
     ifp.stoplogger()

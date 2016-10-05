@@ -203,6 +203,33 @@ def extended_local_maxima(image, neighborhood=26):
     image = image.astype(np.float32)
     return vigra.analysis.extendedLocalMaxima3D(image, neighborhood=neighborhood)
 
+
+def pixels_at_boundary(image, axes=[1, 1, 1]):
+
+    return axes[0] * ((np.concatenate((image[(0,),:,:], image[:-1,:,:]))
+                      - np.concatenate((image[1:,:,:], image[(-1,),:,:]))) != 0) \
+        + axes[1] * ((np.concatenate((image[:,(0,),:], image[:,:-1,:]), 1)
+                      - np.concatenate((image[:,1:,:], image[:,(-1,),:]), 1)) != 0) \
+        + axes[2] * ((np.concatenate((image[:,:,(0,)], image[:,:,:-1]), 2)
+                      - np.concatenate((image[:,:,1:], image[:,:,(-1,)]), 2)) != 0)
+
+    # imxp = copy.deepcopy(image)
+    # imxp[1:,:,:] = image[:-1,:,:]
+    # imxm = copy.deepcopy(image)
+    # imxm[:-1,:,:] = image[1:,:,:]
+
+    # imyp = copy.deepcopy(image)
+    # imyp[:,1:,:] = image[:,:-1,:]
+    # imym = copy.deepcopy(image)
+    # imym[:,:-1,:] = image[:,1:,:]
+    # imzp = copy.deepcopy(image)
+    # imzp[:,:,1:] = image[:,:,:-1]
+    # imzm = copy.deepcopy(image)
+    # imzm[:,:,:-1] = image[:,:,1:]
+
+    # return axes[0] * ((imxp - imxm) != 0) + axes[1] * ((imyp - imym) != 0) + axes[2] * ((imzp - imzm) != 0)
+    # return ((imyp - imym) != 0) + ((imzp - imzm) != 0)
+
 # _____________________________________________________________________________________________
 
 
@@ -275,6 +302,20 @@ class ImageProcessing:
             # self._data[targetkey] = self._data[sourcekey]
         else:
             print 'Warning: Deepcopy only implemented for dict type!'
+
+    def rename_entries(self, ids, targetids):
+
+        if type(ids) is str:
+            ids = (ids,)
+            if type(targetids) is not str:
+                raise NameError("Error in ImageProcessing.rename_entries: ids and targetids not compatible!")
+            targetids = (targetids,)
+
+        if len(ids) != len(targetids):
+            raise NameError("Error in ImageProcessing.rename_entries: ids and targetids do not have same length!")
+
+        for i in xrange(0, len(ids)):
+            self._data[targetids[i]] = self._data.pop(ids[i])
 
     ###########################################################################################
     # Image processing
@@ -509,6 +550,9 @@ class ImageProcessing:
 
     def extended_local_maxima(self, neighborhood=26, ids=None, targetids=None):
         self.anytask(extended_local_maxima, neighborhood=neighborhood, ids=ids, targetids=targetids)
+
+    def pixels_at_boundary(self, axes=[1, 1, 1], ids=None, targetids=None):
+        self.anytask(pixels_at_boundary, axes=axes, ids=ids, targetids=targetids)
 
     ###########################################################################################
     # Iterators
@@ -979,6 +1023,10 @@ class ImageFileProcessing(ImageProcessing):
         :type filename: str
         :param filename: If not set the generated file name within this class is used
         """
+
+        if type(ids) is str:
+            ids = (ids,)
+
         if filename is None and filepath is None:
             self.write_h5(self.get_data(), nfile=self._imageFileName + '.h5', dict_ids=ids)
         else:
