@@ -26,3 +26,8 @@ featurefile:    'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.feature
 merge_adjacent_objects:
     numberbysize: 10
     numberbyrandom: 5
+
+localmax_on_disttransf:
+    anisotropy: [10, 1, 1]
+    sigma: 20
+
