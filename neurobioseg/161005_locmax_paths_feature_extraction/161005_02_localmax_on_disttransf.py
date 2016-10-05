@@ -45,17 +45,20 @@ if __name__ == '__main__':
         pixel_pitch=thisparams['anisotropy'],
         background=True
     )
+    locmaxnames = params['locmaxnames']
+    ifp.rename_entries(ids = ('largeobj', 'largeobjm'), targetids = (locmaxnames[0], locmaxnames[1]))
 
     # Gaussian smoothing
     ifp.logging('Dragging Carl Friedrich over the image ...')
-    ifp.gaussian_smoothing(thisparams['sigma'] / np.array(thisparams['anisotropy']))
+    ifp.gaussian_smoothing(thisparams['sigma'] / np.array(thisparams['anisotropy']),
+                           ids=(locmaxnames[0], locmaxnames[1]), targetids=(locmaxnames[2], locmaxnames[3]))
 
     # Local maxima
     ifp.logging('Discovering mountains ...')
-    ifp.extended_local_maxima(neighborhood=26)
+    ifp.extended_local_maxima(neighborhood=26, ids=(locmaxnames[2], locmaxnames[3]))
 
     # Write result
-    ifp.rename_entries(ids = ('largeobj', 'largeobjm'), targetids = params['locmaxnames'])
+    # ifp.rename_entries(ids = ('largeobj', 'largeobjm'), targetids = params['locmaxnames'])
     ifp.write(filename=params['locmaxfile'])
 
     ifp.logging('')
