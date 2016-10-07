@@ -15,6 +15,8 @@ largeobjmnames:
     - 'mergeids_all'
 locmaxfile:     'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.locmax.h5'
 locmaxnames:
+    - 'disttransf'
+    - 'disttransfm'
     - 'locmax'
     - 'locmaxm'
 pathsfile:      'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.h5'
@@ -31,3 +33,5 @@ localmax_on_disttransf:
     anisotropy: [10, 1, 1]
     sigma: 20
 
+paths_within_labels:
+    penaltypower: 10

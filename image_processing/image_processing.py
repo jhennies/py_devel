@@ -557,20 +557,23 @@ class ImageProcessing:
     ###########################################################################################
     # Iterators
 
-    def label_iterator(self, id=None, labellist=None):
+    def label_iterator(self, id=None, labellist=None, background=None):
 
         if labellist is None:
             labellist = self.unique(ids=id)
 
+        if background is not None:
+            labellist = filter(lambda x: x != 0, labellist)
+
         for lbl in labellist:
             yield lbl
 
-    def label_image_iterator(self, from_id, to_id, labellist=None, accumulate=False):
+    def label_image_iterator(self, from_id, to_id, labellist=None, background=None, accumulate=False):
 
         if accumulate:
             self.addtodict(np.zeros(self.shape(from_id)), to_id)
 
-        for lbl in self.label_iterator(id=from_id, labellist=labellist):
+        for lbl in self.label_iterator(id=from_id, labellist=labellist, background=background):
             if not accumulate:
                 self.getlabel(lbl, ids=from_id, targetids=to_id)
             else:
@@ -580,9 +583,9 @@ class ImageProcessing:
             yield lbl
 
     def label_bounds_iterator(self, labelid, targetid, ids=None, targetids=None,
-                              maskvalue=0, value=np.nan):
+                              maskvalue=0, value=np.nan, background=None):
 
-        for lbl in self.label_image_iterator(labelid, targetid):
+        for lbl in self.label_image_iterator(labelid, targetid, background=background):
 
             bounds = self.find_bounding_rect(ids=targetid)
 
