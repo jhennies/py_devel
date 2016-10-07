@@ -104,8 +104,6 @@ if __name__ == '__main__':
     ifp.logging('ifp.shape() = {}', ifp.shape())
     ifp.logging('{}', ifp.amax())
 
-    # TODO: Put the code here
-    # ifpout = ImageFileProcessing()
     hfp = Hdf5Processing()
     c = 0
     for lblo in ifp.label_bounds_iterator('largeobj', 'curlabel', ids=('locmax', 'disttransf'), targetids=('curlocmax', 'curdisttransf'),
@@ -116,11 +114,8 @@ if __name__ == '__main__':
 
         if ifp.amax('curlocmax') == 1:
             ps = find_shortest_path(ifp, thisparams['penaltypower'])
-            # ifpout.addtodict(ps, lblo['label'])
             ifp.logging('Number of paths found: {}', len(ps))
             if ps:
-                # ifpout.set_data_dict({lblo['label']: ps}, append=True)
-                # ifp.logging('ifpout.keys() = {}', ifpout.get_data().keys())
                 hfp.setdata({lblo['label']: ps}, append=True)
                 ifp.write(filename='paths_over_dist_{}.h5'.format(lblo['label']), ids='paths_over_dist')
 
@@ -131,7 +126,6 @@ if __name__ == '__main__':
         if c == 5:
             break
 
-    # ifpout.write(filepath=params['intermedfolder']+params['pathsfile'])
     hfp.write(filepath=params['intermedfolder']+params['pathsfile'])
 
     ifp.logging('')

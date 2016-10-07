@@ -19,10 +19,8 @@ locmaxnames:
     - 'disttransfm'
     - 'locmax'
     - 'locmaxm'
-pathsfile:      'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.h5'
-pathnames:
-    - 'paths'
-    - 'paths_on_disttransf'
+pathstruefile:  'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.true.h5'
+pathsfalsefile: 'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.false.h5'
 featurefile:    'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.features.h5'
 
 merge_adjacent_objects:
@@ -34,4 +32,7 @@ localmax_on_disttransf:
     sigma: 20
 
 paths_within_labels:
+    penaltypower: 10
+
+paths_of_partners:
     penaltypower: 10

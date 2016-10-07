@@ -583,9 +583,9 @@ class ImageProcessing:
             yield lbl
 
     def label_bounds_iterator(self, labelid, targetid, ids=None, targetids=None,
-                              maskvalue=0, value=np.nan, background=None):
+                              maskvalue=0, value=np.nan, background=None, labellist=None):
 
-        for lbl in self.label_image_iterator(labelid, targetid, background=background):
+        for lbl in self.label_image_iterator(labelid, targetid, background=background, labellist=labellist):
 
             bounds = self.find_bounding_rect(ids=targetid)
 
