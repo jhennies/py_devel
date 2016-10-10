@@ -129,7 +129,7 @@ if __name__ == '__main__':
                                               maskvalue=0, value=0, background=0, labellist=labellist):
             lblo['unml1'] = ifp.get_image('mergeids_all')[c, 0]
             lblo['unml2'] = ifp.get_image('mergeids_all')[c, 1]
-            a = 1/0
+
             ifp.logging('------------\nCurrent label {} in iteration {}', lblo['label'], c)
             ifp.logging('Bounding box = {}', lblo['bounds'])
             ifp.logging('Current unmerged labels: {} and {}', lblo['unml1'], lblo['unml2'])
@@ -168,9 +168,4 @@ if __name__ == '__main__':
 
     except:
 
-        ifp.logging('\nUnexpected error:\n---------------------------\n')
-        ifp.logging('{}', traceback.format_exc())
-        ifp.logging('---------------------------')
-        ifp.stoplogger()
-
-        sys.exit()
+        ifp.errout('Unexpected error', traceback)

@@ -10,6 +10,7 @@ import time
 # import random
 import copy
 import yaml
+import sys
 
 __author__ = 'jhennies'
 
@@ -853,6 +854,13 @@ class ImageFileProcessing(ImageProcessing):
             script = f.read()
         self.logging('{}', script)
         self.logging('<<< CODE <<<')
+
+    def errout(self, name, traceback):
+        self.logging('\n{}:\n---------------------------\n', name)
+        self.logging('{}', traceback.format_exc())
+        self.logging('---------------------------')
+        self.stoplogger()
+        sys.exit()
 
     ###########################################################################################
     # Image processing
