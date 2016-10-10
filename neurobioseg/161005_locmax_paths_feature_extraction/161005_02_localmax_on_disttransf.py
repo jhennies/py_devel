@@ -4,6 +4,7 @@ import random
 import vigra
 import numpy as np
 import os
+import inspect
 
 __author__ = 'jhennies'
 
@@ -24,7 +25,8 @@ if __name__ == '__main__':
 
     ifp.startlogger(filename=ifp.get_params()['intermedfolder'] + 'locmax_on_disttransf.log', type='a')
 
-    ifp.code2log(__file__)
+    # ifp.code2log(__file__)
+    ifp.code2log(inspect.stack()[0][1])
     ifp.logging('')
 
     ifp.logging('yamlfile = {}', yamlfile)

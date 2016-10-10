@@ -6,6 +6,7 @@ import vigra
 import numpy as np
 import os
 import vigra.graphs as graphs
+import inspect
 
 __author__ = 'jhennies'
 
@@ -96,7 +97,8 @@ if __name__ == '__main__':
 
     ifp.startlogger(filename=params['intermedfolder'] + 'paths_within_labels.log', type='a')
 
-    ifp.code2log(__file__)
+    # ifp.code2log(__file__)
+    ifp.code2log(inspect.stack()[0][1])
     ifp.logging('')
 
     ifp.logging('yamlfile = {}', yamlfile)
