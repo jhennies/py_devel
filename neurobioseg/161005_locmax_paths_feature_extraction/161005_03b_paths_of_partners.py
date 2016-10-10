@@ -6,6 +6,8 @@ import vigra
 import numpy as np
 import os
 import vigra.graphs as graphs
+import sys
+import traceback
 
 __author__ = 'jhennies'
 
@@ -90,74 +92,85 @@ def find_shortest_path(ifp, penaltypower):
 
 if __name__ == '__main__':
 
-    yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters.yml'
+    try:
 
-    ifp = ImageFileProcessing(
-        yaml=yamlfile,
-        yamlspec={'image_path': 'intermedfolder', 'image_file': 'locmaxfile', 'image_names': ('locmaxnames', 1, 3)},
-        asdict=True,
-        keys=('disttransf', 'locmax')
-    )
-    params = ifp.get_params()
-    thisparams = params['paths_of_partners']
-    ifp.addfromfile(params['intermedfolder']+params['largeobjmfile'], image_names=params['largeobjmnames'],
-                    ids=['largeobjm', 'mergeids_small', 'mergeids_random', 'mergeids_all'])
-    ifp.addfromfile(params['intermedfolder']+params['largeobjfile'], image_names=params['largeobjname'], ids='largeobj')
+        yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters.yml'
 
-    ifp.startlogger(filename=params['intermedfolder'] + 'paths_of_partners.log', type='a')
-
-    ifp.code2log(__file__)
-    ifp.logging('')
-
-    ifp.logging('yamlfile = {}', yamlfile)
-    ifp.logging('ifp.get_data().keys() = {}', ifp.get_data().keys())
-    ifp.logging('ifp.shape() = {}', ifp.shape())
-    ifp.logging('{}', ifp.amax())
-
-    hfp = Hdf5Processing()
-    c = 0
-    # These are the labels which were merged with a respective partner
-    labellist = ifp.get_image('mergeids_all')[:, 0]
-    ifp.logging('labellist = {}', labellist)
-    for lblo in ifp.label_bounds_iterator('largeobjm', 'curlabel',
-                                          ids=('locmax', 'disttransf', 'largeobj'),
-                                          targetids=('curlocmax', 'curdisttransf', 'curlargeobj'),
-                                          maskvalue=0, value=0, background=0, labellist=labellist):
-        lblo['unml1'] = ifp.get_image('mergeids_all')[c, 0]
-        lblo['unml2'] = ifp.get_image('mergeids_all')[c, 1]
-
-        ifp.logging('------------\nCurrent label {} in iteration {}', lblo['label'], c)
-        ifp.logging('Bounding box = {}', lblo['bounds'])
-        ifp.logging('Current unmerged labels: {} and {}', lblo['unml1'], lblo['unml2'])
-
-        # Within the iterator the local maxima within both merged objects are available
-        # Now get the local maxima of both objects individually (the 'UNMerged Labels' = 'unml')
-        ifp.getlabel(lblo['unml1'], ids='curlargeobj', targetids='unml1')
-        ifp.getlabel(lblo['unml2'], ids='curlargeobj', targetids='unml2')
-        ifp.mask_image(maskvalue=0, value=0,
-           ids=('curlocmax', 'curlocmax'),
-           ids2=('unml1', 'unml2'),
-           targetids=('curlocmax_unml1', 'curlocmax_unml2')
+        ifp = ImageFileProcessing(
+            yaml=yamlfile,
+            yamlspec={'image_path': 'intermedfolder', 'image_file': 'locmaxfile', 'image_names': ('locmaxnames', 1, 3)},
+            asdict=True,
+            keys=('disttransf', 'locmax')
         )
+        params = ifp.get_params()
+        thisparams = params['paths_of_partners']
+        ifp.addfromfile(params['intermedfolder']+params['largeobjmfile'], image_names=params['largeobjmnames'],
+                        ids=['largeobjm', 'mergeids_small', 'mergeids_random', 'mergeids_all'])
+        ifp.addfromfile(params['intermedfolder']+params['largeobjfile'], image_names=params['largeobjname'], ids='largeobj')
 
-        # TODO: Find the shortest paths between both labels
-        ifp.logging('ifp.amax = {}', ifp.amax())
-        if ifp.amax('curlocmax_unml1')  == 1 and ifp.amax('curlocmax_unml2') == 1:
-            ps = find_shortest_path(ifp, thisparams['penaltypower'])
+        ifp.startlogger(filename=params['intermedfolder'] + 'paths_of_partners.log', type='a')
 
-            ifp.logging('Number of paths found: {}', len(ps))
-            if ps:
-                hfp.setdata({lblo['label']: ps}, append=True)
-                ifp.write(filename='paths_over_dist_{}.h5'.format(lblo['label']), ids='paths_over_dist')
+        ifp.code2log(__file__)
+        ifp.logging('')
 
-        else:
-            ifp.logging('No local maxima found for at least one partner.')
+        ifp.logging('yamlfile = {}', yamlfile)
+        ifp.logging('ifp.get_data().keys() = {}', ifp.get_data().keys())
+        ifp.logging('ifp.shape() = {}', ifp.shape())
+        ifp.logging('{}', ifp.amax())
 
-        c += 1
-        if c == 5:
-            break
+        hfp = Hdf5Processing()
+        c = 0
+        # These are the labels which were merged with a respective partner
+        labellist = ifp.get_image('mergeids_all')[:, 0]
+        ifp.logging('labellist = {}', labellist)
+        for lblo in ifp.label_bounds_iterator('largeobjm', 'curlabel',
+                                              ids=('locmax', 'disttransf', 'largeobj'),
+                                              targetids=('curlocmax', 'curdisttransf', 'curlargeobj'),
+                                              maskvalue=0, value=0, background=0, labellist=labellist):
+            lblo['unml1'] = ifp.get_image('mergeids_all')[c, 0]
+            lblo['unml2'] = ifp.get_image('mergeids_all')[c, 1]
+            a = 1/0
+            ifp.logging('------------\nCurrent label {} in iteration {}', lblo['label'], c)
+            ifp.logging('Bounding box = {}', lblo['bounds'])
+            ifp.logging('Current unmerged labels: {} and {}', lblo['unml1'], lblo['unml2'])
 
-    hfp.write(filepath=params['intermedfolder']+params['pathsfalsefile'])
+            # Within the iterator the local maxima within both merged objects are available
+            # Now get the local maxima of both objects individually (the 'UNMerged Labels' = 'unml')
+            ifp.getlabel(lblo['unml1'], ids='curlargeobj', targetids='unml1')
+            ifp.getlabel(lblo['unml2'], ids='curlargeobj', targetids='unml2')
+            ifp.mask_image(maskvalue=0, value=0,
+               ids=('curlocmax', 'curlocmax'),
+               ids2=('unml1', 'unml2'),
+               targetids=('curlocmax_unml1', 'curlocmax_unml2')
+            )
 
-    ifp.logging('')
-    ifp.stoplogger()
+            # TODO: Find the shortest paths between both labels
+            ifp.logging('ifp.amax = {}', ifp.amax())
+            if ifp.amax('curlocmax_unml1')  == 1 and ifp.amax('curlocmax_unml2') == 1:
+                ps = find_shortest_path(ifp, thisparams['penaltypower'])
+
+                ifp.logging('Number of paths found: {}', len(ps))
+                if ps:
+                    hfp.setdata({lblo['label']: ps}, append=True)
+                    ifp.write(filename='paths_over_dist_false_{}.h5'.format(lblo['label']), ids='paths_over_dist')
+
+            else:
+                ifp.logging('No local maxima found for at least one partner.')
+
+            c += 1
+            # if c == 5:
+            #     break
+
+        hfp.write(filepath=params['intermedfolder']+params['pathsfalsefile'])
+
+        ifp.logging('')
+        ifp.stoplogger()
+
+    except:
+
+        ifp.logging('\nUnexpected error:\n---------------------------\n')
+        ifp.logging('{}', traceback.format_exc())
+        ifp.logging('---------------------------')
+        ifp.stoplogger()
+
+        sys.exit()
