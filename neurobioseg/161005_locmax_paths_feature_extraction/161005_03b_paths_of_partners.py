@@ -1,5 +1,6 @@
 
 from image_processing import ImageFileProcessing
+from image_processing import getlabel
 from hdf5_processing import Hdf5Processing
 import random
 import vigra
@@ -28,7 +29,7 @@ def find_shortest_path(ifp, penaltypower):
     ifp.power(penaltypower, ids='curdisttransf_inf')
 
     indicator = ifp.get_image('curdisttransf_inf')
-    gridgr = graphs.gridGraph(ifp.shape('curlabel'))
+    gridgr = graphs.gridGraph(ifp.shape('curlabelpair'))
 
     ifp.logging('gridgr.shape = {}'.format(gridgr.shape))
 
@@ -82,10 +83,10 @@ def find_shortest_path(ifp, penaltypower):
     # ifp.concatenate('disttransf', 'paths', target='paths_over_dist')
     ifp.astype(np.uint8, ('pathsim'))
     # ifp.anytask(vigra.filters.multiBinaryDilation, ('paths', 'locmax'), 3)
-    ifp.swapaxes(0, 2, ids=('pathsim', 'curlargeobj', 'curdisttransf'))
+    ifp.swapaxes(0, 2, ids=('pathsim', 'curlabelpair', 'curdisttransf'))
     ifp.anytask(vigra.filters.discDilation, 2, ids='pathsim')
-    ifp.logging('ifp.shape = {}', ifp.shape(ids=('pathsim', 'curlargeobj', 'curdisttransf')))
-    ifp.set_data_dict({'paths_over_dist': np.array([ifp.get_image('pathsim'), ifp.get_image('curlargeobj'), ifp.get_image('curdisttransf')])}, append=True)
+    ifp.logging('ifp.shape = {}', ifp.shape(ids=('pathsim', 'curlabelpair', 'curdisttransf')))
+    ifp.set_data_dict({'paths_over_dist': np.array([ifp.get_image('pathsim'), ifp.get_image('curlabelpair'), ifp.get_image('curdisttransf')])}, append=True)
 
     return paths
 
@@ -116,28 +117,44 @@ if __name__ == '__main__':
         ifp.logging('yamlfile = {}', yamlfile)
         ifp.logging('ifp.get_data().keys() = {}', ifp.get_data().keys())
         ifp.logging('ifp.shape() = {}', ifp.shape())
-        ifp.logging('{}', ifp.amax())
+        ifp.logging('ifp.amax() = {}', ifp.amax())
 
         hfp = Hdf5Processing()
         c = 0
         # These are the labels which were merged with a respective partner
-        labellist = ifp.get_image('mergeids_all')[:, 0]
+        # labellist = ifp.get_image('mergeids_all')[:, 0]
+        labellist = ifp.get_image('mergeids_all')
+        # labellist = [9988]
         ifp.logging('labellist = {}', labellist)
-        for lblo in ifp.label_bounds_iterator('largeobjm', 'curlabel',
-                                              ids=('locmax', 'disttransf', 'largeobj'),
-                                              targetids=('curlocmax', 'curdisttransf', 'curlargeobj'),
-                                              maskvalue=0, value=0, background=0, labellist=labellist):
-            lblo['unml1'] = ifp.get_image('mergeids_all')[c, 0]
-            lblo['unml2'] = ifp.get_image('mergeids_all')[c, 1]
+        # for lblo in ifp.label_bounds_iterator('largeobjm', 'curlabel',
+        #                                       ids=('locmax', 'disttransf', 'largeobj'),
+        #                                       targetids=('curlocmax', 'curdisttransf', 'curlargeobj'),
+        #                                       maskvalue=0, value=0, background=0, labellist=labellist,
+        #                                       forcecontinue=True):
 
-            ifp.logging('------------\nCurrent label {} in iteration {}', lblo['label'], c)
-            ifp.logging('Bounding box = {}', lblo['bounds'])
-            ifp.logging('Current unmerged labels: {} and {}', lblo['unml1'], lblo['unml2'])
+        for lblp in ifp.labelpair_bounds_iterator('largeobj', 'curlabelpair',
+                                                 ids=('locmax', 'disttransf'),
+                                                 targetids=('curlocmax', 'curdisttransf'),
+                                                 maskvalue=0, value=0,
+                                                 labellist=labellist, forcecontinue=False):
+
+            # lblo['unml1'] = ifp.get_image('mergeids_all')[c, 0]
+            # lblo['unml2'] = ifp.get_image('mergeids_all')[c, 1]
+            # lblo['unml1'] = 9988
+            # lblo['unml2'] = 4077
+            # #
+            # # # ifp.deepcopy_entry('curlargeobj', 'curmergedlabels')
+            # # mergeobj = getlabel((lblo['unml2'], lblo['unml1']), ifp.get_image('largeobj'))
+            # # ifp.get_image('curmergedlabels')[mergeobj > 0] = 1
+            #
+            ifp.logging('------------\nCurrent labelpair {} in iteration {}', lblp['labels'], c)
+            ifp.logging('Bounding box = {}', lblp['bounds'])
+            # ifp.logging('Current unmerged labels: {} and {}', lblp['unml1'], lblp['unml2'])
 
             # Within the iterator the local maxima within both merged objects are available
             # Now get the local maxima of both objects individually (the 'UNMerged Labels' = 'unml')
-            ifp.getlabel(lblo['unml1'], ids='curlargeobj', targetids='unml1')
-            ifp.getlabel(lblo['unml2'], ids='curlargeobj', targetids='unml2')
+            ifp.getlabel(lblp['labels'][0], ids='curlabelpair', targetids='unml1')
+            ifp.getlabel(lblp['labels'][1], ids='curlabelpair', targetids='unml2')
             ifp.mask_image(maskvalue=0, value=0,
                ids=('curlocmax', 'curlocmax'),
                ids2=('unml1', 'unml2'),
@@ -151,8 +168,8 @@ if __name__ == '__main__':
 
                 ifp.logging('Number of paths found: {}', len(ps))
                 if ps:
-                    hfp.setdata({lblo['label']: ps}, append=True)
-                    ifp.write(filename='paths_over_dist_false_{}.h5'.format(lblo['label']), ids='paths_over_dist')
+                    hfp.setdata({'{}_{}'.format(lblp['labels'][0], lblp['labels'][1]): ps}, append=True)
+                    ifp.write(filename='paths_over_dist_false_{}_{}.h5'.format(lblp['labels'][0], lblp['labels'][1]), ids='paths_over_dist')
 
             else:
                 ifp.logging('No local maxima found for at least one partner.')
@@ -169,3 +186,8 @@ if __name__ == '__main__':
     except:
 
         ifp.errout('Unexpected error', traceback)
+
+    try:
+        hfp.write(filepath=params['intermedfolder'] + params['pathsfalsefile'])
+    except:
+        pass

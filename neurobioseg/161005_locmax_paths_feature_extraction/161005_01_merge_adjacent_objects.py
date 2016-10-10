@@ -51,13 +51,13 @@ if __name__ == '__main__':
     ifp.astype(np.uint32, ids='labels')
     (grag, rag) = ifp.anytask_rtrn(graphs.gridRegionAdjacencyGraph, ignoreLabel=0, ids='labels')
     edge_ids = rag.edgeIds()
-    ifp.logging('Edge ids: {}', edge_ids)
+    # ifp.logging('Edge ids: {}', edge_ids)
 
     # Type 1:
     # Select edges by size (smallest edges)
     ifp.logging('Number of edgeLengths = {}', len(rag.edgeLengths()))
     edgelen_ids = dict(zip(edge_ids, rag.edgeLengths()))
-    ifp.logging('edgelen_ids = {}', edgelen_ids)
+    # ifp.logging('edgelen_ids = {}', edgelen_ids)
     sorted_edgelens = np.sort(rag.edgeLengths())
     #
     smallest_merge_lens = sorted_edgelens[0:numberbysize]
@@ -100,6 +100,14 @@ if __name__ == '__main__':
         ifp.filter_values(x[1], type='eq', setto=x[0], ids=targetnames[0])
     #     ifp.getlabel(x, ids='labels', targetids='labels_merged_{}_{}'.format(x[0], x[1]))
     # ifp.getlabel(tuple(np.unique(all_merge_labelids)), ids='labels', targetids='get_labels_merged')
+
+    # # Make image of merged labels only
+    # ifp.set_data_dict({targetnames[0]: np.zeros(ifp.shape('labels'))}, append=True)
+    # c = 0
+    # for x in all_merge_labelids:
+    #     ifp.mask_image(x[0], c, ids=targetnames[0], ids2='labels')
+    #     c += 1
+
     ifp.write(filepath=targetfolder + targetfile, ids=targetnames)
     # ifp.write(filepath=targetfolder + 'all_images.h5')
 

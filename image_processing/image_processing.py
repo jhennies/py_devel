@@ -11,6 +11,7 @@ import time
 import copy
 import yaml
 import sys
+import traceback
 
 __author__ = 'jhennies'
 
@@ -54,7 +55,6 @@ def resize_z_nearest(image, z):
 
 
 def getlabel(image, label):
-
     if type(label) is tuple:
 
         lblim = np.zeros(image.shape, dtype=image.dtype)
@@ -153,12 +153,21 @@ def concatenate(image1, image2):
 
 def find_bounding_rect(image):
 
+    # print 'np.amax(image) = {}'.format(np.amax(image))
+    # print 'image.sum(axis=0) = {}'.format(image.sum(axis=0))
+    # print 'image.sum(axis=0).sum(axis=0) = {}'.format(image.sum(axis=0).sum(axis=0))
+
     # Bands
     bnds = np.flatnonzero(image.sum(axis=0).sum(axis=0))
     # Rows
     rows = np.flatnonzero(image.sum(axis=1).sum(axis=1))
     # Columns
     cols = np.flatnonzero(image.sum(axis=2).sum(axis=0))
+
+    # print 'image.shape = {}'.format(image.shape)
+    # print 'bnds = {}'.format(bnds)
+    # print 'rows = {}'.format(rows)
+    # print 'cols = {}'.format(cols)
 
     return [[rows.min(), rows.max()+1], [cols.min(), cols.max()+1], [bnds.min(), bnds.max()+1]]
 
@@ -584,19 +593,104 @@ class ImageProcessing:
             yield lbl
 
     def label_bounds_iterator(self, labelid, targetid, ids=None, targetids=None,
-                              maskvalue=0, value=np.nan, background=None, labellist=None):
+                              maskvalue=0, value=np.nan, background=None, labellist=None,
+                              forcecontinue=False):
 
         for lbl in self.label_image_iterator(labelid, targetid, background=background, labellist=labellist):
 
-            bounds = self.find_bounding_rect(ids=targetid)
+            # self.logging('self.amax() = {}', self.amax())
+            try:
 
-            self.crop_bounding_rect(bounds, ids=targetid)
+                bounds = self.find_bounding_rect(ids=targetid)
 
-            if ids is not None:
-                self.crop_bounding_rect(bounds, ids=ids, targetids=targetids)
-                self.mask_image(maskvalue=maskvalue, value=value, ids=targetids, ids2=targetid)
+                self.crop_bounding_rect(bounds, ids=targetid)
 
-            yield {'bounds': bounds, 'label': lbl}
+                if ids is not None:
+                    self.crop_bounding_rect(bounds, ids=ids, targetids=targetids)
+                    self.mask_image(maskvalue=maskvalue, value=value, ids=targetids, ids2=targetid)
+
+                yield {'bounds': bounds, 'label': lbl}
+
+            except:
+
+                if forcecontinue:
+                    self.errprint('Warning: Something went wrong in label {}, jumping to next label'.format(lbl), traceback)
+
+                    continue
+                else:
+                    raise
+
+    def labelpair_bounds_iterator(self, labelid, targetid, ids=None, targetids=None,
+                                  maskvalue=0, value=np.nan, labellist=None,
+                                  forcecontinue=False):
+
+        if labellist is None:
+            raise ValueError('Error in ImageProcessing.labelpair_bounds_iterator: A labellist with labelpairs has to be specified!')
+
+        for lblpair in labellist:
+
+            try:
+                self.getlabel(tuple(lblpair), ids=labelid, targetids=targetid)
+                bounds = self.find_bounding_rect(ids=targetid)
+                self.crop_bounding_rect(bounds, ids=targetid)
+
+                if ids is not None:
+                    self.crop_bounding_rect(bounds, ids=ids, targetids=targetids)
+                    self.mask_image(maskvalue=maskvalue, value=value, ids=targetids, ids2=targetid)
+
+                yield {'bounds': bounds, 'labels': lblpair}
+
+            except:
+
+                if forcecontinue:
+                    self.errprint('Warning: Something went wrong in labelpair {}, jumping to next labelpair'.format(lblpair))
+                    continue
+                else:
+                    raise
+
+    ###########################################################################################
+    # Log file operations
+
+    _logger = None
+
+    def startlogger(self, filename=None, type='a'):
+
+        if filename is not None:
+            self._logger = open(filename, type)
+
+        self.logging("Logger started: {}\n".format(time.strftime('%X %z on %b %d, %Y')))
+
+    def logging(self, format, *args):
+        print format.format(*args)
+        format += "\n"
+        if self._logger is not None:
+            self._logger.write(format.format(*args))
+
+    def stoplogger(self):
+
+        self.logging("Logger stopped: {}".format(time.strftime('%X %z on %b %d, %Y')))
+
+        if self._logger is not None:
+            self._logger.close()
+
+    def code2log(self, filename):
+        self.logging('>>> CODE >>>')
+        with open(filename) as f:
+            script = f.read()
+        self.logging('{}', script)
+        self.logging('<<< CODE <<<')
+
+    def errout(self, name, tb):
+        self.logging('\n{}:\n---------------------------\n', name)
+        self.logging('{}', tb.format_exc())
+        self.logging('---------------------------')
+        self.stoplogger()
+        sys.exit()
+
+    def errprint(self, name, tb):
+        self.logging('\n{}:\n---------------------------\n', name)
+        self.logging('{}', tb.format_exc())
+        self.logging('---------------------------')
 
 # _____________________________________________________________________________________________
 
@@ -822,45 +916,6 @@ class ImageFileProcessing(ImageProcessing):
 
     def addtoname(self, addstr):
         self._imageFileName += addstr
-
-    ###########################################################################################
-    # Log file operations
-
-    _logger = None
-
-    def startlogger(self, filename=None, type='a'):
-
-        if filename is not None:
-            self._logger = open(filename, type)
-
-        self.logging("Logger started: {}\n".format(time.strftime('%X %z on %b %d, %Y')))
-
-    def logging(self, format, *args):
-        print format.format(*args)
-        format += "\n"
-        if self._logger is not None:
-            self._logger.write(format.format(*args))
-
-    def stoplogger(self):
-
-        self.logging("Logger stopped: {}".format(time.strftime('%X %z on %b %d, %Y')))
-
-        if self._logger is not None:
-            self._logger.close()
-
-    def code2log(self, filename):
-        self.logging('>>> CODE >>>')
-        with open(filename) as f:
-            script = f.read()
-        self.logging('{}', script)
-        self.logging('<<< CODE <<<')
-
-    def errout(self, name, traceback):
-        self.logging('\n{}:\n---------------------------\n', name)
-        self.logging('{}', traceback.format_exc())
-        self.logging('---------------------------')
-        self.stoplogger()
-        sys.exit()
 
     ###########################################################################################
     # Image processing
