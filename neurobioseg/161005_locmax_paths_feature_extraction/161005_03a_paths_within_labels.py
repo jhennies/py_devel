@@ -117,16 +117,16 @@ if __name__ == '__main__':
             ifp.logging('Number of paths found: {}', len(ps))
             if ps:
                 hfp.setdata({lblo['label']: ps}, append=True)
-                ifp.write(filename='paths_over_dist_{}.h5'.format(lblo['label']), ids='paths_over_dist')
+                ifp.write(filename='paths_over_dist_true_{}.h5'.format(lblo['label']), ids='paths_over_dist')
 
         else:
             ifp.logging('No local maxima found for this label.')
 
         c += 1
-        if c == 5:
-            break
+        # if c == 5:
+        #     break
 
-    hfp.write(filepath=params['intermedfolder']+params['pathsfile'])
+    hfp.write(filepath=params['intermedfolder']+params['pathstruefile'])
 
     ifp.logging('')
     ifp.stoplogger()

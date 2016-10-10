@@ -161,7 +161,7 @@ if __name__ == '__main__':
                targetids=('curlocmax_unml1', 'curlocmax_unml2')
             )
 
-            # TODO: Find the shortest paths between both labels
+            # Find the shortest paths between both labels
             ifp.logging('ifp.amax = {}', ifp.amax())
             if ifp.amax('curlocmax_unml1')  == 1 and ifp.amax('curlocmax_unml2') == 1:
                 ps = find_shortest_path(ifp, thisparams['penaltypower'])
