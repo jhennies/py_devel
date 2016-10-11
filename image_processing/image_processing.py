@@ -705,6 +705,7 @@ class ImageFileProcessing(ImageProcessing):
     # _data = None
     _boundaries = None
     _parameters = None
+    _yaml = None
 
     def __init__(self, image_path=None, image_file=None, image_names=None, image_ids=None,
                  asdict=True, keys=None, yaml=None, yamlspec=None):
@@ -757,6 +758,7 @@ class ImageFileProcessing(ImageProcessing):
         """
 
         if yaml is not None:
+            self._yaml = yaml
             yamldict = self.load_yaml(yaml)
             if yamlspec is None:
                 if 'image_path' in yamldict.keys(): image_path = yamldict['image_path']
@@ -1112,6 +1114,19 @@ class ImageFileProcessing(ImageProcessing):
         #     self.write_h5(self._imageFileName + '.h5', self.get_data(), dict_ids=ids)
         # else:
         #     self.write_h5(filename, self.get_data(), dict_ids=ids)
+
+    ###########################################################################################
+    # Log file operations
+
+    def yaml2log(self, filepath=None):
+
+        if filepath is None:
+            filepath = self._yaml
+
+        with open(filepath, 'r') as f:
+            yaml_data = f.read()
+        self.logging('>>> YAML >>>\n{}\n<<< YAML <<<', yaml_data)
+
 
 # _____________________________________________________________________________________________
 

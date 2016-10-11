@@ -54,7 +54,7 @@ class Hdf5Processing:
 
         of.close()
 
-    def get_h5_item_structure(self, f, offset='    ', castkey=None):
+    def get_h5_content(self, f, offset='    ', castkey=None):
 
         # if isinstance(f, h5py.Dataset):
         #     print offset, '(Dataset)', f.name, 'len =', f.shape
@@ -77,7 +77,7 @@ class Hdf5Processing:
                 if castkey is not None:
                     key = castkey(key)
                     # print '{} type(key) = {}'.format(offset, type(key))
-                rtrn_dict[key] = self.get_h5_item_structure(subg, offset + '    ', castkey=castkey)
+                rtrn_dict[key] = self.get_h5_content(subg, offset + '    ', castkey=castkey)
 
         else:
             # print offset, f
@@ -89,7 +89,7 @@ class Hdf5Processing:
 
         f = h5py.File(filepath)
 
-        return self.get_h5_item_structure(f, castkey=castkey)
+        return self.get_h5_content(f, castkey=castkey)
 
     def data_from_file(self, filepath, dataname, castkey=None, append=True):
         newdata = self.load_h5(filepath, castkey=castkey)
@@ -101,6 +101,28 @@ class Hdf5Processing:
     def getdataitem(self, itemkey):
         return self._data[itemkey]
 
+    def keys(self):
+        return self._data.keys()
+
+    def datastructure2string(self, data=None, dstr='', indent=0, maxdepth=None, depth=0):
+
+        depth += 1
+        if maxdepth is not None:
+            if depth > maxdepth:
+                return dstr
+
+        if data is None:
+            data = self._data
+
+        if type(data) is dict:
+
+            for key, val in data.iteritems():
+
+                # print key
+                dstr += '{}{}\n'.format(' '*indent, key)
+                dstr = self.datastructure2string(data=val, dstr=dstr, indent=indent+4, maxdepth=maxdepth, depth=depth)
+
+        return dstr
 
 if __name__ == '__main__':
 
