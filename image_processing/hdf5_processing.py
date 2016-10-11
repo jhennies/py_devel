@@ -1,5 +1,6 @@
 import h5py
 import numpy as np
+from simple_logger import SimpleLogger
 import re
 import vigra
 import scipy
@@ -14,7 +15,7 @@ import sys
 __author__ = 'jhennies'
 
 
-class Hdf5Processing:
+class Hdf5Processing(SimpleLogger):
 
     _data = None
 
@@ -123,6 +124,27 @@ class Hdf5Processing:
                 dstr = self.datastructure2string(data=val, dstr=dstr, indent=indent+4, maxdepth=maxdepth, depth=depth)
 
         return dstr
+
+    def data_iterator(self, maxdepth=None, data=None, depth=0):
+
+        depth += 1
+        if maxdepth is not None:
+            if depth-1 > maxdepth:
+                return
+
+        if data is None:
+            data = self._data
+
+        if type(data) is dict:
+
+            for key, val in data.iteritems():
+                # print key, val
+                yield {'depth': depth-1, 'key': key, 'val': val}
+                # self.data_iterator(level=level, maxlevel=maxlevel, data=val)
+
+                for d in self.data_iterator(maxdepth=maxdepth, data=val, depth=depth):
+                    yield d
+
 
 if __name__ == '__main__':
 

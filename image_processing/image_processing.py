@@ -12,6 +12,7 @@ import copy
 import yaml
 import sys
 import traceback
+from simple_logger import SimpleLogger
 
 __author__ = 'jhennies'
 
@@ -243,7 +244,7 @@ def pixels_at_boundary(image, axes=[1, 1, 1]):
 # _____________________________________________________________________________________________
 
 
-class ImageProcessing:
+class ImageProcessing(SimpleLogger):
 
     _data = None
 
@@ -647,50 +648,6 @@ class ImageProcessing:
                     continue
                 else:
                     raise
-
-    ###########################################################################################
-    # Log file operations
-
-    _logger = None
-
-    def startlogger(self, filename=None, type='a'):
-
-        if filename is not None:
-            self._logger = open(filename, type)
-
-        self.logging("Logger started: {}\n".format(time.strftime('%X %z on %b %d, %Y')))
-
-    def logging(self, format, *args):
-        print format.format(*args)
-        format += "\n"
-        if self._logger is not None:
-            self._logger.write(format.format(*args))
-
-    def stoplogger(self):
-
-        self.logging("Logger stopped: {}".format(time.strftime('%X %z on %b %d, %Y')))
-
-        if self._logger is not None:
-            self._logger.close()
-
-    def code2log(self, filename):
-        self.logging('>>> CODE >>>')
-        with open(filename) as f:
-            script = f.read()
-        self.logging('{}', script)
-        self.logging('<<< CODE <<<')
-
-    def errout(self, name, tb):
-        self.logging('\n{}:\n---------------------------\n', name)
-        self.logging('{}', tb.format_exc())
-        self.logging('---------------------------')
-        self.stoplogger()
-        sys.exit()
-
-    def errprint(self, name, tb):
-        self.logging('\n{}:\n---------------------------\n', name)
-        self.logging('{}', tb.format_exc())
-        self.logging('---------------------------')
 
 # _____________________________________________________________________________________________
 
