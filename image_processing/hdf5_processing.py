@@ -9,6 +9,7 @@ import time
 # import random
 import copy
 import yaml
+import sys
 
 __author__ = 'jhennies'
 
@@ -17,9 +18,12 @@ class Hdf5Processing:
 
     _data = None
 
-    def __init__(self, data=None, dataname=None):
+    def __init__(self, filepath=None, data=None, dataname=None, castkey=None):
         if data is not None:
             self.setdata(data, dataname)
+
+        elif filepath is not None:
+            self.data_from_file(filepath, dataname, castkey=castkey, append=False)
 
     def setdata(self, data, append=True):
 
@@ -50,5 +54,70 @@ class Hdf5Processing:
 
         of.close()
 
+    def get_h5_item_structure(self, f, offset='    ', castkey=None):
+
+        # if isinstance(f, h5py.Dataset):
+        #     print offset, '(Dataset)', f.name, 'len =', f.shape
+        #
+        # if isinstance(f, h5py.Group):
+        #     print offset, '(Group)', f.name
+        #
+        # else :
+        #     pass
+        #     # print 'WORNING: UNKNOWN ITEM IN HDF5 FILE', f.name
+        #     # sys.exit ( "EXECUTION IS TERMINATED" )
+        # dict_f = {}
+
+        if isinstance(f, h5py.File) or isinstance(f, h5py.Group):
+            dict_f = dict(f)
+            rtrn_dict = {}
+            for key, val in dict_f.iteritems():
+                subg = val
+                # print offset, key
+                if castkey is not None:
+                    key = castkey(key)
+                    # print '{} type(key) = {}'.format(offset, type(key))
+                rtrn_dict[key] = self.get_h5_item_structure(subg, offset + '    ', castkey=castkey)
+
+        else:
+            # print offset, f
+            rtrn_dict = np.array(f)
+
+        return rtrn_dict
+
+    def load_h5(self, filepath, castkey=None):
+
+        f = h5py.File(filepath)
+
+        return self.get_h5_item_structure(f, castkey=castkey)
+
+    def data_from_file(self, filepath, dataname, castkey=None, append=True):
+        newdata = self.load_h5(filepath, castkey=castkey)
+        self.setdata({dataname: newdata}, append)
+
+    def getdata(self):
+        return self._data
+
+    def getdataitem(self, itemkey):
+        return self._data[itemkey]
+
+
 if __name__ == '__main__':
-    pass
+
+    # hfp = Hdf5Processing()
+    # content = hfp.load('/media/julian/Daten/neuraldata/cremi_2016/develop/161011_locmax_paths_feature_extraction/intermediate/cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.true.h5',
+    #          castkey=float)
+    # print content.keys()
+    # print content[7428].keys()
+    # print content[7428][0
+
+    hfp = Hdf5Processing(
+        filepath='/media/julian/Daten/neuraldata/cremi_2016/develop/161011_locmax_paths_feature_extraction/intermediate/cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.true.h5',
+        dataname='content',
+        castkey=float
+    )
+
+    data = hfp.getdataitem('content')
+    print data.keys()
+    print data[data.keys()[0]].keys()
+    print data[data.keys()[0]][data[data.keys()[0]].keys()[0]]
