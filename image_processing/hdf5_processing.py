@@ -1,6 +1,7 @@
 import h5py
 import numpy as np
 from simple_logger import SimpleLogger
+from yaml_parameters import YamlParams
 import re
 import vigra
 import scipy
@@ -15,13 +16,38 @@ import sys
 __author__ = 'jhennies'
 
 
-class Hdf5Processing(SimpleLogger):
+class Hdf5Processing(SimpleLogger, YamlParams):
 
     _data = None
 
-    def __init__(self, filepath=None, data=None, dataname=None, castkey=None):
+    def __init__(self, path=None, filename=None, filepath=None, data=None, dataname=None, castkey=None,
+                 yaml=None, yamlspec=None):
+
+        YamlParams.__init__(self, filename=yaml)
+
+        if yaml is not None:
+
+            yamldict = self.get_params()
+            if yamlspec is None:
+                if 'filepath' in yamldict.keys(): filepath = yamldict['filepath']
+                if 'path' in yamldict.keys(): filepath = yamldict['path']
+                if 'filename' in yamldict.keys(): filepath = yamldict['filename']
+                if 'dataname' in yamldict.keys(): dataname = yamldict['dataname']
+                if 'castkey' in yamldict.keys(): castkey = yamldict['castkey']
+
+            else:
+                if 'filepath' in yamlspec.keys(): filepath = yamldict[yamlspec['filepath']]
+                if 'path' in yamlspec.keys(): path = yamldict[yamlspec['path']]
+                if 'filename' in yamlspec.keys(): filename = yamldict[yamlspec['filename']]
+                if 'dataname' in yamlspec.keys(): dataname = yamldict[yamlspec['dataname']]
+                if 'castkey' in yamlspec.keys(): castkey = yamldict[yamlspec['castkey']]
+
+
         if data is not None:
             self.setdata(data, dataname)
+
+        elif path is not None:
+            self.data_from_file(path+filename, dataname, castkey=castkey, append=False)
 
         elif filepath is not None:
             self.data_from_file(filepath, dataname, castkey=castkey, append=False)

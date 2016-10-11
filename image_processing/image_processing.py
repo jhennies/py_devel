@@ -13,6 +13,7 @@ import yaml
 import sys
 import traceback
 from simple_logger import SimpleLogger
+from yaml_parameters import YamlParams
 
 __author__ = 'jhennies'
 
@@ -652,7 +653,7 @@ class ImageProcessing(SimpleLogger):
 # _____________________________________________________________________________________________
 
 
-class ImageFileProcessing(ImageProcessing):
+class ImageFileProcessing(ImageProcessing, YamlParams):
 
     _imagePath = None
     _imageFile = None
@@ -661,8 +662,6 @@ class ImageFileProcessing(ImageProcessing):
     _imageIds = 0
     # _data = None
     _boundaries = None
-    _parameters = None
-    _yaml = None
 
     def __init__(self, image_path=None, image_file=None, image_names=None, image_ids=None,
                  asdict=True, keys=None, yaml=None, yamlspec=None):
@@ -715,8 +714,10 @@ class ImageFileProcessing(ImageProcessing):
         """
 
         if yaml is not None:
-            self._yaml = yaml
-            yamldict = self.load_yaml(yaml)
+            YamlParams.__init__(self, filename=yaml)
+            # self._yaml = yaml
+            # yamldict = self.load_yaml(yaml)
+            yamldict = self.get_params()
             if yamlspec is None:
                 if 'image_path' in yamldict.keys(): image_path = yamldict['image_path']
                 if 'image_file' in yamldict.keys(): image_file = yamldict['image_file']
@@ -738,6 +739,8 @@ class ImageFileProcessing(ImageProcessing):
                 if 'image_ids' in yamlspec.keys(): image_ids = yamldict[yamlspec['image_ids']]
                 if 'asdict' in yamlspec.keys(): asdict = yamldict[yamlspec['asdict']]
                 if 'keys' in yamlspec.keys(): keys = yamldict[yamlspec['keys']]
+        else:
+            YamlParams.__init__(self)
 
         if image_path is not None and image_file is not None:
             data = self.load_h5(image_path + image_file, image_ids, image_names,
@@ -748,15 +751,6 @@ class ImageFileProcessing(ImageProcessing):
         ImageProcessing.__init__(self, data)
 
         self.set_file(image_path, image_file, image_names, image_ids)
-
-    def load_yaml(self, filename):
-
-        with open(filename, 'r') as f:
-            readict = yaml.load(f)
-
-        self._parameters = readict
-
-        return readict
 
     def load_h5(self, im_file, ids=None, names=None, asdict=False, keys=None):
         #     """
@@ -869,9 +863,6 @@ class ImageFileProcessing(ImageProcessing):
 
     def get_filename(self):
         return self._imageFileName + '.h5'
-
-    def get_params(self):
-        return self._parameters
 
     def addtoname(self, addstr):
         self._imageFileName += addstr
@@ -1071,18 +1062,6 @@ class ImageFileProcessing(ImageProcessing):
         #     self.write_h5(self._imageFileName + '.h5', self.get_data(), dict_ids=ids)
         # else:
         #     self.write_h5(filename, self.get_data(), dict_ids=ids)
-
-    ###########################################################################################
-    # Log file operations
-
-    def yaml2log(self, filepath=None):
-
-        if filepath is None:
-            filepath = self._yaml
-
-        with open(filepath, 'r') as f:
-            yaml_data = f.read()
-        self.logging('>>> YAML >>>\n{}\n<<< YAML <<<', yaml_data)
 
 
 # _____________________________________________________________________________________________
