@@ -1,6 +1,6 @@
 
 from image_processing import ImageFileProcessing
-from image_processing import getlabel
+from processing_lib import getlabel
 from hdf5_processing import Hdf5Processing
 import random
 import vigra
