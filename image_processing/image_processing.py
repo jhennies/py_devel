@@ -329,6 +329,10 @@ class ImageProcessing(SimpleLogger):
         for i in xrange(0, len(ids)):
             self._data[targetids[i]] = self._data.pop(ids[i])
 
+    def new_image(self, shape, name, dtype=np.float32, value=0):
+        image = np.ones(shape, dtype=dtype) * value
+        self.set_data_dict({name: image})
+
     ###########################################################################################
     # Image processing
 

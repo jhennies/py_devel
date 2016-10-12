@@ -16,7 +16,7 @@ import sys
 __author__ = 'jhennies'
 
 
-class Hdf5Processing(SimpleLogger, YamlParams):
+class Hdf5Processing(YamlParams):
 
     _data = None
 

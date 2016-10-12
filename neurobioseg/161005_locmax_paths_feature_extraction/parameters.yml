@@ -36,3 +36,7 @@ paths_within_labels:
 
 paths_of_partners:
     penaltypower: 10
+
+features_of_paths:
+    anisotropy: [10, 1, 1]
+    radius_paths_ends: 10
