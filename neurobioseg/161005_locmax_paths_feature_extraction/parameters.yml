@@ -1,6 +1,6 @@
 datafolder: '/media/julian/Daten/neuraldata/cremi_2016/'
-resultfolder: '/media/julian/Daten/neuraldata/cremi_2016/develop/161011_locmax_paths_feature_extraction/'
-intermedfolder: '/media/julian/Daten/neuraldata/cremi_2016/develop/161011_locmax_paths_feature_extraction/intermediate/'
+resultfolder: '/media/julian/Daten/neuraldata/cremi_2016/develop/161012_locmax_paths_feature_extraction/'
+intermedfolder: '/media/julian/Daten/neuraldata/cremi_2016/develop/161012_locmax_paths_feature_extraction/intermediate/'
 createfolders: True
 
 labelsfile:     'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.h5'

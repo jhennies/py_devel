@@ -11,7 +11,7 @@ import inspect
 __author__ = 'jhennies'
 
 
-def find_shortest_path(ifp, penaltypower):
+def find_shortest_path(ifp, penaltypower, bounds):
 
     # Modify distancetransform
     #
@@ -62,7 +62,8 @@ def find_shortest_path(ifp, penaltypower):
 
             instance.run(gridgr_edgeind, sourceNode, target=targetNode)
             path = instance.path(pathType='coordinates')
-            paths.append(path)
+            # Do not forget to correct for the offset caused by cropping!
+            paths.append(path + [bounds[0][0], bounds[1][0], bounds[2][0]])
 
             # for coords in path:
             #     # ifp.logging('coords = {}'.format(coords))
@@ -115,7 +116,7 @@ if __name__ == '__main__':
         ifp.logging('Bounding box = {}', lblo['bounds'])
 
         if ifp.amax('curlocmax') == 1:
-            ps = find_shortest_path(ifp, thisparams['penaltypower'])
+            ps = find_shortest_path(ifp, thisparams['penaltypower'], lblo['bounds'])
             ifp.logging('Number of paths found: {}', len(ps))
             if ps:
                 hfp.setdata({lblo['label']: ps}, append=True)

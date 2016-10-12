@@ -151,7 +151,7 @@ class Hdf5Processing(YamlParams):
 
         return dstr
 
-    def data_iterator(self, maxdepth=None, data=None, depth=0):
+    def data_iterator(self, maxdepth=None, data=None, depth=0, keylist=[]):
 
         depth += 1
         if maxdepth is not None:
@@ -165,12 +165,31 @@ class Hdf5Processing(YamlParams):
 
             for key, val in data.iteritems():
                 # print key, val
-                yield {'depth': depth-1, 'key': key, 'val': val}
+                kl = keylist + [key,]
+                yield {'depth': depth-1, 'key': key, 'val': val, 'keylist': kl}
                 # self.data_iterator(level=level, maxlevel=maxlevel, data=val)
 
-                for d in self.data_iterator(maxdepth=maxdepth, data=val, depth=depth):
+                for d in self.data_iterator(maxdepth=maxdepth, data=val, depth=depth, keylist=kl):
                     yield d
 
+    # # ANYTASK-based functions
+    #
+    # def anytask(self, task, *args, **kwargs):
+    #     """
+    #     :param task:
+    #
+    #     :param args:
+    #
+    #     :param kwargs:
+    #
+    #     """
+    #
+    #     for d in self.data_iterator(maxdepth=None):
+    #
+    #         if type(d['val']) is not dict:
+    #
+    #             d['val'] = task(d['val'], *args, **kwargs)
+    #             self._data[d['keylist']] = d['val']
 
 if __name__ == '__main__':
 

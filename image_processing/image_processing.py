@@ -14,235 +14,9 @@ import sys
 import traceback
 from simple_logger import SimpleLogger
 from yaml_parameters import YamlParams
+import processing_lib as lib
 
 __author__ = 'jhennies'
-
-
-# _____________________________________________________________________________________________
-# The image processing library
-
-def invert_image(image):
-    return np.amax(image) - image
-
-
-def swapaxes(image, axis1, axis2):
-    return np.swapaxes(image, axis1, axis2)
-
-
-def rollaxis(image, axis, start=0):
-    return np.rollaxis(image, axis, start)
-
-
-def resize(image, zoom, mode):
-    # self._image = vigra.sampling.resizeImageNoInterpolation(self._image, shape=shape)
-    print 'Resizing with mode = ' + mode
-    return scipy.ndimage.interpolation.zoom(image, zoom, mode=mode, order=0)
-    # scipy.misc.imresize(self._image, shape, interp='nearest')
-
-
-def resize_z_nearest(image, z):
-    img = image
-    newimg = np.zeros((img.shape[0], img.shape[1], z))
-    for i in xrange(0, img.shape[1]):
-        t = img[:, i, :]
-        # print img.shape
-        # print t.shape
-        # t = np.swapaxes(t, 1, 2)
-        misc.imresize(t, z, interp='nearest')
-        # t = np.swapaxes(t, 1, 2)
-
-        newimg[:, i, :] = t
-
-    return newimg
-
-
-def getlabel(image, label):
-    if type(label) is tuple:
-
-        lblim = np.zeros(image.shape, dtype=image.dtype)
-        for lbl in label:
-            lblim[image == lbl] = lbl
-
-        return lblim
-
-    else:
-
-        return np.array((image == label)).astype(np.uint32)
-
-
-def amax(image):
-    return np.amax(image)
-
-
-def astype(image, dtype):
-    return image.astype(dtype=dtype)
-
-
-def distance_transform(image, pixel_pitch=(), background=True):
-    return vigra.filters.distanceTransform(image, pixel_pitch=pixel_pitch, background=background)
-
-
-def filter_values(image, value, type='se', setto=0):
-
-    if type == 's':
-        image[image < value] = setto
-    elif type == 'se':
-        image[image <= value] = setto
-    elif type == 'eq':
-        image[image == value] = setto
-    elif type == 'le':
-        image[image >= value] = setto
-    elif type == 'l':
-        image[image > value] = setto
-    elif type == 'ne':
-        image[image != value] = setto
-
-    return image
-
-
-def binarize(image, value, type='l'):
-
-    returnimg = np.array()
-    if type == 's':
-        returnimg = (image < value)
-    elif type == 'se':
-        returnimg = (image <= value)
-    elif type == 'eq':
-        returnimg = (image == value)
-    elif type == 'le':
-        returnimg = (image >= value)
-    elif type == 'l':
-        returnimg = (image > value)
-
-    return returnimg
-
-
-def conncomp(image, neighborhood='direct', background_value=0):
-    return vigra.analysis.labelMultiArrayWithBackground(image, neighborhood=neighborhood, background_value=background_value)
-
-
-def crop(image, start, stop):
-    return image[start[0]:stop[0], start[1]:stop[1], start[2]:stop[2]]
-
-
-def shape(image):
-    return image.shape
-
-
-def power(image, value):
-    return np.power(image, value)
-
-
-def mult(image, value):
-    return np.multiply(image, value)
-
-
-def mult2im(image1, image2):
-    return image1 * image2
-
-
-def add(image, value):
-    return image + value
-
-
-def add2im(image1, image2):
-    return image1 + image2
-
-
-def concatenate(image1, image2):
-    return [image1, image2]
-
-
-def find_bounding_rect(image):
-
-    # print 'np.amax(image) = {}'.format(np.amax(image))
-    # print 'image.sum(axis=0) = {}'.format(image.sum(axis=0))
-    # print 'image.sum(axis=0).sum(axis=0) = {}'.format(image.sum(axis=0).sum(axis=0))
-
-    # Bands
-    bnds = np.flatnonzero(image.sum(axis=0).sum(axis=0))
-    # Rows
-    rows = np.flatnonzero(image.sum(axis=1).sum(axis=1))
-    # Columns
-    cols = np.flatnonzero(image.sum(axis=2).sum(axis=0))
-
-    # print 'image.shape = {}'.format(image.shape)
-    # print 'bnds = {}'.format(bnds)
-    # print 'rows = {}'.format(rows)
-    # print 'cols = {}'.format(cols)
-
-    return [[rows.min(), rows.max()+1], [cols.min(), cols.max()+1], [bnds.min(), bnds.max()+1]]
-
-
-def crop_bounding_rect(image, bounds=None):
-
-    if bounds is None:
-        bounds = find_bounding_rect(image)
-
-    return image[bounds[0][0]:bounds[0][1], bounds[1][0]:bounds[1][1], bounds[2][0]:bounds[2][1]]
-
-
-def replace_subimage(image, rplimage, position=None, bounds=None, ignore=None):
-
-    # Make sure bounds is not None
-    if bounds is None and position is None:
-        bounds = ((0, 0), (0, 0), (0, 0))
-    if bounds is None and position is not None:
-        bounds = ((position[0], rplimage.shape[0]), (position[1], rplimage.shape[1]), (position[2], rplimage.shape[2]))
-
-    if ignore is None:
-        image[bounds[0][0]:bounds[0][1], bounds[1][0]:bounds[1][1], bounds[2][0]:bounds[2][1]] = rplimage
-    else:
-        image[bounds[0][0]:bounds[0][1], bounds[1][0]:bounds[1][1], bounds[2][0]:bounds[2][1]][rplimage != ignore] = rplimage[rplimage != ignore]
-
-    return image
-
-
-def mask_image(image, mask, maskvalue=False, value=0):
-    image[mask == maskvalue] = value
-    return image
-
-
-def unique(image):
-    return np.unique(image)
-
-
-def gaussian_smoothing(image, sigma):
-    return vigra.filters.gaussianSmoothing(image, sigma)
-
-
-def extended_local_maxima(image, neighborhood=26):
-    image = image.astype(np.float32)
-    return vigra.analysis.extendedLocalMaxima3D(image, neighborhood=neighborhood)
-
-
-def pixels_at_boundary(image, axes=[1, 1, 1]):
-
-    return axes[0] * ((np.concatenate((image[(0,),:,:], image[:-1,:,:]))
-                      - np.concatenate((image[1:,:,:], image[(-1,),:,:]))) != 0) \
-        + axes[1] * ((np.concatenate((image[:,(0,),:], image[:,:-1,:]), 1)
-                      - np.concatenate((image[:,1:,:], image[:,(-1,),:]), 1)) != 0) \
-        + axes[2] * ((np.concatenate((image[:,:,(0,)], image[:,:,:-1]), 2)
-                      - np.concatenate((image[:,:,1:], image[:,:,(-1,)]), 2)) != 0)
-
-    # imxp = copy.deepcopy(image)
-    # imxp[1:,:,:] = image[:-1,:,:]
-    # imxm = copy.deepcopy(image)
-    # imxm[:-1,:,:] = image[1:,:,:]
-
-    # imyp = copy.deepcopy(image)
-    # imyp[:,1:,:] = image[:,:-1,:]
-    # imym = copy.deepcopy(image)
-    # imym[:,:-1,:] = image[:,1:,:]
-    # imzp = copy.deepcopy(image)
-    # imzp[:,:,1:] = image[:,:,:-1]
-    # imzm = copy.deepcopy(image)
-    # imzm[:,:,:-1] = image[:,:,1:]
-
-    # return axes[0] * ((imxp - imxm) != 0) + axes[1] * ((imyp - imym) != 0) + axes[2] * ((imzp - imzm) != 0)
-    # return ((imyp - imym) != 0) + ((imzp - imzm) != 0)
-
-# _____________________________________________________________________________________________
 
 
 class ImageProcessing(SimpleLogger):
@@ -482,40 +256,40 @@ class ImageProcessing(SimpleLogger):
             return task(self._data, *args, **kwargs)
 
     def invert_image(self, ids=None, targetids=None):
-        self.anytask(invert_image, ids=ids, targetids=targetids)
+        self.anytask(lib.invert_image, ids=ids, targetids=targetids)
 
     def swapaxes(self, axis1, axis2, ids=None, targetids=None):
-        self.anytask(swapaxes, axis1, axis2, ids=ids, targetids=targetids)
+        self.anytask(lib.swapaxes, axis1, axis2, ids=ids, targetids=targetids)
 
     def rollaxis(self, axis, start=0, ids=None, targetids=None):
-        self.anytask(rollaxis, axis, start=start, ids=ids, targetids=targetids)
+        self.anytask(lib.rollaxis, axis, start=start, ids=ids, targetids=targetids)
 
     def resize(self, zoom, mode, ids=None, targetids=None):
-        self.anytask(resize, zoom, mode, ids=ids, targetids=targetids)
+        self.anytask(lib.resize, zoom, mode, ids=ids, targetids=targetids)
 
     def resize_z_nearest(self, z, ids=None, targetids=None):
-        self.anytask(resize_z_nearest, z, ids=ids, targetids=targetids)
+        self.anytask(lib.resize_z_nearest, z, ids=ids, targetids=targetids)
 
     def getlabel(self, label, ids=None, targetids=None):
-        self.anytask(getlabel, label, ids=ids, targetids=targetids)
+        self.anytask(lib.getlabel, label, ids=ids, targetids=targetids)
 
     def amax(self, ids=None):
-        return self.anytask_rtrn(amax, ids=ids)
+        return self.anytask_rtrn(lib.amax, ids=ids)
 
     def astype(self, dtype, ids=None, targetids=None):
-        self.anytask(astype, dtype, ids=ids, targetids=targetids)
+        self.anytask(lib.astype, dtype, ids=ids, targetids=targetids)
 
     def distance_transform(self, pixel_pitch=(), background=True, ids=None, targetids=None):
-        self.anytask(distance_transform, pixel_pitch=pixel_pitch, background=background, ids=ids, targetids=targetids)
+        self.anytask(lib.distance_transform, pixel_pitch=pixel_pitch, background=background, ids=ids, targetids=targetids)
 
     def filter_values(self, value, type='se', setto=0, ids=None, targetids=None):
-        self.anytask(filter_values, value, type=type, setto=setto, ids=ids, targetids=targetids)
+        self.anytask(lib.filter_values, value, type=type, setto=setto, ids=ids, targetids=targetids)
 
     def binarize(self, value, type='l', ids=None, targetids=None):
-        self.anytask(binarize, value, type=type, ids=ids, targetids=targetids)
+        self.anytask(lib.binarize, value, type=type, ids=ids, targetids=targetids)
 
     def conncomp(self, neighborhood='direct', background_value=0, ids=None, targetids=None):
-        self.anytask(conncomp, neighborhood=neighborhood, background_value=background_value, ids=ids, targetids=targetids)
+        self.anytask(lib.conncomp, neighborhood=neighborhood, background_value=background_value, ids=ids, targetids=targetids)
 
     def skimage_watershed(self, markers, connectivity=1, offset=None, mask=None,
                           compactness=0, ids=None, targetids=None):
@@ -523,52 +297,55 @@ class ImageProcessing(SimpleLogger):
                      offset=offset, mask=mask, compactness=compactness, ids=ids, targetids=targetids)
 
     def crop(self, start, stop, ids=None, targetids=None):
-        self.anytask(crop, start, stop, ids=ids, targetids=targetids)
+        self.anytask(lib.crop, start, stop, ids=ids, targetids=targetids)
 
     def shape(self, ids=None):
-        return self.anytask_rtrn(shape, ids=ids)
+        return self.anytask_rtrn(lib.shape, ids=ids)
 
     def power(self, value, ids=None, targetids=None):
-        self.anytask(power, value, ids=ids, targetids=targetids)
+        self.anytask(lib.power, value, ids=ids, targetids=targetids)
 
     def mult(self, value, ids=None, targetids=None):
-        self.anytask(mult, value, ids=ids, targetids=targetids)
+        self.anytask(lib.mult, value, ids=ids, targetids=targetids)
 
     def mult2im(self, ids=None, ids2=None, targetids=None):
-        self.anytask(mult2im, ids=ids, ids2=ids2, targetids=targetids)
+        self.anytask(lib.mult2im, ids=ids, ids2=ids2, targetids=targetids)
 
     def add(self, value, ids=None, targetids=None):
-        self.anytask(add, value, ids=ids, targetids=targetids)
+        self.anytask(lib.add, value, ids=ids, targetids=targetids)
 
     def add2im(self, ids=None, ids2=None, targetids=None):
-        self.anytask(add2im, ids=ids, ids2=ids2, targetids=targetids)
+        self.anytask(lib.add2im, ids=ids, ids2=ids2, targetids=targetids)
 
     def concatenate(self, ids, ids2, targetids=None):
-        self.anytask(concatenate, ids=ids, ids2=ids2, targetids=targetids)
+        self.anytask(lib.concatenate, ids=ids, ids2=ids2, targetids=targetids)
 
     def find_bounding_rect(self, ids=None):
-        return self.anytask_rtrn(find_bounding_rect, ids=ids)
+        return self.anytask_rtrn(lib.find_bounding_rect, ids=ids)
 
     def crop_bounding_rect(self, bounds=None, ids=None, targetids=None):
-        self.anytask(crop_bounding_rect, bounds=bounds, ids=ids, targetids=targetids)
+        self.anytask(lib.crop_bounding_rect, bounds=bounds, ids=ids, targetids=targetids)
 
     def replace_subimage(self, position=None, bounds=None, ignore=None, ids=None, ids2=None, targetids=None):
-        self.anytask(replace_subimage, position=position, bounds=bounds, ignore=ignore, ids=ids, ids2=ids2, targetids=targetids)
+        self.anytask(lib.replace_subimage, position=position, bounds=bounds, ignore=ignore, ids=ids, ids2=ids2, targetids=targetids)
 
     def mask_image(self, maskvalue=False, value=0, ids=None, ids2=None, targetids=None):
-        self.anytask(mask_image, maskvalue=maskvalue, value=value, ids=ids, ids2=ids2, targetids=targetids)
+        self.anytask(lib.mask_image, maskvalue=maskvalue, value=value, ids=ids, ids2=ids2, targetids=targetids)
 
     def unique(self, ids=None):
-        return self.anytask_rtrn(unique, ids=ids)
+        return self.anytask_rtrn(lib.unique, ids=ids)
 
     def gaussian_smoothing(self, sigma, ids=None, targetids=None):
-        self.anytask(gaussian_smoothing, sigma, ids=ids, targetids=targetids)
+        self.anytask(lib.gaussian_smoothing, sigma, ids=ids, targetids=targetids)
 
     def extended_local_maxima(self, neighborhood=26, ids=None, targetids=None):
-        self.anytask(extended_local_maxima, neighborhood=neighborhood, ids=ids, targetids=targetids)
+        self.anytask(lib.extended_local_maxima, neighborhood=neighborhood, ids=ids, targetids=targetids)
 
     def pixels_at_boundary(self, axes=[1, 1, 1], ids=None, targetids=None):
-        self.anytask(pixels_at_boundary, axes=axes, ids=ids, targetids=targetids)
+        self.anytask(lib.pixels_at_boundary, axes=axes, ids=ids, targetids=targetids)
+
+    def positions2value(self, coordinates, value, ids=None, targetids=None):
+        self.anytask(lib.positions2value, coordinates, value, ids=ids, targetids=targetids)
 
     ###########################################################################################
     # Iterators
