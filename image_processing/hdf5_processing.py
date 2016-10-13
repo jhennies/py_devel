@@ -18,11 +18,10 @@ __author__ = 'jhennies'
 
 class Hdf5Processing(dict, YamlParams):
 
-    # _data = None
-
     def __init__(self, path=None, filename=None, filepath=None, data=None, dataname=None, castkey=None,
                  yaml=None, yamlspec=None):
 
+        dict.__init__(self)
         YamlParams.__init__(self, filename=yaml)
 
         if yaml is not None:
@@ -74,7 +73,8 @@ class Hdf5Processing(dict, YamlParams):
             if len(item) > 1:
                 firstkey = item.pop(0)
                 # try:
-                return Hdf5Processing(data=self[firstkey])[item]
+                # return Hdf5Processing(data=self[firstkey])[item]
+                return type(self)(data=self[firstkey])[item]
                 # except KeyError:
                 #     value = Hdf5Processing(data=self[firstkey])[item] = type(self)()
                 #     return value
@@ -100,9 +100,11 @@ class Hdf5Processing(dict, YamlParams):
                 fkey = key.pop(0)
                 self[fkey][key] = val
             else:
-                super(type(self), self).__setitem__(key[0], val)
+                # super(Hdf5Processing, self).__setitem__(key[0], val)
+                dict.__setitem__(self, key[0], val)
         else:
-            super(type(self), self).__setitem__(key, val)
+            # super(Hdf5Processing, self).__setitem__(key, val)
+            dict.__setitem__(self, key, val)
 
     def setdata(self, data, append=True):
 
@@ -186,9 +188,6 @@ class Hdf5Processing(dict, YamlParams):
     def data_from_file(self, filepath, dataname, castkey=None, append=True):
         newdata = self.load_h5(filepath, castkey=castkey)
         self.setdata({dataname: newdata}, append)
-
-    def getdata(self):
-        return self._data
 
     def getdataitem(self, itemkey):
         return self[itemkey]
