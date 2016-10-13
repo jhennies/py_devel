@@ -375,9 +375,9 @@ class ImageProcessing(SimpleLogger):
             for ex_key, ex_val in external_data.iteritems():
 
                 if reverse_input:
-                    hfp.setdata({d_key: {ex_key: task(ex_val, d_val, *args, **kwargs)}})
+                    hfp[d_key, ex_key] = task(ex_val, d_val, *args, **kwargs)
                 else:
-                    hfp.setdata({d_key: {ex_key: task(d_val, ex_val, *args, **kwargs)}})
+                    hfp[d_key, ex_key] = task(d_val, ex_val, *args, **kwargs)
 
         return hfp
 
