@@ -57,8 +57,24 @@ class Hdf5Processing(YamlParams):
         if not append or self._data is None:
             self._data = {}
 
-        for d in data:
-            self._data[d] = data[d]
+        # TODO: Make this recursive
+        for d_key, d_val in data.iteritems():
+
+            if d_key in self._data:
+
+                for dd_key, dd_val in d_val.iteritems():
+
+                    if dd_key in self._data:
+
+                        for ddd_key, ddd_val in dd_val.iteritems():
+
+                            self._data[d_key][dd_key][ddd_key] = ddd_val
+
+                    else:
+                        self._data[d_key][dd_key] = dd_val
+
+            else:
+                self._data[d_key] = d_val
 
     def write(self, filepath):
 

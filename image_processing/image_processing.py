@@ -15,6 +15,7 @@ import traceback
 from simple_logger import SimpleLogger
 from yaml_parameters import YamlParams
 import processing_lib as lib
+from hdf5_processing import Hdf5Processing
 
 __author__ = 'jhennies'
 
@@ -346,6 +347,39 @@ class ImageProcessing(SimpleLogger):
 
     def positions2value(self, coordinates, value, ids=None, targetids=None):
         self.anytask(lib.positions2value, coordinates, value, ids=ids, targetids=targetids)
+
+    ###########################################################################################
+    # Cross-computation of two ImageProcessing instances
+
+    def cross_comp(self, improc, task, *args, **kwargs):
+
+        if 'out' in kwargs.keys():
+            hfp = kwargs.pop('out')
+        else:
+            hfp = Hdf5Processing()
+
+        reverse_input = False
+        if 'reverse_input' in kwargs.keys():
+            reverse_input = kwargs.pop('reverse_input')
+
+        data = self.get_data()
+        if type(data) is not dict:
+            data = {'data': data}
+
+        external_data = improc.get_data()
+        if type(external_data) is not dict:
+            external_data = {'ext_data': data}
+
+        for d_key, d_val in data.iteritems():
+
+            for ex_key, ex_val in external_data.iteritems():
+
+                if reverse_input:
+                    hfp.setdata({d_key: {ex_key: task(ex_val, d_val, *args, **kwargs)}})
+                else:
+                    hfp.setdata({d_key: {ex_key: task(d_val, ex_val, *args, **kwargs)}})
+
+        return hfp
 
     ###########################################################################################
     # Iterators
