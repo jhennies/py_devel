@@ -16,9 +16,9 @@ import sys
 __author__ = 'jhennies'
 
 
-class Hdf5Processing(YamlParams):
+class Hdf5Processing(dict, YamlParams):
 
-    _data = None
+    # _data = None
 
     def __init__(self, path=None, filename=None, filepath=None, data=None, dataname=None, castkey=None,
                  yaml=None, yamlspec=None):
@@ -44,7 +44,10 @@ class Hdf5Processing(YamlParams):
 
 
         if data is not None:
-            self.setdata(data, dataname)
+            if dataname is None:
+                self.setdata(data, append=False)
+            else:
+                self.setdata(data, dataname)
 
         elif path is not None:
             self.data_from_file(path+filename, dataname, castkey=castkey, append=False)
@@ -52,48 +55,94 @@ class Hdf5Processing(YamlParams):
         elif filepath is not None:
             self.data_from_file(filepath, dataname, castkey=castkey, append=False)
 
+    def __getitem__(self, item):
+
+        # # This atomatically creates items that are not there in the first place
+        # try:
+        #     return dict.__getitem__(self, item)
+        # except KeyError:
+        #     value = self[item] = type(self)()
+        #     return value
+
+        # if type(item) is tuple:
+        #     execstr = ('self' + "[{}]" * len(item)).format(*item)
+        #     print execstr
+
+        if type(item) is tuple or type(item) is list:
+
+            item = list(item)
+            if len(item) > 1:
+                firstkey = item.pop(0)
+                # try:
+                return Hdf5Processing(data=self[firstkey])[item]
+                # except KeyError:
+                #     value = Hdf5Processing(data=self[firstkey])[item] = type(self)()
+                #     return value
+            else:
+                return dict.__getitem__(self, item[0])
+
+            # except KeyError:
+            #     value = self[item.pop] = type(self)()
+            #     return value
+
+        else:
+
+            try:
+                return dict.__getitem__(self, item)
+            except KeyError:
+                value = self[item] = type(self)()
+                return value
+
+    def __setitem__(self, key, val):
+        if type(key) is tuple or type(key) is list:
+            if len(key) > 1:
+                key = list(key)
+                fkey = key.pop(0)
+                self[fkey][key] = val
+            else:
+                super(type(self), self).__setitem__(key[0], val)
+        else:
+            super(type(self), self).__setitem__(key, val)
+
     def setdata(self, data, append=True):
 
-        if not append or self._data is None:
-            self._data = {}
+        for key, val in data.iteritems():
+            try:
+                self[key] = type(self)(data=val)
+            except AttributeError:
+                self[key] = val
 
-        # TODO: Make this recursive
-        for d_key, d_val in data.iteritems():
+    def write_dataset(self, group, data):
 
-            if d_key in self._data:
+        for k, v in data.iteritems():
 
-                for dd_key, dd_val in d_val.iteritems():
+            if type(v) is type(self):
 
-                    if dd_key in self._data:
+                grp = group.create_group(str(k))
 
-                        for ddd_key, ddd_val in dd_val.iteritems():
-
-                            self._data[d_key][dd_key][ddd_key] = ddd_val
-
-                    else:
-                        self._data[d_key][dd_key] = dd_val
+                self.write_dataset(grp, v)
 
             else:
-                self._data[d_key] = d_val
 
-    def write(self, filepath):
+                if type(v) is list:
 
-        of = h5py.File(filepath)
+                    grp = group.create_group(str(k))
+                    for i in xrange(0, len(v)):
+                        grp.create_dataset(str(i), data=v[i])
 
-        for dk, dv in self._data.items():
+                elif type(v) is np.ndarray:
 
-            if type(dv) is list:
+                    group.create_dataset(k, data=v)
 
-                grp = of.create_group(str(dk))
-                for i in xrange(0, len(dv)):
-                    grp.create_dataset(str(i), data=dv[i])
+                else:
+                    print 'Warning in Hdf5Processing.write(): Nothing to write.'
 
-            elif type(dv) is np.array:
+    def write(self, filepath=None, of=None):
 
-                of.create_dataset(dk, data=dv)
+        if of is None:
+            of = h5py.File(filepath)
 
-            else:
-                print 'Warning in Hdf5Processing.write(): Nothing to write.'
+        self.write_dataset(of, self)
 
         of.close()
 
@@ -142,10 +191,7 @@ class Hdf5Processing(YamlParams):
         return self._data
 
     def getdataitem(self, itemkey):
-        return self._data[itemkey]
-
-    def keys(self):
-        return self._data.keys()
+        return self[itemkey]
 
     def datastructure2string(self, data=None, dstr='', indent=0, maxdepth=None, depth=0):
 
@@ -155,9 +201,11 @@ class Hdf5Processing(YamlParams):
                 return dstr
 
         if data is None:
-            data = self._data
+            data = self
 
-        if type(data) is dict:
+        # if type(data) is dict:
+
+        try:
 
             for key, val in data.iteritems():
 
@@ -165,6 +213,8 @@ class Hdf5Processing(YamlParams):
                 dstr += '{}{}\n'.format(' '*indent, key)
                 dstr = self.datastructure2string(data=val, dstr=dstr, indent=indent+4, maxdepth=maxdepth, depth=depth)
 
+        except:
+            pass
         return dstr
 
     def data_iterator(self, maxdepth=None, data=None, depth=0, keylist=[]):
@@ -175,9 +225,9 @@ class Hdf5Processing(YamlParams):
                 return
 
         if data is None:
-            data = self._data
+            data = self
 
-        if type(data) is dict:
+        try:
 
             for key, val in data.iteritems():
                 # print key, val
@@ -187,6 +237,9 @@ class Hdf5Processing(YamlParams):
 
                 for d in self.data_iterator(maxdepth=maxdepth, data=val, depth=depth, keylist=kl):
                     yield d
+
+        except:
+            pass
 
     # # ANYTASK-based functions
     #
@@ -216,13 +269,70 @@ if __name__ == '__main__':
     # print content[7428].keys()
     # print content[7428][0
 
-    hfp = Hdf5Processing(
-        filepath='/media/julian/Daten/neuraldata/cremi_2016/develop/161011_locmax_paths_feature_extraction/intermediate/cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.true.h5',
-        dataname='content',
-        castkey=float
-    )
+    # hfp = Hdf5Processing(
+    #     filepath='/media/julian/Daten/neuraldata/cremi_2016/develop/161011_locmax_paths_feature_extraction/intermediate/cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.true.h5',
+    #     dataname='content',
+    #     castkey=float
+    # )
+    #
+    # data = hfp['content']
 
-    data = hfp.getdataitem('content')
-    print data.keys()
-    print data[data.keys()[0]].keys()
-    print data[data.keys()[0]][data[data.keys()[0]].keys()[0]]
+    # print data.keys()
+    # print data[data.keys()[0]].keys()
+    # print data[data.keys()[0]][data[data.keys()[0]].keys()[0]]
+
+    # yamlfile = '/media/julian/Daten/src/hci/py_devel/neurobioseg/161005_locmax_paths_feature_extraction/parameters.yml'
+    #
+    # hfp = Hdf5Processing(
+    #     yaml=yamlfile,
+    #     yamlspec={'path': 'intermedfolder', 'filename': 'pathstruefile'},
+    #     dataname='true',
+    #     castkey=None
+    # )
+    # params = hfp.get_params()
+    # hfp.logging('params = {}', params)
+    # hfp.data_from_file(
+    #     filepath=params['intermedfolder'] + params['pathsfalsefile'],
+    #     dataname='false',
+    #     castkey=None
+    # )
+    # hfp.startlogger()
+
+    # hfp.logging('Datastructure:\n{}', hfp.datastructure2string())
+    # for i in hfp.data_iterator():
+    #     print i['keylist']
+
+    # hfp['true']['100']['39'] = 10
+    # hfp['true', '100', '39'] = 10
+    # hfp.logging('{}', hfp['true'].keys())
+    # hfp.logging('{}', hfp['true', '12735.0', '39'])
+    #
+    # hfp.logging('{}', hfp['true', '12735.0'].keys())
+    # hfp.logging('{}', hfp['true', '12735.0', '11'])
+
+    # print hfp['true']['12735.0']
+
+    # print type(hfp['true', '12735.0'])
+    #
+    # a = ('test', 'a')
+    # # hfp['test', 'a'] = 12
+    # hfp[a] = 12
+    # print hfp.keys()
+    # print hfp['test'].keys()
+    #
+    # a = ('false', 'a', '70')
+    # # hfp[a] = 99
+    # hfp['false', 'a', '70'] = 99
+    # print hfp['false', 'a'].keys()
+
+    # hfp.stoplogger()
+
+
+    hfp = Hdf5Processing(data={'a': {'b': np.array([10, 10])}})
+
+    hfp['a', 'c'] = np.array([20, 10, 20, 30])
+    hfp['d', 'b'] = [[1, 1, 2], [2, 3, 4], [3, 2, 1], [2], [12, 3], [4, 3,4]]
+
+    print hfp
+
+    hfp.write(filepath='/home/julian/Documents/test.h5')
