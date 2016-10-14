@@ -56,12 +56,12 @@ class Hdf5ImageProcessing(Hdf5Processing):
             print 'k = {}'.format(k)
             print 'keys = {}'.format(self.keys())
 
-            # currentk = k.pop(0)
-
             if type(self[k]) is not type(self):
-                task(self[k], *args, **kwargs)
+                self[k] = task(self[k], *args, **kwargs)
             else:
-                self[k].anytask(task, *args, **kwargs)
+                self[k] = self[k].anytask(task, *args, **kwargs)
+
+        return self
 
 
 class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
@@ -75,13 +75,13 @@ if __name__ == '__main__':
     # hp = Hdf5Processing()
     hipl = Hdf5ImageProcessingLib()
 
-    hipl['a', 'b', 'c1'] = np.zeros((10, 10, 10))
-    hipl['a', 'b', 'c2'] = np.ones((10, 10, 10))
+    hipl['a', 'b', 'c1'] = np.zeros((10, 10))
+    hipl['a', 'b', 'c2'] = np.ones((10, 10))
 
-    hipl['a', 'b2', 'd'] = np.ones((10, 10, 10))*2
-    hipl['a', 'b2', 'e'] = np.ones((10, 10, 10))*3
+    hipl['a', 'b2', 'd'] = np.ones((10, 10))*2
+    hipl['a', 'b2', 'e'] = np.ones((10, 10))*3
 
-    hipl['f', 'g', 'h'] = np.ones((10, 10, 10))*5
+    hipl['f', 'g', 'h'] = np.ones((10, 10))*5
 
     print hipl.datastructure2string()
 
@@ -91,3 +91,10 @@ if __name__ == '__main__':
     print type(hipl['a','b','c1'])
 
     hipl.anytask(lib.add, 10, keys=(('a', 'b'), 'f'))
+
+    print hipl['a', 'b']
+    print hipl['f']
+
+    hipl.anytask(lib.mult, 0.5)
+
+    print hipl
