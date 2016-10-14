@@ -192,7 +192,7 @@ class Hdf5Processing(dict, YamlParams):
     def getdataitem(self, itemkey):
         return self[itemkey]
 
-    def datastructure2string(self, data=None, dstr='', indent=0, maxdepth=None, depth=0):
+    def datastructure2string(self, data=None, dstr='', indent=0, maxdepth=None, depth=0, indentstr='.  '):
 
         depth += 1
         if maxdepth is not None:
@@ -209,8 +209,8 @@ class Hdf5Processing(dict, YamlParams):
             for key, val in data.iteritems():
 
                 # print key
-                dstr += '{}{}\n'.format(' '*indent, key)
-                dstr = self.datastructure2string(data=val, dstr=dstr, indent=indent+4, maxdepth=maxdepth, depth=depth)
+                dstr += '{}{}\n'.format(indentstr*indent, key)
+                dstr = self.datastructure2string(data=val, dstr=dstr, indent=indent+1, maxdepth=maxdepth, depth=depth, indentstr=indentstr)
 
         except:
             pass
