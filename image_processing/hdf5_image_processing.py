@@ -163,11 +163,16 @@ class Hdf5ImageProcessing(Hdf5Processing):
 
         return self
 
-
 class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
 
     def __init__(self, *args, **kwargs):
         super(Hdf5ImageProcessingLib, self).__init__(*args, **kwargs)
+
+    ###########################################################################################
+    # Image processing
+
+    def positions2value(self, coordinates, value, **kwargs):
+        self.anytask(lib.positions2value, coordinates, value, **kwargs)
 
 
 if __name__ == '__main__':

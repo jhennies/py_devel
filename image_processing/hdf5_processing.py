@@ -18,7 +18,7 @@ __author__ = 'jhennies'
 
 class Hdf5Processing(dict, YamlParams):
 
-    def __init__(self, path=None, filename=None, filepath=None, data=None, dataname=None, castkey=None,
+    def __init__(self, path=None, filename=None, filepath=None, data=None, skeys=None, tkeys=None, castkey=None,
                  yaml=None, yamlspec=None):
 
         dict.__init__(self)
@@ -31,28 +31,44 @@ class Hdf5Processing(dict, YamlParams):
                 if 'filepath' in yamldict.keys(): filepath = yamldict['filepath']
                 if 'path' in yamldict.keys(): filepath = yamldict['path']
                 if 'filename' in yamldict.keys(): filepath = yamldict['filename']
-                if 'dataname' in yamldict.keys(): dataname = yamldict['dataname']
                 if 'castkey' in yamldict.keys(): castkey = yamldict['castkey']
+                if 'skeys' in yamlspec.keys():
+                    if type(yamlspec['skeys']) is dict:
+                        skeys = ()
+                        for i in xrange(1, len(yamlspec['skeys'])):
+                            skeys += (yamldict[yamlspec['skeys'][0]][yamlspec['skeys'][i]],)
+                    else:
+                        skeys = yamldict['skeys']
 
             else:
                 if 'filepath' in yamlspec.keys(): filepath = yamldict[yamlspec['filepath']]
                 if 'path' in yamlspec.keys(): path = yamldict[yamlspec['path']]
                 if 'filename' in yamlspec.keys(): filename = yamldict[yamlspec['filename']]
-                if 'dataname' in yamlspec.keys(): dataname = yamldict[yamlspec['dataname']]
                 if 'castkey' in yamlspec.keys(): castkey = yamldict[yamlspec['castkey']]
+                if 'skeys' in yamlspec.keys():
+                    if type(yamlspec['skeys']) is dict:
+                        skeys = ()
+                        for key, val in yamlspec['skeys'].iteritems():
+                            for i in val:
+                                skeys += (yamldict[key][i],)
+
+                        for i in xrange(1, len(yamlspec['skeys'])):
+                            skeys += (yamldict[yamlspec['skeys'][0]][yamlspec['skeys'][i]],)
+                    else:
+                        skeys = yamldict[yamlspec['skeys']]
 
 
         if data is not None:
-            if dataname is None:
-                self.setdata(data, append=False)
+            if tkeys is None:
+                self.setdata(data)
             else:
-                self.setdata(data, dataname)
+                self.setdata(data, tkeys)
 
         elif path is not None:
-            self.data_from_file(path+filename, dataname, castkey=castkey, append=False)
+            self.data_from_file(path+filename, skeys=skeys, tkeys=tkeys, castkey=castkey)
 
         elif filepath is not None:
-            self.data_from_file(filepath, dataname, castkey=castkey, append=False)
+            self.data_from_file(filepath, skeys=skeys, tkeys=tkeys, castkey=castkey)
 
     def __getitem__(self, item):
 
@@ -106,13 +122,33 @@ class Hdf5Processing(dict, YamlParams):
             # super(Hdf5Processing, self).__setitem__(key, val)
             dict.__setitem__(self, key, val)
 
-    def setdata(self, data, append=True):
+    def setdata(self, data, tkeys=None):
 
-        for key, val in data.iteritems():
+        if tkeys is not None:
+            if type(tkeys) is not tuple and type(tkeys) is not list:
+                tkeys = (tkeys,)
+
+            if len(tkeys) != len(data.keys()):
+                if len(tkeys) == 1:
+                    # tkeys = [tkeys[0] + x for x in data.keys()]
+                    tkeys = zip(tkeys * len(data.keys()), data.keys())
+                else:
+                    raise RuntimeError('Hdf5Processing: Length of tkeys must be equal to length of data keys!')
+
+        else:
+            tkeys = data.keys()
+
+        for i in xrange(0, len(data.keys())):
             try:
-                self[key] = type(self)(data=val)
-            except AttributeError:
-                self[key] = val
+                self[tkeys[i]] = type(self)(data=data[data.keys()[i]])
+            except:
+                self[tkeys[i]] = data[data.keys()[i]]
+
+        # for key, val in data.iteritems():
+        #     try:
+        #         self[key] = type(self)(data=val)
+        #     except AttributeError:
+        #         self[key] = val
 
     def write_dataset(self, group, data):
 
@@ -148,7 +184,7 @@ class Hdf5Processing(dict, YamlParams):
 
         of.close()
 
-    def get_h5_content(self, f, offset='    ', castkey=None):
+    def get_h5_content(self, f, skeys=None, offset='    ', castkey=None):
 
         # if isinstance(f, h5py.Dataset):
         #     print offset, '(Dataset)', f.name, 'len =', f.shape
@@ -164,6 +200,8 @@ class Hdf5Processing(dict, YamlParams):
 
         if isinstance(f, h5py.File) or isinstance(f, h5py.Group):
             dict_f = dict(f)
+            if skeys is None:
+                skeys = dict_f.keys()
             rtrn_dict = {}
             for key, val in dict_f.iteritems():
                 subg = val
@@ -171,7 +209,8 @@ class Hdf5Processing(dict, YamlParams):
                 if castkey is not None:
                     key = castkey(key)
                     # print '{} type(key) = {}'.format(offset, type(key))
-                rtrn_dict[key] = self.get_h5_content(subg, offset + '    ', castkey=castkey)
+                if key in skeys:
+                    rtrn_dict[key] = self.get_h5_content(subg, offset=offset + '    ', castkey=castkey)
 
         else:
             # print offset, f
@@ -179,15 +218,15 @@ class Hdf5Processing(dict, YamlParams):
 
         return rtrn_dict
 
-    def load_h5(self, filepath, castkey=None):
+    def load_h5(self, filepath, skeys=None, castkey=None):
 
         f = h5py.File(filepath)
 
-        return self.get_h5_content(f, castkey=castkey)
+        return self.get_h5_content(f, skeys=skeys, castkey=castkey)
 
-    def data_from_file(self, filepath, dataname, castkey=None, append=True):
-        newdata = self.load_h5(filepath, castkey=castkey)
-        self.setdata({dataname: newdata}, append)
+    def data_from_file(self, filepath, skeys=None, tkeys=None, castkey=None):
+        newdata = self.load_h5(filepath, skeys=skeys, castkey=castkey)
+        self.setdata(newdata, tkeys=tkeys)
 
     def getdataitem(self, itemkey):
         return self[itemkey]
@@ -333,5 +372,6 @@ if __name__ == '__main__':
     hfp['d', 'b'] = [[1, 1, 2], [2, 3, 4], [3, 2, 1], [2], [12, 3], [4, 3,4]]
 
     print hfp
+    print hfp.datastructure2string()
 
     hfp.write(filepath='/home/julian/Documents/test.h5')

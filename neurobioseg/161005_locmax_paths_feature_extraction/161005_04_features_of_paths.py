@@ -1,5 +1,6 @@
 
 from image_processing import ImageFileProcessing
+from hdf5_image_processing import Hdf5ImageProcessing, Hdf5ImageProcessingLib
 from processing_lib import getlabel
 import  processing_lib as lib
 from hdf5_processing import Hdf5Processing
@@ -15,31 +16,38 @@ import inspect
 __author__ = 'jhennies'
 
 
-def make_path_images(path_processing, hfp):
+def make_path_images(path_processing, hfp, shape):
 
-    path_processing.new_image(feature_images.shape('disttransf'), 'paths_true', np.float32, 0)
+    path_processing['paths_true'] = np.zeros(shape, dtype=np.float32)
 
     # Make path image (true)
     c = 0
     # This iterates over the paths of class 'true'
-    for d in hfp.data_iterator(maxdepth=1, data=hfp.getdata()['true']):
+    for d in hfp.data_iterator(maxdepth=1, data=hfp['true']):
         if d['depth'] == 1:
             path = lib.swapaxes(d['val'], 0, 1)
             path_processing.positions2value(path, c)
 
             c += 1
 
-    path_processing.new_image(feature_images.shape('disttransf'), 'paths_false', np.float32, 0)
+        path_processing['paths_false'] = np.zeros(shape, dtype=np.float32)
 
     # Make path image (false)
     c = 0
     # This iterates over the paths of class 'false'
-    for d in hfp.data_iterator(maxdepth=1, data=hfp.getdata()['false']):
+    for d in hfp.data_iterator(maxdepth=1, data=hfp['false']):
         if d['depth'] == 1:
             path = lib.swapaxes(d['val'], 0, 1)
             path_processing.positions2value(path, c)
 
             c += 1
+
+
+def make_features_paths(paths, feature_images, features_out):
+
+    paths.astype(np.uint32)
+    feature_images.astype(np.float32)
+    paths.cross_comp(feature_images, vigra.analysis.extractRegionFeatures, ignoreLabel=0, reverse_input=True, out=features_out)
 
 
 if __name__ == '__main__':
@@ -52,14 +60,14 @@ if __name__ == '__main__':
         hfp = Hdf5Processing(
             yaml=yamlfile,
             yamlspec={'path': 'intermedfolder', 'filename': 'pathstruefile'},
-            dataname='true',
+            tkeys='true',
             castkey=None
         )
         params = hfp.get_params()
         hfp.logging('params = {}', params)
         hfp.data_from_file(
             filepath=params['intermedfolder'] + params['pathsfalsefile'],
-            dataname='false',
+            tkeys='false',
             castkey=None
         )
         hfp.startlogger(filename=params['intermedfolder']+'features_of_paths.log', type='a')
@@ -71,9 +79,9 @@ if __name__ == '__main__':
         hfp.logging('\nhfp datastructure: \n\n{}', hfp.datastructure2string(maxdepth=1))
 
         # TODO: Iterate over paths and accumulate features
-        # TODO: Implement data itarator
+        # TODO: Implement data iterator
 
-        ifp = ImageFileProcessing()
+        # ifp = ImageFileProcessing()
 
         # pathclass = None
 
@@ -110,27 +118,41 @@ if __name__ == '__main__':
         # TODO:     Topological feature: Statistics on curvature
         # TODO: Get data features on path (raw, probabilities, distance transform)
         # TODO: Get data features on end points (raw, probabilities, distance transform)
+        # TODO: Cross-computation of two ImageProcessing instances
 
         # Store all feature images in here
-        feature_images = ImageFileProcessing(
+        feature_images = Hdf5ImageProcessing(
             yaml=yamlfile,
-            yamlspec={'image_path': 'intermedfolder', 'image_file': 'locmaxfile', 'image_names': ('locmaxnames', 0, 1)},
-            asdict=True,
-            keys=('disttransf', 'disttransfm')
+            yamlspec={'path': 'intermedfolder', 'filename': 'locmaxfile', 'skeys': {'locmaxnames': (0, 1)}},
+            tkeys=('disttransf', 'disttransfm')
         )
 
+        hfp.logging('\nfeature_images datastructure: \n\n{}', feature_images.datastructure2string(maxdepth=1))
+
         # This is for the path images
-        paths = ImageFileProcessing()
+        paths = Hdf5ImageProcessingLib()
+        # # Add the feature images to the paths dictionary
+        # paths.set_data_dict(feature_images.get_data(), append=True)
 
         # Create the path images for feature accumulator
-        make_path_images(paths, hfp)
-
+        make_path_images(paths, hfp, feature_images.shape('disttransf'))
         paths.write(filepath='/media/julian/Daten/neuraldata/cremi_2016/test.h5')
+
+        # This is for the features
+        features = Hdf5Processing()
+
+        # Get features along the paths
+        make_features_paths(paths, feature_images, features)
+
+        hfp.logging('\nCalculated features: \n-------------------\n{}-------------------\n', features.datastructure2string())
+
+        hfp.logging('Possible features: \n{}', features['paths_false', 'disttransfm'].supportedFeatures())
+        # features.write(filepath='/media/julian/Daten/neuraldata/cremi_2016/test.h5')
 
         hfp.logging('')
         hfp.stoplogger()
 
     except:
-
+        raise
         hfp.errout('Unexpected error', traceback)
 
