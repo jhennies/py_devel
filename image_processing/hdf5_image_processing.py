@@ -11,6 +11,36 @@ class Hdf5ImageProcessing(Hdf5Processing):
     def __init__(self, *args, **kwargs):
         super(Hdf5ImageProcessing, self).__init__(*args, **kwargs)
 
+    def reciprocal_key_gen(self, names1, names2):
+
+        lenk = len(names1)
+        names1 *= len(names2)
+        names2 = tuple(sorted(names2 * lenk))
+
+        return self.resultkey_name_gen(names1, names2)
+
+    @staticmethod
+    def resultkey_name_gen(names1, names2):
+
+        names = zip(names1, names2)
+        tkeys = ()
+        for k in names:
+            kstr = ''
+            for l in k:
+                if type(l) is tuple or type(l) is list:
+                    for m in l:
+                        if kstr != '':
+                            kstr += '_' + str(m)
+                        else:
+                            kstr += str(m)
+                else:
+                    if kstr != '':
+                        kstr += '_' + str(l)
+                    else:
+                        kstr += str(l)
+            tkeys += (kstr,)
+        return tkeys
+
     def anytask(self, task, *args, **kwargs):
         """
         :param task: The function which will be executed (has to take an image as first argument or first two arguments)
@@ -86,25 +116,9 @@ class Hdf5ImageProcessing(Hdf5Processing):
         if tkeys is None:
 
             if reciprocal:
-                # In my next life this will be in its own function...
-                # This generates the target keys for reciprocal computation of inputs
-                tkeys = ()
-                akeys = zip(keys, keys2)
-                for k in akeys:
-                    kstr = ''
-                    for l in k:
-                        if type(l) is tuple or type(l) is list:
-                            for m in l:
-                                if kstr != '':
-                                    kstr += '_' + str(m)
-                                else:
-                                    kstr += str(m)
-                        else:
-                            if kstr != '':
-                                kstr += '_' + str(l)
-                            else:
-                                kstr += str(l)
-                    tkeys += (kstr,)
+
+                tkeys = self.resultkey_name_gen(keys, keys2)
+
             else:
                 tkeys = keys
 
@@ -114,33 +128,14 @@ class Hdf5ImageProcessing(Hdf5Processing):
 
                 if reciprocal:
 
-                    # See above
-                    ttkeys = ()
-                    akeys = zip(keys, keys2)
-                    for k in akeys:
-                        kstr = ''
-                        for l in k:
-                            if type(l) is tuple or type(l) is list:
-                                for m in l:
-                                    if kstr != '':
-                                        kstr += '_' + str(m)
-                                    else:
-                                        kstr += str(m)
-                            else:
-                                if kstr != '':
-                                    kstr += '_' + str(l)
-                                else:
-                                    kstr += str(l)
-                        ttkeys += (kstr,)
+                    ttkeys = self.resultkey_name_gen(keys, keys2)
                     tkeys = zip(tkeys*len(ttkeys), ttkeys)
+
+                    # tkeys = tuple([tkeys + x for x in keys])
 
                 else:
 
-                    # Create a tuple list which is the same length as keys ...
-                    tkeys *= len(keys)
-                    # ... and zip it to the keys such that a new result entry containing all the keys from the source
-                    # entries is created
-                    tkeys = zip(tkeys, keys)
+                    tkeys = tuple([tkeys + x for x in keys])
 
             else:
                 raise RuntimeError('Hdf5ImageProcessing.anytask: The length of keys and tkeys has to be identical!')
@@ -182,6 +177,7 @@ if __name__ == '__main__':
     # hp = Hdf5Processing()
     hipl = Hdf5ImageProcessingLib()
 
+
     hipl['a', 'b', 'c1'] = np.zeros((10, 10))
     hipl['a', 'b', 'c2'] = np.ones((10, 10))
 
@@ -193,22 +189,31 @@ if __name__ == '__main__':
     print hipl.datastructure2string()
     print '--------------------------'
 
-    # hipl.anytask(lib.add2im, keys=(('a', 'b'),), keys2=(('a', 'b2'),), tkeys='result')
-    hipl.anytask(lib.add, 2, tkeys='add2')
+    hipl.anytask(lib.add2im,
+                 keys=(('a', 'b'), ('a', 'b2')),
+                 keys2=(('a', 'b'), ('a', 'b2')),
+                 reciprocal=True,
+                 tkeys='result')
+                 #tkeys=zip(('result',)*2, hipl.resultkey_name_gen(('ab', 'ab2'), ('ab', 'ab2'))))
     print hipl.datastructure2string()
-    print '--------------------------'
 
-    hipl.anytask(lib.add2im, keys=(('a', 'b'),), keys2=(('a', 'b2'),), tkeys='add2im')
-    print hipl.datastructure2string()
-    print '--------------------------'
-    print hipl['a', 'b', 'c2'][0, 0]
-    print hipl['a', 'b2', 'e'][0, 0]
-    print hipl['add2im', 'c2'][0, 0]
-    print '--------------------------'
-
-    hipl.anytask(lib.add2im, keys=(('a', 'b'), ('a', 'b2')), keys2=(('a', 'b'), ('a', 'b2')), tkeys='add2im_recip', reciprocal=True)
-    print hipl.datastructure2string()
-    print '--------------------------'
+    #
+    # # hipl.anytask(lib.add2im, keys=(('a', 'b'),), keys2=(('a', 'b2'),), tkeys='result')
+    # hipl.anytask(lib.add, 2, tkeys='add2')
+    # print hipl.datastructure2string()
+    # print '--------------------------'
+    #
+    # hipl.anytask(lib.add2im, keys=(('a', 'b'),), keys2=(('a', 'b2'),), tkeys='add2im')
+    # print hipl.datastructure2string()
+    # print '--------------------------'
+    # print hipl['a', 'b', 'c2'][0, 0]
+    # print hipl['a', 'b2', 'e'][0, 0]
+    # print hipl['add2im', 'c2'][0, 0]
+    # print '--------------------------'
+    #
+    # hipl.anytask(lib.add2im, keys=(('a', 'b'), ('a', 'b2')), keys2=(('a', 'b'), ('a', 'b2')), tkeys='add2im_recip', reciprocal=True)
+    # print hipl.datastructure2string()
+    # print '--------------------------'
 
 
     # print type(hipl)
