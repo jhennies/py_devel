@@ -404,7 +404,7 @@ class ImageProcessing(SimpleLogger):
             if not accumulate:
                 self.getlabel(lbl, ids=from_id, targetids=to_id)
             else:
-                newlabel = getlabel(lbl, self.get_image(from_id))
+                newlabel = lib.getlabel(lbl, self.get_image(from_id))
                 self.get_image(to_id)[newlabel == 1] = lbl
 
             yield lbl

@@ -131,8 +131,6 @@ class Hdf5ImageProcessing(Hdf5Processing):
                     ttkeys = self.resultkey_name_gen(keys, keys2)
                     tkeys = zip(tkeys*len(ttkeys), ttkeys)
 
-                    # tkeys = tuple([tkeys + x for x in keys])
-
                 else:
 
                     tkeys = tuple([tkeys + x for x in keys])
@@ -177,7 +175,6 @@ if __name__ == '__main__':
     # hp = Hdf5Processing()
     hipl = Hdf5ImageProcessingLib()
 
-
     hipl['a', 'b', 'c1'] = np.zeros((10, 10))
     hipl['a', 'b', 'c2'] = np.ones((10, 10))
 
@@ -195,6 +192,7 @@ if __name__ == '__main__':
                  reciprocal=True,
                  tkeys='result')
                  #tkeys=zip(('result',)*2, hipl.resultkey_name_gen(('ab', 'ab2'), ('ab', 'ab2'))))
+
     print hipl.datastructure2string()
 
     #
