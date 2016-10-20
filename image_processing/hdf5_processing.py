@@ -270,7 +270,8 @@ class Hdf5Processing(dict, YamlParams):
             for key, val in data.iteritems():
                 # print key, val
                 kl = keylist + [key,]
-                yield {'depth': depth-1, 'key': key, 'val': val, 'keylist': kl}
+                # yield {'depth': depth-1, 'key': key, 'val': val, 'keylist': kl}
+                yield [depth-1, key, val, kl]
                 # self.data_iterator(level=level, maxlevel=maxlevel, data=val)
 
                 for d in self.data_iterator(maxdepth=maxdepth, data=val, depth=depth, keylist=kl):

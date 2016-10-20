@@ -235,3 +235,9 @@ def pixels_at_boundary(image, axes=[1, 1, 1]):
 def positions2value(image, coordinates, value):
     image[coordinates[0], coordinates[1], coordinates[2]] = value
     return image
+
+def getvaluesfromcoords(image, coordinates):
+
+    values = [image[x[0], x[1], x[2]] for x in coordinates]
+
+    return values

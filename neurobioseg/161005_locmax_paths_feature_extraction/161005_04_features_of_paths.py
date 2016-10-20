@@ -43,12 +43,17 @@ def make_path_images(path_processing, hfp, shape):
             c += 1
 
 
-def make_features_paths(paths, feature_images, features_out):
+def make_features_paths(paths, disttransf_images, feature_images, features_out):
 
     paths.astype(np.uint32)
     feature_images.astype(np.float32)
-    paths.cross_comp(feature_images, vigra.analysis.extractRegionFeatures, ignoreLabel=0, reverse_input=True, out=features_out)
+    # features_out = Hdf5ImageProcessing()
+    features_out['disttransf'] = paths
 
+    features_out['disttransf'].anytask(vigra.analysis.extractRegionFeatures, ignoreLabel=0,
+                         reverse_order=True, reciprocal=False,
+                         keys=('paths_true', 'paths_false'),
+                         indict=disttransf_images)
 
 if __name__ == '__main__':
 
@@ -121,13 +126,14 @@ if __name__ == '__main__':
         # TODO: Cross-computation of two ImageProcessing instances
 
         # Store all feature images in here
-        feature_images = Hdf5ImageProcessing(
+        disttransf_images = Hdf5ImageProcessing(
             yaml=yamlfile,
             yamlspec={'path': 'intermedfolder', 'filename': 'locmaxfile', 'skeys': {'locmaxnames': (0, 1)}},
             tkeys=('disttransf', 'disttransfm')
         )
+        feature_images = Hdf5ImageProcessing()
 
-        hfp.logging('\nfeature_images datastructure: \n\n{}', feature_images.datastructure2string(maxdepth=1))
+        hfp.logging('\ndisttransf_images datastructure: \n\n{}', disttransf_images.datastructure2string(maxdepth=1))
 
         # This is for the path images
         paths = Hdf5ImageProcessingLib()
@@ -135,24 +141,24 @@ if __name__ == '__main__':
         # paths.set_data_dict(feature_images.get_data(), append=True)
 
         # Create the path images for feature accumulator
-        make_path_images(paths, hfp, feature_images.shape('disttransf'))
-        paths.write(filepath='/media/julian/Daten/neuraldata/cremi_2016/test.h5')
+        make_path_images(paths, hfp, disttransf_images['disttransf'].shape)
+        # paths.write(filepath='/media/julian/Daten/neuraldata/cremi_2016/test.h5')
 
         # This is for the features
-        features = Hdf5Processing()
+        features = Hdf5ImageProcessing()
 
         # Get features along the paths
-        make_features_paths(paths, feature_images, features)
+        make_features_paths(paths, disttransf_images, feature_images, features)
 
         hfp.logging('\nCalculated features: \n-------------------\n{}-------------------\n', features.datastructure2string())
 
-        hfp.logging('Possible features: \n{}', features['paths_false', 'disttransfm'].supportedFeatures())
+        # hfp.logging('Possible features: \n{}', features['paths_false', 'disttransfm'].supportedFeatures())
         # features.write(filepath='/media/julian/Daten/neuraldata/cremi_2016/test.h5')
 
         hfp.logging('')
         hfp.stoplogger()
 
     except:
-        raise
+
         hfp.errout('Unexpected error', traceback)
 

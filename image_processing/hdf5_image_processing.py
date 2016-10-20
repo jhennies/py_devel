@@ -68,10 +68,13 @@ class Hdf5ImageProcessing(Hdf5Processing):
         tkeys = None
         indict = None
         reciprocal = False
+        reverse_order = False
 
         # Get flags
         if 'reciprocal' in kwargs.keys():
             reciprocal = kwargs.pop('reciprocal')
+        if 'reverse_order' in kwargs.keys():
+            reverse_order = kwargs.pop('reverse_order')
 
         # Get keys from input
         if 'keys' in kwargs.keys():
@@ -157,11 +160,17 @@ class Hdf5ImageProcessing(Hdf5Processing):
             for k in akeys:
 
                 if type(self[k[0]]) is not type(self):
-                    self[k[2]] = task(self[k[0]], indict[k[1]], *args, **kwargs)
+                    if reverse_order:
+                        self[k[2]] = task(indict[k[1]], self[k[0]], *args, **kwargs)
+                    else:
+                        self[k[2]] = task(self[k[0]], indict[k[1]], *args, **kwargs)
                 else:
                     self[k[2]] = self[k[0]].anytask(task, *args, indict=indict[k[1]], **kwargs)
 
         return self
+
+    def astype(self, dtype, **kwargs):
+        self.anytask(lib.astype, dtype, **kwargs)
 
 class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
 
