@@ -3,6 +3,7 @@ from hdf5_processing import Hdf5Processing
 import numpy as np
 import processing_lib as lib
 import numpy as np
+from copy import deepcopy
 
 __author__ = 'jhennies'
 
@@ -72,7 +73,7 @@ class Hdf5ImageProcessing(Hdf5Processing):
         indict = None
         reciprocal = False
         reverse_order = False
-        returnonly = True
+        returnonly = False
 
         # Get flags
         if 'reciprocal' in kwargs.keys():
@@ -183,6 +184,12 @@ class Hdf5ImageProcessing(Hdf5Processing):
     def astype(self, dtype, **kwargs):
         self.anytask(lib.astype, dtype, **kwargs)
 
+    def deepcopy_entry(self, skey, tkey):
+        self[tkey] = deepcopy(self[skey])
+
+    def rename_entry(self, old, new):
+        self[new] = self[old]
+        del self[old]
 
 ###############################################################################################
 
@@ -202,6 +209,9 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
 
     def getlabel(self, label, **kwargs):
         return self.anytask(lib.getlabel, label, **kwargs)
+
+    def filter_values(self, value, **kwargs):
+        return self.anytask(lib.filter_values, value, **kwargs)
 
     # _________________________________________________________________________________________
     # Iterators

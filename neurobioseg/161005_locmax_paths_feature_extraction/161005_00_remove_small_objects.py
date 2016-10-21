@@ -85,6 +85,9 @@ if __name__ == '__main__':
 
         hfp.write(filepath=params['intermedfolder'] + params['largeobjfile'])
 
+        hfp.logging('')
+        hfp.stoplogger()
+
     except:
 
         hfp.errout('Unexpected error')

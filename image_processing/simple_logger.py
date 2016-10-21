@@ -22,10 +22,15 @@ class SimpleLogger():
         self.logging("Logger started: {}\n".format(time.strftime('%X %z on %b %d, %Y')))
 
     def logging(self, format, *args):
-        print format.format(*args)
-        format += "\n"
-        if self._logger is not None:
-            self._logger.write(format.format(*args))
+        if type(format) is str:
+            print format.format(*args)
+            format += "\n"
+            if self._logger is not None:
+                self._logger.write(format.format(*args))
+        else:
+            print format
+            if self._logger is not None:
+                self._logger.write(str(format))
 
     def stoplogger(self):
 
