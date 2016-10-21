@@ -48,22 +48,31 @@ if __name__ == '__main__':
         castkey=None
     )
     params = hfp.get_params()
-    hfp.startlogger(filename=params['intermedfolder']+'remove_small_objects.log', type='a')
+    hfp.startlogger(filename=params['resultfolder']+'remove_small_objects.log', type='a')
 
     try:
 
-        # Create new subfolder for intermediate results
-        if not os.path.exists(params['intermedfolder'] + 'remove_small_objects'):
-            os.makedirs(params['intermedfolder'] + 'remove_small_objects')
+        # Create folder for scripts
+        if not os.path.exists(params['scriptsfolder']):
+            os.makedirs(params['scriptsfolder'])
         else:
             if params['overwriteresults']:
-                hfp.logging('remove_small_objects: Warning: Target already exists and is overwritten...\n')
+                hfp.logging('remove_small_objects: Warning: Scriptsfolder already exists and content will be overwritten...\n')
             else:
-                raise IOError('remove_small_objects: Error: Target already exists!')
+                raise IOError('remove_small_objects: Error: Scriptsfolder already exists!')
 
-        # Copy the script file and the parameters to the corresponding intermedfolder
-        copy(inspect.stack()[0][1], params['intermedfolder'] + 'remove_small_objects')
-        copy(yamlfile, params['intermedfolder'] + 'remove_small_objects/remove_small_objects.parameters.yml')
+        # Create folder for intermediate results
+        if not os.path.exists(params['intermedfolder']):
+            os.makedirs(params['intermedfolder'])
+        else:
+            if params['overwriteresults']:
+                hfp.logging('remove_small_objects: Warning: Intermedfolder already exists and content will be overwritten...\n')
+            else:
+                raise IOError('remove_small_objects: Error: Intermedfolder already exists!')
+
+        # Copy the script file and the parameters to the scriptsfolder
+        copy(inspect.stack()[0][1], params['scriptsfolder'])
+        copy(yamlfile, params['scriptsfolder'] + 'remove_small_objects.parameters.yml')
         # Write script and parameters to the logfile
         hfp.code2log(inspect.stack()[0][1])
         hfp.logging('')
@@ -74,7 +83,7 @@ if __name__ == '__main__':
 
         remove_small_objects(hfp)
 
-        hfp.write(filepath=params['intermedfolder'] + '/remove_small_objects/' + params['largeobjfile'])
+        hfp.write(filepath=params['intermedfolder'] + params['largeobjfile'])
 
     except:
 

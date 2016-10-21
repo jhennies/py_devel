@@ -1,6 +1,7 @@
 datafolder: '/mnt/localdata02/jhennies/neuraldata/cremi_2016/'
 resultfolder: '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161020_random_forest_of_paths/'
 intermedfolder: '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161020_random_forest_of_paths/intermediate/'
+scriptsfolder: '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161020_random_forest_of_paths/scripts/'
 createfolders: True
 
 overwriteresults: True
