@@ -4,6 +4,8 @@ import vigra
 from vigra.learning import RandomForest as RF
 from vigra.learning import RandomForestOld as RFO
 # Sklearn
+from sklearn.ensemble import RandomForestClassifier as Skrf
+
 import numpy as np
 
 
@@ -43,13 +45,24 @@ if __name__ == '__main__':
     trainLabels = np.zeros((10,), dtype=np.uint32)
     trainLabels[5:] = 1
     print trainLabels
+    testData = np.zeros((10, 3), dtype=np.float32)
+    testData[0:2, 0] = 1
+    testData[3:5, 0] = 2
+    testData[7:8, 1] = 1
+    print testData
+    # rf = RFO(trainData, trainLabels)#,
+    #             # treeCount = 255, mtry=0, min_split_node_size=1,
+    #             # training_set_size=0, training_set_proportions=1.0,
+    #             # sample_with_replacement=True, sample_classes_individually=False,)
+    # print rf
 
-    rf = RFO(trainData, trainLabels)#,
-                # treeCount = 255, mtry=0, min_split_node_size=1,
-                # training_set_size=0, training_set_proportions=1.0,
-                # sample_with_replacement=True, sample_classes_individually=False,)
-    print rf
+    rf = Skrf(oob_score=True)
 
+    rf.fit(trainData, trainLabels)
+
+    result = rf.predict_proba(testData)
+
+    print result
 
 
     # rf = RF()

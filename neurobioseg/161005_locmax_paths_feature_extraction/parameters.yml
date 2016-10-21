@@ -1,7 +1,9 @@
-datafolder: '/media/julian/Daten/neuraldata/cremi_2016/'
-resultfolder: '/media/julian/Daten/neuraldata/cremi_2016/develop/161012_locmax_paths_feature_extraction/'
-intermedfolder: '/media/julian/Daten/neuraldata/cremi_2016/develop/161012_locmax_paths_feature_extraction/intermediate/'
+datafolder: '/mnt/localdata02/jhennies/neuraldata/cremi_2016/'
+resultfolder: '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161020_random_forest_of_paths/'
+intermedfolder: '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161020_random_forest_of_paths/intermediate/'
 createfolders: True
+
+overwriteresults: True
 
 labelsfile:     'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.h5'
 labelsname:     'labels'
@@ -22,6 +24,10 @@ locmaxnames:
 pathstruefile:  'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.true.h5'
 pathsfalsefile: 'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.false.h5'
 featurefile:    'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.features.h5'
+randforestfile: 'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.randforest.h5'
+
+remove_small_objects:
+    bysize: 10000
 
 merge_adjacent_objects:
     numberbysize: 10
@@ -40,3 +46,5 @@ paths_of_partners:
 features_of_paths:
     anisotropy: [10, 1, 1]
     radius_paths_ends: 10
+
+

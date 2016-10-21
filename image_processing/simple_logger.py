@@ -1,6 +1,7 @@
 
 import time
 import sys
+import traceback
 
 
 __author__ = 'jhennies'
@@ -40,7 +41,7 @@ class SimpleLogger():
         self.logging('{}', script)
         self.logging('<<< CODE <<<')
 
-    def errout(self, name, tb):
+    def errout(self, name, tb=traceback):
         self.logging('\n{}:\n---------------------------\n', name)
         self.logging('{}', tb.format_exc())
         self.logging('---------------------------')

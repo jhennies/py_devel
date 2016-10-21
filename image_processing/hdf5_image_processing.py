@@ -2,9 +2,12 @@
 from hdf5_processing import Hdf5Processing
 import numpy as np
 import processing_lib as lib
+import numpy as np
 
 __author__ = 'jhennies'
 
+
+###############################################################################################
 
 class Hdf5ImageProcessing(Hdf5Processing):
 
@@ -69,12 +72,15 @@ class Hdf5ImageProcessing(Hdf5Processing):
         indict = None
         reciprocal = False
         reverse_order = False
+        returnonly = True
 
         # Get flags
         if 'reciprocal' in kwargs.keys():
             reciprocal = kwargs.pop('reciprocal')
         if 'reverse_order' in kwargs.keys():
             reverse_order = kwargs.pop('reverse_order')
+        if 'return_only' in kwargs.keys():
+            returnonly = kwargs.pop('return_only')
 
         # Get keys from input
         if 'keys' in kwargs.keys():
@@ -141,6 +147,11 @@ class Hdf5ImageProcessing(Hdf5Processing):
             else:
                 raise RuntimeError('Hdf5ImageProcessing.anytask: The length of keys and tkeys has to be identical!')
 
+        if returnonly:
+            rtrn = type(self)()
+        else:
+            rtrn = self
+
         if keys2 is None:
 
             # This is performed if neither keys2 nor indict is given
@@ -148,9 +159,9 @@ class Hdf5ImageProcessing(Hdf5Processing):
             for k in akeys:
 
                 if type(self[k[0]]) is not type(self):
-                    self[k[1]] = task(self[k[0]], *args, **kwargs)
+                    rtrn[k[1]] = task(self[k[0]], *args, **kwargs)
                 else:
-                    self[k[1]] = self[k[0]].anytask(task, *args, **kwargs)
+                    rtrn[k[1]] = self[k[0]].anytask(task, *args, **kwargs)
 
         else:
 
@@ -161,27 +172,72 @@ class Hdf5ImageProcessing(Hdf5Processing):
 
                 if type(self[k[0]]) is not type(self):
                     if reverse_order:
-                        self[k[2]] = task(indict[k[1]], self[k[0]], *args, **kwargs)
+                        rtrn[k[2]] = task(indict[k[1]], self[k[0]], *args, **kwargs)
                     else:
-                        self[k[2]] = task(self[k[0]], indict[k[1]], *args, **kwargs)
+                        rtrn[k[2]] = task(self[k[0]], indict[k[1]], *args, **kwargs)
                 else:
-                    self[k[2]] = self[k[0]].anytask(task, *args, indict=indict[k[1]], **kwargs)
+                    rtrn[k[2]] = self[k[0]].anytask(task, *args, indict=indict[k[1]], **kwargs)
 
-        return self
+        return rtrn
 
     def astype(self, dtype, **kwargs):
         self.anytask(lib.astype, dtype, **kwargs)
+
+
+###############################################################################################
 
 class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
 
     def __init__(self, *args, **kwargs):
         super(Hdf5ImageProcessingLib, self).__init__(*args, **kwargs)
 
-    ###########################################################################################
+    # _________________________________________________________________________________________
     # Image processing
 
     def positions2value(self, coordinates, value, **kwargs):
-        self.anytask(lib.positions2value, coordinates, value, **kwargs)
+        return self.anytask(lib.positions2value, coordinates, value, **kwargs)
+
+    def unique(self, **kwargs):
+        return self.anytask(lib.unique, **kwargs)
+
+    def getlabel(self, label, **kwargs):
+        return self.anytask(lib.getlabel, label, **kwargs)
+
+    # _________________________________________________________________________________________
+    # Iterators
+
+    def label_iterator(self, key=None, labellist=None, background=None):
+
+        if labellist is None:
+            labellist = self.unique(keys=key, return_only=True)[key]
+
+        if background is not None:
+            labellist = filter(lambda x: x != 0, labellist)
+
+        for lbl in labellist:
+            yield lbl
+
+
+    def label_image_iterator(self, key=None, labellist=None, background=None, accumulate=False):
+
+        if accumulate:
+
+            lblim = np.zeros(self[key].shape, dtype=self[key].dtype)
+
+            for lbl in self.label_iterator(key=key, labellist=labellist, background=background):
+
+                lblim[lib.getlabel(self[key], lbl) == 1] = lbl
+                yield [lbl, lblim]
+
+        else:
+
+            for lbl in self.label_iterator(key=key, labellist=labellist, background=background):
+
+                lblim = lib.getlabel(self[key], lbl)
+                yield [lbl, lblim]
+
+    def label_image_bounds_iterator(self):
+        pass
 
 
 if __name__ == '__main__':
@@ -204,7 +260,8 @@ if __name__ == '__main__':
                  keys=(('a', 'b'), ('a', 'b2')),
                  keys2=(('a', 'b'), ('a', 'b2')),
                  reciprocal=True,
-                 tkeys='result')
+                 tkeys='result',
+                 return_only=False)
                  #tkeys=zip(('result',)*2, hipl.resultkey_name_gen(('ab', 'ab2'), ('ab', 'ab2'))))
 
     print hipl.datastructure2string()

@@ -192,8 +192,8 @@ def mask_image(image, mask, maskvalue=False, value=0):
     return image
 
 
-def unique(image):
-    return np.unique(image)
+def unique(image, return_counts=False):
+    return np.unique(image, return_counts=return_counts)
 
 
 def gaussian_smoothing(image, sigma):

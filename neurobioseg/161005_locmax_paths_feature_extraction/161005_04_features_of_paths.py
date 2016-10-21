@@ -57,25 +57,26 @@ def make_features_paths(paths, disttransf_images, feature_images, features_out):
 
 if __name__ == '__main__':
 
+    yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters.yml'
+
+    # TODO: Insert code here
+    hfp = Hdf5ImageProcessingLib(
+        yaml=yamlfile,
+        yamlspec={'path': 'intermedfolder', 'filename': 'pathstruefile'},
+        tkeys='true',
+        castkey=None
+    )
+    params = hfp.get_params()
+    hfp.logging('params = {}', params)
+    hfp.data_from_file(
+        filepath=params['intermedfolder'] + params['pathsfalsefile'],
+        tkeys='false',
+        castkey=None
+    )
+    hfp.startlogger(filename=params['intermedfolder']+'features_of_paths.log', type='a')
+
     try:
 
-        yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters.yml'
-
-        # TODO: Insert code here
-        hfp = Hdf5Processing(
-            yaml=yamlfile,
-            yamlspec={'path': 'intermedfolder', 'filename': 'pathstruefile'},
-            tkeys='true',
-            castkey=None
-        )
-        params = hfp.get_params()
-        hfp.logging('params = {}', params)
-        hfp.data_from_file(
-            filepath=params['intermedfolder'] + params['pathsfalsefile'],
-            tkeys='false',
-            castkey=None
-        )
-        hfp.startlogger(filename=params['intermedfolder']+'features_of_paths.log', type='a')
         hfp.code2log(inspect.stack()[0][1])
         hfp.logging('')
         hfp.yaml2log()
