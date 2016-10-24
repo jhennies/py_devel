@@ -33,13 +33,13 @@ randforestfile: 'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.randfor
 remove_small_objects:
     bysize: 10000
 
-find_orphans:
-    parameter: False
-
 merge_adjacent_objects:
     seed: 1
     numberbysize: 10
     numberbyrandom: 10
+
+find_border_contacts:
+    parameter: False
 
 localmax_on_disttransf:
     anisotropy: [10, 1, 1]
