@@ -1,0 +1,58 @@
+datafolder: '/mnt/localdata02/jhennies/neuraldata/cremi_2016/'
+resultfolder: '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161020_random_forest_of_paths/'
+intermedfolder: '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161020_random_forest_of_paths/intermediate/'
+scriptsfolder: '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161020_random_forest_of_paths/scripts/'
+createfolders: True
+
+overwriteresults: True
+
+labelsfile:     'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.h5'
+labelsname:     'labels'
+largeobjfile:   'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.largeobjects.h5'
+largeobjname:   'largeobjects'
+orphansfile:    'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.orphans.h5'
+orphansname:    'orphans'
+largeobjmfile:  'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.largeobjmerged.h5'
+largeobjmnames:
+    - 'largeobjects_merged'
+    - 'mergeids_small'
+    - 'mergeids_random'
+    - 'mergeids_all'
+    - 'change_hash'
+locmaxfile:     'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.locmax.h5'
+locmaxnames:
+    - 'disttransf'
+    - 'disttransfm'
+    - 'locmax'
+    - 'locmaxm'
+pathstruefile:  'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.true.h5'
+pathsfalsefile: 'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.false.h5'
+featurefile:    'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.features.h5'
+randforestfile: 'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.randforest.h5'
+
+remove_small_objects:
+    bysize: 10000
+
+find_orphans:
+    parameter: False
+
+merge_adjacent_objects:
+    seed: 1
+    numberbysize: 10
+    numberbyrandom: 10
+
+localmax_on_disttransf:
+    anisotropy: [10, 1, 1]
+    sigma: 20
+
+paths_within_labels:
+    penaltypower: 10
+
+paths_of_partners:
+    penaltypower: 10
+
+features_of_paths:
+    anisotropy: [10, 1, 1]
+    radius_paths_ends: 10
+
+
