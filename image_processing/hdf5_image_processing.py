@@ -143,7 +143,7 @@ class Hdf5ImageProcessing(Hdf5Processing):
 
                 else:
 
-                    tkeys = tuple([tkeys + x for x in keys])
+                    tkeys = tuple([tkeys + (x,) for x in keys])
 
             else:
                 raise RuntimeError('Hdf5ImageProcessing.anytask: The length of keys and tkeys has to be identical!')
@@ -212,6 +212,15 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
 
     def filter_values(self, value, **kwargs):
         return self.anytask(lib.filter_values, value, **kwargs)
+
+    def pixels_at_boundary(self, axes=[1, 1, 1], **kwargs):
+        return self.anytask(lib.pixels_at_boundary, axes=axes, **kwargs)
+
+    def distance_transform(self, pixel_pitch=(), background=True, **kwargs):
+        return self.anytask(lib.distance_transform, pixel_pitch=pixel_pitch, background=background, **kwargs)
+
+    def get_faces_with_neighbors(self, **kwargs):
+        return self.anytask(lib.get_faces_with_neighbors, **kwargs)
 
     # _________________________________________________________________________________________
     # Iterators

@@ -144,24 +144,35 @@ def concatenate(image1, image2):
 
 def find_bounding_rect(image):
 
-    # print 'np.amax(image) = {}'.format(np.amax(image))
-    # print 'image.sum(axis=0) = {}'.format(image.sum(axis=0))
-    # print 'image.sum(axis=0).sum(axis=0) = {}'.format(image.sum(axis=0).sum(axis=0))
+    if image.ndim == 3:
 
-    # Bands
-    bnds = np.flatnonzero(image.sum(axis=0).sum(axis=0))
-    # Rows
-    rows = np.flatnonzero(image.sum(axis=1).sum(axis=1))
-    # Columns
-    cols = np.flatnonzero(image.sum(axis=2).sum(axis=0))
+        # print 'np.amax(image) = {}'.format(np.amax(image))
+        # print 'image.sum(axis=0) = {}'.format(image.sum(axis=0))
+        # print 'image.sum(axis=0).sum(axis=0) = {}'.format(image.sum(axis=0).sum(axis=0))
 
-    # print 'image.shape = {}'.format(image.shape)
-    # print 'bnds = {}'.format(bnds)
-    # print 'rows = {}'.format(rows)
-    # print 'cols = {}'.format(cols)
+        # Bands
+        bnds = np.flatnonzero(image.sum(axis=0).sum(axis=0))
+        # Rows
+        rows = np.flatnonzero(image.sum(axis=1).sum(axis=1))
+        # Columns
+        cols = np.flatnonzero(image.sum(axis=2).sum(axis=0))
 
-    return [[rows.min(), rows.max()+1], [cols.min(), cols.max()+1], [bnds.min(), bnds.max()+1]]
+        # print 'image.shape = {}'.format(image.shape)
+        # print 'bnds = {}'.format(bnds)
+        # print 'rows = {}'.format(rows)
+        # print 'cols = {}'.format(cols)
 
+        return [[rows.min(), rows.max()+1], [cols.min(), cols.max()+1], [bnds.min(), bnds.max()+1]]
+
+    elif image.ndim == 2:
+
+        rows = np.flatnonzero(image.sum(axis=0))
+        cols = np.flatnonzero(image.sum(axis=1))
+
+        return [[rows.min(), rows.max()+1], [cols.min(), cols.max()+1]]
+
+    else:
+        raise TypeError('find_bounding_rect: This number of dimensions is currently not supported!')
 
 def crop_bounding_rect(image, bounds=None):
 
@@ -241,3 +252,88 @@ def getvaluesfromcoords(image, coordinates):
     values = [image[x[0], x[1], x[2]] for x in coordinates]
 
     return values
+
+def get_faces_with_neighbors(image):
+
+    faces = dict()
+
+    # --- XY ---
+    # w = x + 2*z, h = y + 2*z
+    shpxy = (image.shape[0] + 2*image.shape[2], image.shape[1] + 2*image.shape[2])
+    xy0 = (0, 0)
+    xy1 = (image.shape[2],) * 2
+    xy2 = (image.shape[2] + image.shape[0], image.shape[2] + image.shape[1])
+    print shpxy, xy0, xy1, xy2
+
+    # xy front face
+    xyf = np.zeros(shpxy)
+    xyf[xy1[0]:xy2[0], xy1[1]:xy2[1]] = image[:, :, 0]
+    xyf[0:xy1[0], xy1[1]:xy2[1]] = np.swapaxes(np.fliplr(image[0, :, :]), 0, 1)
+    xyf[xy2[0]:shpxy[0], xy1[1]:xy2[1]] = np.swapaxes(image[-1, :, :], 0, 1)
+    xyf[xy1[0]:xy2[0], 0:xy1[1]] = np.fliplr(image[:, 0, :])
+    xyf[xy1[0]:xy2[0], xy2[1]:shpxy[1]] = image[:, -1, :]
+
+    # xy back face
+    xyb = np.zeros(shpxy)
+    xyb[xy1[0]:xy2[0], xy1[1]:xy2[1]] = image[:, :, -1]
+    xyb[0:xy1[0], xy1[1]:xy2[1]] = np.swapaxes(image[0, :, :], 0, 1)
+    xyb[xy2[0]:shpxy[0], xy1[1]:xy2[1]] = np.swapaxes(np.fliplr(image[-1, :, :]), 0, 1)
+    xyb[xy1[0]:xy2[0], 0:xy1[1]] = image[:, 0, :]
+    xyb[xy1[0]:xy2[0], xy2[1]:shpxy[1]] = np.fliplr(image[:, -1, :])
+
+    # --- XZ ---
+    # w = x + 2*y, h = z + 2*y
+    shpxz = (image.shape[0] + 2*image.shape[1], image.shape[2] + 2*image.shape[1])
+    xz0 = (0, 0)
+    xz1 = (image.shape[1],) * 2
+    xz2 = (image.shape[1] + image.shape[0], image.shape[1] + image.shape[2])
+    print shpxz, xz0, xz1, xz2
+
+    # xz front face
+    xzf = np.zeros(shpxz)
+    xzf[xz1[0]:xz2[0], xz1[1]:xz2[1]] = image[:, 0, :]
+    xzf[0:xz1[0], xz1[1]:xz2[1]] = np.flipud(image[0, :, :])
+    xzf[xz2[0]:shpxz[0], xz1[1]:xz2[1]] = image[-1, :, :]
+    xzf[xz1[0]:xz2[0], 0:xz1[1]] = np.fliplr(image[:, :, 0])
+    xzf[xz1[0]:xz2[0], xz2[1]:shpxz[1]] = image[:, :, -1]
+
+    # xz back face
+    xzb = np.zeros(shpxz)
+    xzb[xz1[0]:xz2[0], xz1[1]:xz2[1]] = image[:, -1, :]
+    xzb[0:xz1[0], xz1[1]:xz2[1]] = image[0, :, :]
+    xzb[xz2[0]:shpxz[0], xz1[1]:xz2[1]] = np.flipud(image[-1, :, :])
+    xzb[xz1[0]:xz2[0], 0:xz1[1]] = image[:, :, 0]
+    xzb[xz1[0]:xz2[0], xz2[1]:shpxz[1]] = np.fliplr(image[:, :, -1])
+
+    # --- YZ ---
+    # w = y + 2*x, h = z + 2*x
+    shpyz = (image.shape[1] + 2*image.shape[0], image.shape[2] + 2*image.shape[0])
+    yz0 = (0, 0)
+    yz1 = (image.shape[0],) * 2
+    yz2 = (image.shape[0] + image.shape[1], image.shape[0] + image.shape[2])
+    print shpyz, yz0, yz1, yz2
+
+    # yz front face
+    yzf = np.zeros(shpyz)
+    yzf[yz1[0]:yz2[0], yz1[1]:yz2[1]] = image[0, :, :]
+    yzf[0:yz1[0], yz1[1]:yz2[1]] = np.flipud(image[:, 0, :])
+    yzf[yz2[0]:shpyz[0], yz1[1]:yz2[1]] = image[:, -1, :]
+    yzf[yz1[0]:yz2[0], 0:yz1[1]] = np.swapaxes(np.flipud(image[:, :, 0]), 0, 1)
+    yzf[yz1[0]:yz2[0], yz2[1]:shpyz[1]] = np.swapaxes(image[:, :, -1], 0, 1)
+
+    # yz back face
+    yzb = np.zeros(shpyz)
+    yzb[yz1[0]:yz2[0], yz1[1]:yz2[1]] = image[-1, :, :]
+    yzb[0:yz1[0], yz1[1]:yz2[1]] = image[:, 0, :]
+    yzb[yz2[0]:shpyz[0], yz1[1]:yz2[1]] = np.flipud(image[:, -1, :])
+    yzb[yz1[0]:yz2[0], 0:yz1[1]] = np.swapaxes(image[:, :, 0], 0, 1)
+    yzb[yz1[0]:yz2[0], yz2[1]:shpyz[1]] = np.swapaxes(np.flipud(image[:, :, -1]), 0, 1)
+
+    faces['xyf'] = xyf
+    faces['xyb'] = xyb
+    faces['xzf'] = xzf
+    faces['xzb'] = xzb
+    faces['yzf'] = yzf
+    faces['yzb'] = yzb
+
+    return faces

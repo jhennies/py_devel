@@ -39,7 +39,7 @@ merge_adjacent_objects:
     numberbyrandom: 10
 
 find_border_contacts:
-    parameter: False
+    anisotropy: [10, 1, 1]
 
 localmax_on_disttransf:
     anisotropy: [10, 1, 1]
