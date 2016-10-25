@@ -4,6 +4,7 @@ import numpy as np
 import processing_lib as lib
 import numpy as np
 from copy import deepcopy
+# import numpy.lib.index_tricks
 
 __author__ = 'jhennies'
 
@@ -225,10 +226,24 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
     # _________________________________________________________________________________________
     # Iterators
 
-    def label_iterator(self, key=None, labellist=None, background=None):
+    def label_iterator(self, key=None, labellist=None, background=None, area=None):
+        """
+        :param key:
+        :param labellist:
+        :param background:
+        :param area: supply area in the format area=np.s_[numpy indexing], i.e. area=np.s_[:,:,:] for a full 3d image
+            Note that this affects only the determination of which labels are iterated over, when labellist is supplied
+            this parameter has no effect
+        :return:
+        """
 
         if labellist is None:
             labellist = self.unique(keys=key, return_only=True)[key]
+            print 'lalala'
+            if area is not None:
+
+                labellist = lib.unique(self[key][area])
+                print 'I was here'
 
         if background is not None:
             labellist = filter(lambda x: x != 0, labellist)
@@ -237,20 +252,21 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
             yield lbl
 
 
-    def label_image_iterator(self, key=None, labellist=None, background=None, accumulate=False):
+    def label_image_iterator(self, key=None, labellist=None, background=None,
+                             accumulate=False, area=None):
 
         if accumulate:
 
             lblim = np.zeros(self[key].shape, dtype=self[key].dtype)
 
-            for lbl in self.label_iterator(key=key, labellist=labellist, background=background):
+            for lbl in self.label_iterator(key=key, labellist=labellist, background=background, area=area):
 
                 lblim[lib.getlabel(self[key], lbl) == 1] = lbl
                 yield [lbl, lblim]
 
         else:
 
-            for lbl in self.label_iterator(key=key, labellist=labellist, background=background):
+            for lbl in self.label_iterator(key=key, labellist=labellist, background=background, area=area):
 
                 lblim = lib.getlabel(self[key], lbl)
                 yield [lbl, lblim]

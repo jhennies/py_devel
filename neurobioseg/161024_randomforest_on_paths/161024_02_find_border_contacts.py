@@ -69,10 +69,19 @@ def find_border_contacts(hfp):
             'xzb': shp[1],
             'yzf': shp[0],
             'yzb': shp[0]}
+    # Define the relevant areas within the faces images for improved efficiency
+    # Only labels found within these areas are checked for their maximum in the loops below
+    areas = {'xyf': np.s_[shp[2]:shp[2]+shp[0], shp[2]:shp[2]+shp[1]],
+             'xyb': np.s_[shp[2]:shp[2]+shp[0], shp[2]:shp[2]+shp[1]],
+             'xzf': np.s_[shp[1]:shp[1]+shp[0], shp[1]:shp[1]+shp[2]],
+             'xzb': np.s_[shp[1]:shp[1]+shp[0], shp[1]:shp[1]+shp[2]],
+             'yzf': np.s_[shp[0]:shp[0]+shp[1], shp[0]:shp[0]+shp[2]],
+             'yzb': np.s_[shp[0]:shp[0]+shp[1], shp[0]:shp[0]+shp[2]]}
+
     for k, bounds in keys.iteritems():
 
         # bounds = (shp[0],) * 2
-        for lbl, lblim in hfp['faces', 'largeobj'].label_image_iterator(key=k, background=0):
+        for lbl, lblim in hfp['faces', 'largeobj'].label_image_iterator(key=k, background=0, area=areas[k]):
 
             hfp.logging('---\nLabel {} found in image {}', lbl, k)
 
@@ -83,29 +92,25 @@ def find_border_contacts(hfp):
             conncomp = vigra.analysis.labelImageWithBackground(lblim.astype(np.uint32), neighborhood=8, background_value=0)
 
             for l in np.unique(conncomp):
+                # Ignore background
                 if l == 0: continue
-                # print l
-                # plt.figure()
+
+                # Get the current label object
                 curobj = conncomp == l
-                # print np.amax(curobj)
-                # plt.imshow(conncomp==l)
-                # plt.show()
 
                 # Get disttancetransf of the object
                 curdist = np.array(hfp['faces', 'disttransf', k])
                 curdist[curobj == False] = 0
-                # plt.imshow(curdist)
-                # plt.show()
 
                 # Detect the global maximum of this object
-                # Only one pixel is allowed to be selected
                 amax = np.amax(curdist)
                 curdist[curdist < amax] = 0
                 curdist[curdist > 0] = lbl
+                # Only one pixel is allowed to be selected
                 bds = lib.find_bounding_rect(curdist)
                 centroid = (int((bds[1][0] + bds[1][1]-1) / 2), int((bds[0][0] + bds[0][1]-1) / 2))
 
-                # TODO: bounds depends on k
+                # Now translate the calculated centroid to the position within the orignial 3D volume
                 centroidm = (centroid[0] - bounds, centroid[1] - bounds)
                 hfp.logging('centroidxy = {}', centroidm)
                 # Set the pixel
