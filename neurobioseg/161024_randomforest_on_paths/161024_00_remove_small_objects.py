@@ -10,9 +10,19 @@ import matplotlib.pyplot as plt
 __author__ = 'jhennies'
 
 
-def remove_small_objects(hfp):
+def remove_small_objects(hfp, key):
     """
     :param hfp: A Hdf5ImageProcessing instance containing a labelimage named 'labels'
+
+    hfp.get_params()
+
+        remove_small_objects
+            bysize
+            relabel
+
+        largeobjname
+
+    :param key: the source key for calculation
     """
 
     params = hfp.get_params()
@@ -21,19 +31,19 @@ def remove_small_objects(hfp):
     size_exclusion = thisparams['bysize']
     hfp.logging('size_exclusion = {}', size_exclusion)
 
-    unique, counts = np.unique(hfp['labels'], return_counts=True)
+    unique, counts = np.unique(hfp[key], return_counts=True)
     hfp.logging('unique = {}, counts = {}', unique, counts)
 
     hfp.logging('{}', unique[counts < size_exclusion])
 
     # With accumulate set to True, this iterator does everything we need:
     # Each label with a count larger than size_exclusion is added to lblim which is initialized as np.zeros(...)
-    for lbl, lblim in hfp.label_image_iterator(key='labels',
+    for lbl, lblim in hfp.label_image_iterator(key=key,
                                                labellist=unique[counts > size_exclusion],
-                                               accumulate=True):
+                                               accumulate=True, relabel=thisparams['relabel']):
         hfp.logging('---\nIncluding label {}', lbl)
 
-    del hfp['labels']
+    del hfp[key]
     hfp[params['largeobjname']] = lblim
 
 
@@ -81,7 +91,7 @@ if __name__ == '__main__':
 
         hfp.logging('\nhfp datastructure: \n\n{}', hfp.datastructure2string(maxdepth=1))
 
-        remove_small_objects(hfp)
+        remove_small_objects(hfp, 'labels')
 
         hfp.write(filepath=params['intermedfolder'] + params['largeobjfile'])
 
