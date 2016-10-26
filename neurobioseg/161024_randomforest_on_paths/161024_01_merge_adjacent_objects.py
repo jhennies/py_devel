@@ -13,7 +13,26 @@ from copy import deepcopy
 __author__ = 'jhennies'
 
 
-def merge_adjacent_objects(hfp):
+def merge_adjacent_objects(hfp, key):
+    """
+    :param hfp:
+
+    hfp.get_params():
+
+        merge_adjacent_objects
+            seed
+            numberbysize
+            numberbyrandom
+
+        largeobjmnames
+            - 'largeobj_merged'
+            - 'mergeids_small'
+            - 'mergeids_random'
+            - 'mergeids_all'
+            - 'change_hash'
+
+    :param key: the source key for calculation
+    """
 
     params = hfp.get_params()
     thisparams = params['merge_adjacent_objects']
@@ -23,14 +42,14 @@ def merge_adjacent_objects(hfp):
     targetnames = params['largeobjmnames']
 
     # Get only the relevant labels
-    labels = lib.unique(hfp['largeobj'])
+    labels = lib.unique(hfp[key])
     hfp.logging('labels = {}', labels)
 
     # Seed the randomize function
     random.seed(thisparams['seed'])
 
-    hfp.astype(np.uint32, keys='largeobj')
-    (grag, rag) = graphs.gridRegionAdjacencyGraph(hfp['largeobj'], ignoreLabel=0)
+    hfp.astype(np.uint32, keys=key)
+    (grag, rag) = graphs.gridRegionAdjacencyGraph(hfp[key], ignoreLabel=0)
     edge_ids = rag.edgeIds()
     # hfp.logging('Edge ids: {}', edge_ids)
 
@@ -114,7 +133,7 @@ def merge_adjacent_objects(hfp):
 
     # Create the merged image
     # hfp.deepcopy_entry('largeobj', targetnames[0])
-    hfp.rename_entry('largeobj', targetnames[0])
+    hfp.rename_entry(key, targetnames[0])
     for k, v in change_hash.iteritems():
         for x in v:
             if x != k:
@@ -128,7 +147,7 @@ if __name__ == '__main__':
 
     hfp = IPL(
         yaml=yamlfile,
-        yamlspec={'path': 'datafolder', 'filename': 'largeobjfile', 'skeys': 'largeobjname'},
+        yamlspec={'path': 'intermedfolder', 'filename': 'largeobjfile', 'skeys': 'largeobjname'},
         tkeys='largeobj',
         castkey=None
     )
@@ -148,7 +167,7 @@ if __name__ == '__main__':
 
         hfp.logging('\nhfp datastructure: \n\n{}', hfp.datastructure2string(maxdepth=1))
 
-        merge_adjacent_objects(hfp)
+        merge_adjacent_objects(hfp, 'largeobj')
 
         hfp.write(filepath=params['intermedfolder'] + params['largeobjmfile'])
 
