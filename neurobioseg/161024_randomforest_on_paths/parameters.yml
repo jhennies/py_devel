@@ -10,8 +10,6 @@ labelsfile:     'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.h5'
 labelsname:     'labels'
 largeobjfile:   'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.largeobjects.h5'
 largeobjname:   'largeobjects'
-orphansfile:    'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.orphans.h5'
-orphansname:    'orphans'
 largeobjmfile:  'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.largeobjmerged.h5'
 largeobjmnames:
     - 'largeobjects_merged'
@@ -19,6 +17,20 @@ largeobjmnames:
     - 'mergeids_random'
     - 'mergeids_all'
     - 'change_hash'
+locmaxborderfile:       'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.locmaxborder.h5'
+locmaxbordernames:
+    - 'border_locmax'
+    - 'border_locmax_m'
+    - 'disttransf'
+    - 'disttransfm'
+bordercontactsfile:     'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.bordercontacts.h5'
+bordercontactsnames:
+    - 'orphans'
+    - 'orphansm'
+    - 'onecontact'
+    - 'onecontactm'
+    - 'multiplecontact'
+    - 'multiplecontactm'
 locmaxfile:     'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.locmax.h5'
 locmaxnames:
     - 'disttransf'
@@ -32,6 +44,7 @@ randforestfile: 'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.randfor
 
 remove_small_objects:
     bysize: 10000
+    relabel: True
 
 merge_adjacent_objects:
     seed: 1
@@ -40,6 +53,7 @@ merge_adjacent_objects:
 
 find_border_contacts:
     anisotropy: [10, 1, 1]
+    return_bordercontact_images: True
 
 localmax_on_disttransf:
     anisotropy: [10, 1, 1]

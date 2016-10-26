@@ -16,72 +16,41 @@ from skimage import morphology
 __author__ = 'jhennies'
 
 
-def boundary_disttransf(hfp, thisparams):
+def boundary_disttransf(hfp, thisparams, key, tkey):
+
+    hfp.logging('Computing boundary distance transform for key = {}', key)
     # Boundary distance transform
     # a) Boundaries
     hfp.logging('Finding boundaries ...')
     hfp.pixels_at_boundary(
         axes=(np.array(thisparams['anisotropy']).astype(np.float32) ** -1).astype(np.uint8),
-        tkeys='disttransf'
+        keys=key,
+        tkeys=tkey
     )
-    hfp.astype(np.float32)
+    hfp.astype(np.float32, keys=tkey)
 
     # b) Distance transform
     hfp.logging('Computing distance transform on boundaries ...')
     hfp.distance_transform(
         pixel_pitch=thisparams['anisotropy'],
         background=True,
-        keys='disttransf'
+        keys=tkey
     )
 
 
-def compute_faces(hfp):
+def compute_faces(hfp, keys, tkeys):
 
-    hfp.logging('Comuting faces ...')
-    hfp.get_faces_with_neighbors(keys=('largeobj', 'disttransf'), tkeys='faces')
+    hfp.logging('Computing faces ...')
+    hfp.get_faces_with_neighbors(keys=keys, tkeys=tkeys)
     hfp.logging('hfp.datastructure\n---\n{}', hfp.datastructure2string())
 
 
-def find_border_contacts(hfp):
-
-    params = hfp.get_params()
-    thisparams = params['find_border_contacts']
-
-    # # Clear objects at the border
-    # hfp.anytask(clear_border)
-
-    # Do it manually
-    # --------------
-    # Compute the distance transform
-    boundary_disttransf(hfp, thisparams)
-
-    # For each of the 6 faces compute the objects which are touching it and the corresponding local maxima of the
-    # distance transform
-    compute_faces(hfp)
-
-    # Find global maxima for each object touching the border
-    shp = hfp['largeobj'].shape
-    hfp['border_locmax'] = np.zeros(shp)
-
-    keys = {'xyf': shp[2],
-            'xyb': shp[2],
-            'xzf': shp[1],
-            'xzb': shp[1],
-            'yzf': shp[0],
-            'yzb': shp[0]}
-    # Define the relevant areas within the faces images for improved efficiency
-    # Only labels found within these areas are checked for their maximum in the loops below
-    areas = {'xyf': np.s_[shp[2]:shp[2]+shp[0], shp[2]:shp[2]+shp[1]],
-             'xyb': np.s_[shp[2]:shp[2]+shp[0], shp[2]:shp[2]+shp[1]],
-             'xzf': np.s_[shp[1]:shp[1]+shp[0], shp[1]:shp[1]+shp[2]],
-             'xzb': np.s_[shp[1]:shp[1]+shp[0], shp[1]:shp[1]+shp[2]],
-             'yzf': np.s_[shp[0]:shp[0]+shp[1], shp[0]:shp[0]+shp[2]],
-             'yzb': np.s_[shp[0]:shp[0]+shp[1], shp[0]:shp[0]+shp[2]]}
+def find_border_centroids(hfp, keys, areas, largeobjkey, disttransfkey, resultkey):
 
     for k, bounds in keys.iteritems():
 
         # bounds = (shp[0],) * 2
-        for lbl, lblim in hfp['faces', 'largeobj'].label_image_iterator(key=k, background=0, area=areas[k]):
+        for lbl, lblim in hfp['faces', largeobjkey].label_image_iterator(key=k, background=0, area=areas[k]):
 
             hfp.logging('---\nLabel {} found in image {}', lbl, k)
 
@@ -99,7 +68,7 @@ def find_border_contacts(hfp):
                 curobj = conncomp == l
 
                 # Get disttancetransf of the object
-                curdist = np.array(hfp['faces', 'disttransf', k])
+                curdist = np.array(hfp['faces', disttransfkey, k])
                 curdist[curobj == False] = 0
 
                 # Detect the global maximum of this object
@@ -112,32 +81,151 @@ def find_border_contacts(hfp):
 
                 # Now translate the calculated centroid to the position within the orignial 3D volume
                 centroidm = (centroid[0] - bounds, centroid[1] - bounds)
-                hfp.logging('centroidxy = {}', centroidm)
+                # hfp.logging('centroidxy = {}', centroidm)
                 # Set the pixel
                 try:
                     if centroidm[0] < 0 or centroidm[1] < 0:
                         raise IndexError
                     else:
                         if k == 'xyf':
-                            hfp['border_locmax'][centroidm[0], centroidm[1], 0] = lbl
+                            hfp[resultkey][centroidm[0], centroidm[1], 0] = lbl
                         elif k == 'xyb':
-                            hfp['border_locmax'][centroidm[0], centroidm[1], -1] = lbl
+                            hfp[resultkey][centroidm[0], centroidm[1], -1] = lbl
                         elif k == 'xzf':
-                            hfp['border_locmax'][centroidm[0], 0, centroidm[1]] = lbl
+                            hfp[resultkey][centroidm[0], 0, centroidm[1]] = lbl
                         elif k == 'xzb':
-                            hfp['border_locmax'][centroidm[0], -1, centroidm[1]] = lbl
+                            hfp[resultkey][centroidm[0], -1, centroidm[1]] = lbl
                         elif k == 'yzf':
-                            hfp['border_locmax'][0, centroidm[0], centroidm[1]] = lbl
+                            hfp[resultkey][0, centroidm[0], centroidm[1]] = lbl
                         elif k == 'yzb':
-                            hfp['border_locmax'][-1, centroidm[0], centroidm[1]] = lbl
+                            hfp[resultkey][-1, centroidm[0], centroidm[1]] = lbl
                 except IndexError:
                     pass
 
-    # # Create data structure for output
-    # hfp.rename_entry('largeobj', 'orphans')
 
-    hfp['overlay'] = np.array([(hfp['border_locmax'] > 0).astype(np.float32), hfp['largeobj']/np.amax(hfp['largeobj']), hfp['disttransf']/np.amax(hfp['disttransf'])])
-    # ifp.set_data_dict({'paths_over_dist': np.array([ifp.get_image('pathsim'), ifp.get_image('curlabelpair'), ifp.get_image('curdisttransf')])}, append=True)
+def find_orphans(hfp, bordercontacts, key, tkey):
+
+    non_orphan_labels = []
+    for k, v in hfp['faces', key].iteritems():
+        non_orphan_labels = np.unique(np.append(v, non_orphan_labels))
+
+    all_labels = np.unique(hfp[key])
+    orphan_labels = list(set(all_labels).difference(non_orphan_labels))
+
+    if orphan_labels:
+        bordercontacts[tkey] = hfp.getlabel(orphan_labels, keys=key, return_only=True)
+
+
+def count_contacts(hfp, bordercontacts, key, onecontactkey, multiplecontactkeys):
+
+    labels, counts = np.unique(hfp['border_locmax'], return_counts=True)
+
+    lblcounts = dict(zip(labels, counts))
+
+    for k, v in lblcounts.iteritems():
+        hfp.logging('Found {} border contacts for label {}.', v, k)
+
+    bordercontacts[onecontactkey] = hfp.getlabel(list(labels[counts == 1]), keys=key, return_only=True)
+
+    bordercontacts[multiplecontactkeys] = hfp.getlabel(list(labels[counts > 1]), keys=key, return_only=True)
+
+
+def find_border_contacts(hfp, keys):
+    """
+    :param hfp:
+
+    hfp.get_params()
+
+        find_border_contacts
+            anisotropy
+            return_bordercontact_images
+
+        bordercontactsnames
+        locmaxbordernames
+            - 'border_locmax_1'
+              ...
+            - 'border_locmax_N'
+            - 'disttransf_1'
+              ...
+            - 'disttransf_N'
+
+    :param keys: list of source keys of length = N
+
+    """
+
+    params = hfp.get_params()
+    thisparams = params['find_border_contacts']
+
+    N = len(keys)
+    disttransfkeys = np.array(params['locmaxbordernames'])[N:]
+    locmaxkeys = np.array(params['locmaxbordernames'])[:N]
+    orphankeys = np.array(params['bordercontactsnames'][:N])
+    onecontactkeys = np.array(params['bordercontactsnames'][N:2*N])
+    multiplecontactkeys = np.array(params['bordercontactsnames'][2*N:])
+
+
+    hfp.logging('locmaxkeys = {}', disttransfkeys)
+    bordercontacts = IPL()
+
+    c = 0
+    for key in keys:
+
+        hfp.logging('Finding border contacts for key = {}', key)
+
+        # # Clear objects at the border
+        # hfp.anytask(clear_border)
+
+        # Do it manually
+        # --------------
+        # Compute the distance transform
+        boundary_disttransf(hfp, thisparams, key, disttransfkeys[c])
+
+        # For each of the 6 faces compute the objects which are touching it and the corresponding local maxima of the
+        # distance transform
+        compute_faces(hfp, (key, disttransfkeys[c]), 'faces')
+
+        if thisparams['return_bordercontact_images']:
+            # Use the faces to detect orphans
+            find_orphans(hfp, bordercontacts, key, orphankeys[c])
+
+        # Find global maxima for each object touching the border
+        shp = hfp[key].shape
+        hfp[locmaxkeys[c]] = np.zeros(shp)
+
+        shps = {'xyf': shp[2],
+                'xyb': shp[2],
+                'xzf': shp[1],
+                'xzb': shp[1],
+                'yzf': shp[0],
+                'yzb': shp[0]}
+        # Define the relevant areas within the faces images for improved efficiency
+        # Only labels found within these areas are checked for their maximum in the loops below
+        areas = {'xyf': np.s_[shp[2]:shp[2]+shp[0], shp[2]:shp[2]+shp[1]],
+                 'xyb': np.s_[shp[2]:shp[2]+shp[0], shp[2]:shp[2]+shp[1]],
+                 'xzf': np.s_[shp[1]:shp[1]+shp[0], shp[1]:shp[1]+shp[2]],
+                 'xzb': np.s_[shp[1]:shp[1]+shp[0], shp[1]:shp[1]+shp[2]],
+                 'yzf': np.s_[shp[0]:shp[0]+shp[1], shp[0]:shp[0]+shp[2]],
+                 'yzb': np.s_[shp[0]:shp[0]+shp[1], shp[0]:shp[0]+shp[2]]}
+
+        # Do the computation for the merged and unmerged case
+        find_border_centroids(hfp, shps, areas, key, disttransfkeys[c], locmaxkeys[c])
+
+        # TODO:
+
+        count_contacts(hfp, bordercontacts, key, onecontactkeys[c], multiplecontactkeys[c])
+
+        hfp['overlay{}'.format(c)] = np.array([(hfp[locmaxkeys[c]] > 0).astype(np.float32), (hfp[key].astype(np.float32)/np.amax(hfp[key])).astype(np.float32), (hfp[disttransfkeys[c]]/np.amax(hfp[disttransfkeys[c]])).astype(np.float32)])
+
+        # hfp.pop(key)
+        del hfp[key]
+
+        c += 1
+
+    del (hfp['faces'])
+
+    if thisparams['return_bordercontact_images']:
+        return bordercontacts
+
 
 if __name__ == '__main__':
 
@@ -145,11 +233,14 @@ if __name__ == '__main__':
 
     hfp = IPL(
         yaml=yamlfile,
-        yamlspec={'path': 'datafolder', 'filename': 'largeobjfile', 'skeys': 'largeobjname'},
+        yamlspec={'path': 'intermedfolder', 'filename': 'largeobjfile', 'skeys': 'largeobjname'},
         tkeys='largeobj',
         castkey=None
     )
     params = hfp.get_params()
+    thisparams = params['find_border_contacts']
+    hfp.data_from_file(params['intermedfolder'] + params['largeobjmfile'],
+                       skeys=params['largeobjmnames'][0], tkeys='largeobjm')
     hfp.startlogger(filename=params['resultfolder'] + 'find_orphans.log', type='w')
 
     try:
@@ -165,12 +256,19 @@ if __name__ == '__main__':
 
         hfp.logging('\nhfp datastructure: \n---\n{}', hfp.datastructure2string(maxdepth=1))
 
-        find_border_contacts(hfp)
+        if thisparams['return_bordercontact_images']:
+            bordercontacts = find_border_contacts(hfp, ('largeobj', 'largeobjm'))
+        else:
+            find_border_contacts(hfp, ('largeobj', 'largeobjm'))
 
-        # TODO: Comment in when ready
-        hfp.write(filepath=params['intermedfolder'] + params['orphansfile'])
+        hfp.write(filepath=params['intermedfolder'] + params['locmaxborderfile'])
+        if thisparams['return_bordercontact_images']:
+            bordercontacts.write(filepath=params['intermedfolder'] + params['bordercontactsfile'])
 
-        hfp.logging('\nFinal dictionary structure:\n---\n{}', hfp.datastructure2string())
+        hfp.logging('\nFinal hfp dictionary structure:\n---\n{}', hfp.datastructure2string())
+        if thisparams['return_bordercontact_images']:
+            hfp.logging('\nFinal bordercontacts dictionary structure:\n---\n{}', bordercontacts.datastructure2string())
+
         hfp.logging('')
         hfp.stoplogger()
 

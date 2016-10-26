@@ -46,7 +46,7 @@ def resize_z_nearest(image, z):
 
 
 def getlabel(image, label):
-    if type(label) is tuple:
+    if type(label) is tuple or type(label) is list:
 
         lblim = np.zeros(image.shape, dtype=image.dtype)
         for lbl in label:

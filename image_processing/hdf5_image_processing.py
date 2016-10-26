@@ -189,8 +189,9 @@ class Hdf5ImageProcessing(Hdf5Processing):
         self[tkey] = deepcopy(self[skey])
 
     def rename_entry(self, old, new):
-        self[new] = self[old]
-        del self[old]
+        # self[new] = self[old]
+        # del self[old]
+        self[new] = self.pop(old)
 
 ###############################################################################################
 
@@ -239,11 +240,9 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
 
         if labellist is None:
             labellist = self.unique(keys=key, return_only=True)[key]
-            print 'lalala'
             if area is not None:
 
                 labellist = lib.unique(self[key][area])
-                print 'I was here'
 
         if background is not None:
             labellist = filter(lambda x: x != 0, labellist)
@@ -253,16 +252,22 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
 
 
     def label_image_iterator(self, key=None, labellist=None, background=None,
-                             accumulate=False, area=None):
+                             accumulate=False, area=None, relabel=False):
 
         if accumulate:
 
             lblim = np.zeros(self[key].shape, dtype=self[key].dtype)
 
+            c = 1
             for lbl in self.label_iterator(key=key, labellist=labellist, background=background, area=area):
 
-                lblim[lib.getlabel(self[key], lbl) == 1] = lbl
-                yield [lbl, lblim]
+                if relabel:
+                    lblim[lib.getlabel(self[key], lbl) == 1] = c
+                    yield [c, lblim]
+                    c += 1
+                else:
+                    lblim[lib.getlabel(self[key], lbl) == 1] = lbl
+                    yield [lbl, lblim]
 
         else:
 
