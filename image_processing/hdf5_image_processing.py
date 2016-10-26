@@ -224,6 +224,12 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
     def get_faces_with_neighbors(self, **kwargs):
         return self.anytask(lib.get_faces_with_neighbors, **kwargs)
 
+    def gaussian_smoothing(self, sigma, **kwargs):
+        return self.anytask(lib.gaussian_smoothing, sigma, **kwargs)
+
+    def extended_local_maxima(self, neighborhood=26, **kwargs):
+        return self.anytask(lib.extended_local_maxima, neighborhood=neighborhood, **kwargs)
+
     # _________________________________________________________________________________________
     # Iterators
 

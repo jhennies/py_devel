@@ -210,8 +210,6 @@ def find_border_contacts(hfp, keys):
         # Do the computation for the merged and unmerged case
         find_border_centroids(hfp, shps, areas, key, disttransfkeys[c], locmaxkeys[c])
 
-        # TODO:
-
         count_contacts(hfp, bordercontacts, key, onecontactkeys[c], multiplecontactkeys[c])
 
         hfp['overlay{}'.format(c)] = np.array([(hfp[locmaxkeys[c]] > 0).astype(np.float32), (hfp[key].astype(np.float32)/np.amax(hfp[key])).astype(np.float32), (hfp[disttransfkeys[c]]/np.amax(hfp[disttransfkeys[c]])).astype(np.float32)])
