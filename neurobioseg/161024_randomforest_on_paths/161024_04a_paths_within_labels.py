@@ -124,7 +124,7 @@ def paths_within_labels(hfp, key, locmaxkeys, disttransfkey):
         for i in xrange(0, len(locmaxkeys)):
 
             hfp.logging('locmaxkey = {}', locmaxkeys[i])
-            if np.amax(more_ims[locmaxkeys[i]]) == 1:
+            if np.amax(more_ims[locmaxkeys[i]]) > 0:
                 ps, pathsim = find_shortest_path(hfp, thisparams['penaltypower'], bounds,
                                                  more_ims[disttransfkey], more_ims[locmaxkeys[i]])
                 hfp.logging('Number of paths found: {}', len(ps))
