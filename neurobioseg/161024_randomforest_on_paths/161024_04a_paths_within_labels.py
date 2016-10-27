@@ -14,59 +14,20 @@ import processing_lib as lib
 __author__ = 'jhennies'
 
 
-def shortest_paths(indicator, pairs, bounds=None):
-
-    # Crate the grid graph and shortest path objects
-    gridgr = graphs.gridGraph(indicator.shape)
-    indicator = indicator.astype(np.float32)
-    gridgr_edgeind = graphs.edgeFeaturesFromImage(gridgr, indicator)
-    instance = graphs.ShortestPathPathDijkstra(gridgr)
-
-    # Initialize paths image
-    pathsim = np.zeros(indicator.shape)
-    # Initialize list of path coordinates
-    paths = []
-
-    for pair in pairs:
-
-        source = pair[0]
-        target = pair[1]
-
-        targetNode = gridgr.coordinateToNode(target)
-        sourceNode = gridgr.coordinateToNode(source)
-
-        instance.run(gridgr_edgeind, sourceNode, target=targetNode)
-        path = instance.path(pathType='coordinates')
-        # Do not forget to correct for the offset caused by cropping!
-        if bounds is not None:
-            paths.append(path + [bounds[0].start, bounds[1].start, bounds[2].start])
-        else:
-            paths.append(path)
-
-        pathindices = np.swapaxes(path, 0, 1)
-        pathsim[pathindices[0], pathindices[1], pathindices[2]] = 1
-
-    return paths, pathsim
-
-
 def find_shortest_path(hfp, penaltypower, bounds, disttransf, locmax):
 
-    # TODO: distancetransform modifiactation can be done beforehand!
     # Modify distancetransform
     #
     # a) Invert: the lowest values (i.e. the lowest penalty for the shortest path detection) should be at the center of
     #    the current process
     disttransf = lib.invert_image(disttransf)
-    # ifp.invert_image(ids='curdisttransf')
     #
     # b) Set all values outside the process to infinity
     disttransf = lib.filter_values(disttransf, np.amax(disttransf), type='eq', setto=np.inf)
-    # ifp.filter_values(ifp.amax('curdisttransf'), type='eq', setto=np.inf, ids='curdisttransf', targetids='curdisttransf_inf')
     #
     # c) Increase the value difference between pixels near the boundaries and pixels central within the processes
     #    This increases the likelihood of the paths to follow the center of processes, thus avoiding short-cuts
     disttransf = lib.power(disttransf, penaltypower)
-    # ifp.power(penaltypower, ids='curdisttransf_inf')
 
     # Get local maxima
     indices = np.where(locmax)
@@ -79,7 +40,7 @@ def find_shortest_path(hfp, penaltypower, bounds, disttransf, locmax):
         for j in xrange(i+1, len(coords)):
             pairs.append((coords[i], coords[j]))
 
-    paths, pathim = shortest_paths(disttransf, pairs, bounds=bounds)
+    paths, pathim = lib.shortest_paths(disttransf, pairs, bounds=bounds, hfp=hfp)
 
     return paths, pathim
 

@@ -4,6 +4,7 @@ import scipy
 from scipy import ndimage, misc
 import vigra
 from copy import deepcopy
+from vigra import graphs
 
 __author__ = 'jhennies'
 
@@ -347,3 +348,41 @@ def get_faces_with_neighbors(image):
     faces['yzb'] = yzb
 
     return faces
+
+
+def shortest_paths(indicator, pairs, bounds=None, hfp=None):
+
+    # Crate the grid graph and shortest path objects
+    gridgr = graphs.gridGraph(indicator.shape)
+    indicator = indicator.astype(np.float32)
+    gridgr_edgeind = graphs.edgeFeaturesFromImage(gridgr, indicator)
+    instance = graphs.ShortestPathPathDijkstra(gridgr)
+
+    # Initialize paths image
+    pathsim = np.zeros(indicator.shape)
+    # Initialize list of path coordinates
+    paths = []
+
+    for pair in pairs:
+
+        source = pair[0]
+        target = pair[1]
+
+        if hfp is not None:
+            hfp.logging('Calculating path from {} to {}', source, target)
+
+        targetNode = gridgr.coordinateToNode(target)
+        sourceNode = gridgr.coordinateToNode(source)
+
+        instance.run(gridgr_edgeind, sourceNode, target=targetNode)
+        path = instance.path(pathType='coordinates')
+        # Do not forget to correct for the offset caused by cropping!
+        if bounds is not None:
+            paths.append(path + [bounds[0].start, bounds[1].start, bounds[2].start])
+        else:
+            paths.append(path)
+
+        pathindices = np.swapaxes(path, 0, 1)
+        pathsim[pathindices[0], pathindices[1], pathindices[2]] = 1
+
+    return paths, pathsim

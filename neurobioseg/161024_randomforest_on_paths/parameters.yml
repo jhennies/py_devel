@@ -47,7 +47,7 @@ remove_small_objects:
 merge_adjacent_objects:
     seed: 1
     numberbysize: 10
-    numberbyrandom: 10
+    numberbyrandom: 5
 
 find_border_contacts:
     anisotropy: [10, 1, 1]

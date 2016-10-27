@@ -242,6 +242,12 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
     def amax(self, return_only=True, **kwargs):
         return self.anytask(lib.amax, return_only=return_only, **kwargs)
 
+    def invert_image(self, **kwargs):
+        return self.anytask(lib.invert_image, **kwargs)
+
+    def power(self, value, **kwargs):
+        return self.anytask(lib.power, value, **kwargs)
+
     # _________________________________________________________________________________________
     # Iterators
 
