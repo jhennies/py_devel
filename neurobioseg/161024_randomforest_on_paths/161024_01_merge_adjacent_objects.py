@@ -126,6 +126,9 @@ def merge_adjacent_objects(hfp, key):
             if br:
                 break
     reduce(change_hash)
+    # Change the list in the hash to np-arrays for better storage in h5 files
+    for k, v in change_hash.iteritems():
+        change_hash[k] = np.array(v)
     # And now we have a perfect change list which we just need to iterate over and change the labels in the image
     hfp.logging('change_hash after change:')
     hfp.logging(change_hash)

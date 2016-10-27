@@ -175,8 +175,10 @@ class Hdf5Processing(dict, YamlParams):
                         grp.create_dataset(str(i), data=v[i])
 
                 elif type(v) is np.ndarray:
-
-                    group.create_dataset(k, data=v)
+                    try:
+                        group.create_dataset(k, data=v)
+                    except AttributeError:
+                        group.create_dataset(str(k), data=v)
 
                 else:
                     print 'Warning in Hdf5Processing.write(): Nothing to write.'
