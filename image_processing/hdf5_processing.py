@@ -124,25 +124,31 @@ class Hdf5Processing(dict, YamlParams):
 
     def setdata(self, data, tkeys=None):
 
-        if tkeys is not None:
-            if type(tkeys) is not tuple and type(tkeys) is not list:
-                tkeys = (tkeys,)
+        # if tkeys is not None:
+        #     if type(tkeys) is not tuple and type(tkeys) is not list:
+        #         tkeys = (tkeys,)
+        #
+        #     if len(tkeys) != len(data.keys()):
+        #         if len(tkeys) == 1:
+        #             # tkeys = [tkeys[0] + x for x in data.keys()]
+        #             tkeys = zip(tkeys * len(data.keys()), data.keys())
+        #         else:
+        #             raise RuntimeError('Hdf5Processing: Length of tkeys must be equal to length of data keys!')
+        #
+        # else:
+        #     tkeys = data.keys()
 
-            if len(tkeys) != len(data.keys()):
-                if len(tkeys) == 1:
-                    # tkeys = [tkeys[0] + x for x in data.keys()]
-                    tkeys = zip(tkeys * len(data.keys()), data.keys())
-                else:
-                    raise RuntimeError('Hdf5Processing: Length of tkeys must be equal to length of data keys!')
+        # for i in xrange(0, len(data.keys())):
+        #     try:
+        #         self[tkeys[i]] = type(self)(data=data[data.keys()[i]])
+        #     except:
+        #         self[tkeys[i]] = data[data.keys()[i]]
 
-        else:
-            tkeys = data.keys()
-
-        for i in xrange(0, len(data.keys())):
+        for k in data.keys():
             try:
-                self[tkeys[i]] = type(self)(data=data[data.keys()[i]])
+                self[k] = type(self)(data=data[k])
             except:
-                self[tkeys[i]] = data[data.keys()[i]]
+                self[k] = data[k]
 
         # for key, val in data.iteritems():
         #     try:
@@ -184,7 +190,7 @@ class Hdf5Processing(dict, YamlParams):
 
         of.close()
 
-    def get_h5_content(self, f, skeys=None, offset='    ', castkey=None):
+    def get_h5_content(self, f, skeys=None, tkeys=None, offset='    ', castkey=None):
 
         # if isinstance(f, h5py.Dataset):
         #     print offset, '(Dataset)', f.name, 'len =', f.shape
@@ -202,6 +208,13 @@ class Hdf5Processing(dict, YamlParams):
             dict_f = dict(f)
             if skeys is None:
                 skeys = dict_f.keys()
+            if type(skeys) is str:
+                skeys = (skeys,)
+            if tkeys is None:
+                tkeys = skeys
+            if type(tkeys) is str:
+                tkeys = (tkeys,)
+            akeys = dict(zip(skeys, tkeys))
             rtrn_dict = {}
             for key, val in dict_f.iteritems():
                 subg = val
@@ -210,7 +223,7 @@ class Hdf5Processing(dict, YamlParams):
                     key = castkey(key)
                     # print '{} type(key) = {}'.format(offset, type(key))
                 if key in skeys:
-                    rtrn_dict[key] = self.get_h5_content(subg, offset=offset + '    ', castkey=castkey)
+                    rtrn_dict[akeys[key]] = self.get_h5_content(subg, offset=offset + '    ', castkey=castkey)
 
         else:
             # print offset, f
@@ -218,15 +231,15 @@ class Hdf5Processing(dict, YamlParams):
 
         return rtrn_dict
 
-    def load_h5(self, filepath, skeys=None, castkey=None):
+    def load_h5(self, filepath, skeys=None, tkeys=None, castkey=None):
 
         f = h5py.File(filepath)
 
-        return self.get_h5_content(f, skeys=skeys, castkey=castkey)
+        return self.get_h5_content(f, skeys=skeys, tkeys=tkeys, castkey=castkey)
 
     def data_from_file(self, filepath, skeys=None, tkeys=None, castkey=None):
-        newdata = self.load_h5(filepath, skeys=skeys, castkey=castkey)
-        self.setdata(newdata, tkeys=tkeys)
+        newdata = self.load_h5(filepath, skeys=skeys, tkeys=tkeys, castkey=castkey)
+        self.setdata(newdata)
 
     def getdataitem(self, itemkey):
         return self[itemkey]
