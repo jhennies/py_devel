@@ -231,7 +231,6 @@ if __name__ == '__main__':
         paths = paths_within_labels(hfp, 'largeobj', ('border_locmax', 'locmax'), 'disttransf')
 
         paths.write(filepath=params['intermedfolder'] + params['pathstruefile'])
-        # hfp.write(filepath=params['intermedfolder'] + params['locmaxfile'])
 
         hfp.logging('\nFinal dictionary structure:\n---\n{}', hfp.datastructure2string())
         hfp.logging('')
