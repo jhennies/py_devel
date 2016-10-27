@@ -3,6 +3,7 @@ import numpy as np
 import scipy
 from scipy import ndimage, misc
 import vigra
+from copy import deepcopy
 
 __author__ = 'jhennies'
 
@@ -142,7 +143,7 @@ def concatenate(image1, image2):
     return [image1, image2]
 
 
-def find_bounding_rect(image):
+def find_bounding_rect(image, s_=False):
 
     if image.ndim == 3:
 
@@ -162,14 +163,20 @@ def find_bounding_rect(image):
         # print 'rows = {}'.format(rows)
         # print 'cols = {}'.format(cols)
 
-        return [[rows.min(), rows.max()+1], [cols.min(), cols.max()+1], [bnds.min(), bnds.max()+1]]
+        if s_:
+            return np.s_[rows.min():rows.max()+1, cols.min():cols.max()+1, bnds.min():bnds.max()+1]
+        else:
+            return [[rows.min(), rows.max() + 1], [cols.min(), cols.max() + 1], [bnds.min(), bnds.max() + 1]]
 
     elif image.ndim == 2:
 
         rows = np.flatnonzero(image.sum(axis=0))
         cols = np.flatnonzero(image.sum(axis=1))
 
-        return [[rows.min(), rows.max()+1], [cols.min(), cols.max()+1]]
+        if s_:
+            return np.s_[rows.min():rows.max()+1, cols.min():cols.max()+1]
+        else:
+            return [[rows.min(), rows.max()+1], [cols.min(), cols.max()+1]]
 
     else:
         raise TypeError('find_bounding_rect: This number of dimensions is currently not supported!')
@@ -179,7 +186,10 @@ def crop_bounding_rect(image, bounds=None):
     if bounds is None:
         bounds = find_bounding_rect(image)
 
-    return image[bounds[0][0]:bounds[0][1], bounds[1][0]:bounds[1][1], bounds[2][0]:bounds[2][1]]
+    if type(bounds) is list:
+        return image[bounds[0][0]:bounds[0][1], bounds[1][0]:bounds[1][1], bounds[2][0]:bounds[2][1]]
+    else:
+        return deepcopy(image[bounds])
 
 
 def replace_subimage(image, rplimage, position=None, bounds=None, ignore=None):

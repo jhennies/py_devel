@@ -230,6 +230,18 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
     def extended_local_maxima(self, neighborhood=26, **kwargs):
         return self.anytask(lib.extended_local_maxima, neighborhood=neighborhood, **kwargs)
 
+    def find_bounding_rect(self, **kwargs):
+        return self.anytask(lib.find_bounding_rect, **kwargs)
+
+    def crop_bounding_rect(self, bounds=None, **kwargs):
+        return self.anytask(lib.crop_bounding_rect, bounds=bounds, **kwargs)
+
+    def mask_image(self, maskvalue=False, value=0, **kwargs):
+        return self.anytask(lib.mask_image, maskvalue=maskvalue, value=value, **kwargs)
+
+    def amax(self, return_only=True, **kwargs):
+        return self.anytask(lib.amax, return_only=return_only, **kwargs)
+
     # _________________________________________________________________________________________
     # Iterators
 
@@ -282,8 +294,35 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
                 lblim = lib.getlabel(self[key], lbl)
                 yield [lbl, lblim]
 
-    def label_image_bounds_iterator(self):
-        pass
+    def label_image_bounds_iterator(self, key=None, labellist=None, background=None,
+                                    area=None, more_keys=None,
+                                    maskvalue=0, value=0, forcecontinue=False):
+
+        for lbl, lblim in self.label_image_iterator(key=key, background=background, labellist=labellist, area=area):
+
+            # self.logging('self.amax() = {}', self.amax())
+            try:
+
+                bounds = lib.find_bounding_rect(lblim, s_=True)
+                lblim = lib.crop_bounding_rect(lblim, bounds)
+
+                if more_keys is not None:
+                    more_ims = self.crop_bounding_rect(bounds, keys=more_keys, return_only=True)
+                    more_ims.mask_image(maskvalue=maskvalue, value=value, keys=more_keys, indict={'lblim': lblim})
+
+                    yield [lbl, lblim, more_ims, bounds]
+
+                else:
+                    yield [lbl, lblim, bounds]
+
+            except:
+
+                if forcecontinue:
+                    self.errprint('Warning: Something went wrong in label {}, jumping to next label'.format(lbl), traceback)
+
+                    continue
+                else:
+                    raise
 
 
 if __name__ == '__main__':
