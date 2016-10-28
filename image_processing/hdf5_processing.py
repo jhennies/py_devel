@@ -32,11 +32,11 @@ class Hdf5Processing(dict, YamlParams):
                 if 'path' in yamldict.keys(): filepath = yamldict['path']
                 if 'filename' in yamldict.keys(): filepath = yamldict['filename']
                 if 'castkey' in yamldict.keys(): castkey = yamldict['castkey']
-                if 'skeys' in yamlspec.keys():
-                    if type(yamlspec['skeys']) is dict:
+                if 'skeys' in yamldict.keys():
+                    if type(yamldict['skeys']) is dict:
                         skeys = ()
-                        for i in xrange(1, len(yamlspec['skeys'])):
-                            skeys += (yamldict[yamlspec['skeys'][0]][yamlspec['skeys'][i]],)
+                        for i in xrange(1, len(yamldict['skeys'])):
+                            skeys += (yamldict[yamldict['skeys'][0]][yamldict['skeys'][i]],)
                     else:
                         skeys = yamldict['skeys']
 
