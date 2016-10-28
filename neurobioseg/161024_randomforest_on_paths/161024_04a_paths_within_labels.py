@@ -83,7 +83,7 @@ def paths_within_labels(hfp, key, locmaxkeys, disttransfkey):
                                                  more_ims[disttransfkey], more_ims[locmaxkeys[i]])
                 hfp.logging('Number of paths found: {}', len(ps))
 
-                paths[key, locmaxkeys[i], 'path'] = ps
+                paths[key, locmaxkeys[i], 'path', lbl] = ps
                 paths[key, locmaxkeys[i], 'pathsim'] = pathsim
 
                 paths['pathsim', locmaxkeys[i]][bounds][pathsim > 0] = pathsim[pathsim > 0]

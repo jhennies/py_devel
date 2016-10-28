@@ -192,7 +192,7 @@ def paths_of_partners(hfp, lblsmkey, lblskey, changehashkey, locmaxkeys, disttra
                                                  hfp[changehashkey][str(lbl)])
                 hfp.logging('Number of paths found: {}', len(ps))
 
-                paths[lblsmkey, locmaxkeys[i], 'path'] = ps
+                paths[lblsmkey, locmaxkeys[i], 'path', lbl] = ps
                 paths[lblsmkey, locmaxkeys[i], 'pathsim'] = pathsim
 
                 paths['pathsim', locmaxkeys[i]][bounds][pathsim > 0] = pathsim[pathsim > 0]
