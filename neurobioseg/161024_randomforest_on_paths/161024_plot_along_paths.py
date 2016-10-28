@@ -9,10 +9,10 @@ import matplotlib.pylab as lab
 import processing_lib as lib
 import sys
 
-# TODO: Visualize Distancetransform along paths of true and false merges
-# TODO: Also intensity values of raw data
+# Done: Visualize Distancetransform along paths of true and false merges
+# Done: Also intensity values of raw data
 # TODO: And probability map
-# TODO: Do not forget to save the result for the thesis!
+# Done: Do not forget to save the result for the thesis!
 
 
 __author__ = 'jhennies'
