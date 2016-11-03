@@ -376,11 +376,12 @@ def shortest_paths(indicator, pairs, bounds=None, hfp=None):
 
         instance.run(gridgr_edgeind, sourceNode, target=targetNode)
         path = instance.path(pathType='coordinates')
-        # Do not forget to correct for the offset caused by cropping!
-        if bounds is not None:
-            paths.append(path + [bounds[0].start, bounds[1].start, bounds[2].start])
-        else:
-            paths.append(path)
+        if path.any():
+            # Do not forget to correct for the offset caused by cropping!
+            if bounds is not None:
+                paths.append(path + [bounds[0].start, bounds[1].start, bounds[2].start])
+            else:
+                paths.append(path)
 
         pathindices = np.swapaxes(path, 0, 1)
         pathsim[pathindices[0], pathindices[1], pathindices[2]] = 1

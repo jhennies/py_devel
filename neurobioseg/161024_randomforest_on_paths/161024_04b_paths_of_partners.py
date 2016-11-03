@@ -146,7 +146,7 @@ def find_shortest_path(hfp, penaltypower, bounds, disttransf, locmax,
     return paths, pathim
 
 
-def paths_of_partners(hfp, lblsmkey, lblskey, changehashkey, locmaxkeys, disttransfkey):
+def paths_of_partners(hfp, lblsmkey, lblskey, changehashkey, locmaxkeys, disttransfkey, ignore):
 
     params = hfp.get_params()
     thisparams = params['paths_of_partners']
@@ -170,6 +170,8 @@ def paths_of_partners(hfp, lblsmkey, lblskey, changehashkey, locmaxkeys, disttra
         key=lblsmkey, background=0, more_keys=more_keys,
         maskvalue=0, value=0, labellist=labellist
     ):
+        if lbl in ignore:
+            continue
         # The format of more_ims is:
         # more_ims = {locmaxkeys[0]: locmax_1,
         #                ...
@@ -190,12 +192,16 @@ def paths_of_partners(hfp, lblsmkey, lblskey, changehashkey, locmaxkeys, disttra
                                                  more_ims[locmaxkeys[i]],
                                                  more_ims[lblskey],
                                                  hfp[changehashkey][str(lbl)])
-                hfp.logging('Number of paths found: {}', len(ps))
 
-                paths[lblsmkey, locmaxkeys[i], 'path', lbl] = ps
-                paths[lblsmkey, locmaxkeys[i], 'pathsim'] = pathsim
+                # Only store the path if the path-calculation successfully determined a path
+                # Otherwise an empty list would be stored
+                if ps:
+                    hfp.logging('Number of paths found: {}', len(ps))
 
-                paths['pathsim', locmaxkeys[i]][bounds][pathsim > 0] = pathsim[pathsim > 0]
+                    paths[lblsmkey, locmaxkeys[i], 'path', lbl] = ps
+                    paths[lblsmkey, locmaxkeys[i], 'pathsim'] = pathsim
+
+                    paths['pathsim', locmaxkeys[i]][bounds][pathsim > 0] = pathsim[pathsim > 0]
 
     for k in locmaxkeys:
         paths['overlay', k] = np.array([paths['pathsim', k],
@@ -319,7 +325,7 @@ if __name__ == '__main__':
         castkey=None
     )
     params = hfp.get_params()
-    # thisparams = params['paths_of_partners']
+    thisparams = params['paths_of_partners']
     hfp.startlogger(filename=params['resultfolder'] + 'paths_of_partners.log', type='w')
     hfp.data_from_file(params['intermedfolder'] + params['largeobjfile'],
                        skeys=params['largeobjname'],
@@ -345,7 +351,8 @@ if __name__ == '__main__':
         hfp.logging('\nhfp datastructure: \n\n{}', hfp.datastructure2string(maxdepth=1))
 
         paths = paths_of_partners(hfp, 'largeobjm', 'largeobj',
-                                  'change_hash', ('border_locmax_m', 'locmaxm'), 'disttransfm')
+                                  'change_hash', ('border_locmax_m', 'locmaxm'),
+                                  'disttransfm', thisparams['ignore'])
 
         paths.write(filepath=params['intermedfolder'] + params['pathsfalsefile'])
 

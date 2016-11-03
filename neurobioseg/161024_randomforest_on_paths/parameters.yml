@@ -6,6 +6,8 @@ createfolders: True
 
 overwriteresults: True
 
+rawdatafile:    'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.h5'
+rawdataname:    'raw'
 labelsfile:     'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.h5'
 labelsname:     'labels'
 largeobjfile:   'cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.largeobjects.h5'
@@ -58,9 +60,11 @@ localmax_on_disttransf:
     sigma: 20
 
 paths_within_labels:
+    ignore: [63,]
     penaltypower: 10
 
 paths_of_partners:
+    ignore: [63,]
     penaltypower: 10
 
 features_of_paths:

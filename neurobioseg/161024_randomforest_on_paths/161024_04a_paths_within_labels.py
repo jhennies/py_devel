@@ -42,10 +42,12 @@ def find_shortest_path(hfp, penaltypower, bounds, disttransf, locmax):
 
     paths, pathim = lib.shortest_paths(disttransf, pairs, bounds=bounds, hfp=hfp)
 
+    # # Make sure no empty paths lists are returned
+    # paths = [x for x in paths if x.any()]
     return paths, pathim
 
 
-def paths_within_labels(hfp, key, locmaxkeys, disttransfkey):
+def paths_within_labels(hfp, key, locmaxkeys, disttransfkey, ignore=[]):
 
     params = hfp.get_params()
     thisparams = params['paths_within_labels']
@@ -65,6 +67,8 @@ def paths_within_labels(hfp, key, locmaxkeys, disttransfkey):
         key=key, background=0, more_keys=more_keys,
         maskvalue=0, value=0
     ):
+        if lbl in ignore:
+            continue
         # The format of more_ims is:
         # more_ims = {locmaxkeys[0]: locmax_1,
         #                ...
@@ -81,12 +85,16 @@ def paths_within_labels(hfp, key, locmaxkeys, disttransfkey):
             if np.amax(more_ims[locmaxkeys[i]]) > 0:
                 ps, pathsim = find_shortest_path(hfp, thisparams['penaltypower'], bounds,
                                                  more_ims[disttransfkey], more_ims[locmaxkeys[i]])
-                hfp.logging('Number of paths found: {}', len(ps))
 
-                paths[key, locmaxkeys[i], 'path', lbl] = ps
-                paths[key, locmaxkeys[i], 'pathsim'] = pathsim
+                # Only store the path if the path-calculation successfully determined a path
+                # Otherwise an empty list would be stored
+                if ps:
+                    hfp.logging('Number of paths found: {}', len(ps))
 
-                paths['pathsim', locmaxkeys[i]][bounds][pathsim > 0] = pathsim[pathsim > 0]
+                    paths[key, locmaxkeys[i], 'path', lbl] = ps
+                    paths[key, locmaxkeys[i], 'pathsim'] = pathsim
+
+                    paths['pathsim', locmaxkeys[i]][bounds][pathsim > 0] = pathsim[pathsim > 0]
 
     for k in locmaxkeys:
         paths['overlay', k] = np.array([paths['pathsim', k],
@@ -129,7 +137,8 @@ if __name__ == '__main__':
 
         hfp.logging('\nhfp datastructure: \n\n{}', hfp.datastructure2string(maxdepth=1))
 
-        paths = paths_within_labels(hfp, 'largeobj', ('border_locmax', 'locmax'), 'disttransf')
+        paths = paths_within_labels(hfp, 'largeobj', ('border_locmax', 'locmax'),
+                                    'disttransf', ignore=thisparams['ignore'])
 
         paths.write(filepath=params['intermedfolder'] + params['pathstruefile'])
 
