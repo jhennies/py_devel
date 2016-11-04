@@ -70,5 +70,14 @@ paths_of_partners:
 features_of_paths:
     anisotropy: [10, 1, 1]
     radius_paths_ends: 10
+    features:
+        - 'Sum'
+        - 'Skewness'
+        - 'Variance'
+        - 'Mean'
+        - 'Count'
+        - 'Maximum'
+        - 'Minimum'
+    max_paths_per_label: 5
 
 

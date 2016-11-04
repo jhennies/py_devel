@@ -295,6 +295,63 @@ class Hdf5Processing(dict, YamlParams):
         except:
             pass
 
+    def lengths(self, depth=0):
+
+        returndict = type(self)()
+        for d, k, v, kl in self.data_iterator():
+            if d == depth:
+                returndict[kl] = len(v)
+
+        return returndict
+
+    def maxlength(self, depth=0):
+
+        maxlen = 0
+        for d, k, v, kl in self.data_iterator():
+            if d == depth:
+                if len(v) > maxlen:
+                    maxlen = len(v)
+
+        return maxlen
+
+    def simultaneous_iterator(self, data=None, keylist=None, max_count_per_item=None):
+
+        if data is None:
+            data = self
+
+        if max_count_per_item is None:
+            max_count_per_item = data.maxlength(depth=0)
+        else:
+            if max_count_per_item > data.maxlength(depth=0):
+                max_count_per_item = data.maxlength(depth=0)
+
+        if keylist is None:
+
+            for i in xrange(max_count_per_item):
+                keys = []
+                vals = []
+                for key, val in data.iteritems():
+                    try:
+                        vals.append(val[val.keys()[i]])
+                        keys.append((key, val.keys()[i]))
+                    except:
+                        pass
+                yield [i, keys, vals]
+
+        else:
+
+            for key in keylist:
+                keys = []
+                vals = []
+                for dkey, dval in data.iteritems():
+                    try:
+                        if key in dval.keys():
+                            vals.append(dval[key])
+                            keys.append((dkey, key))
+                    except:
+                        pass
+                yield [key, keys, vals]
+
     # # ANYTASK-based functions
     #
     # def anytask(self, task, *args, **kwargs):
@@ -316,6 +373,8 @@ class Hdf5Processing(dict, YamlParams):
 
 
 if __name__ == '__main__':
+
+    pass
 
     # hfp = Hdf5Processing()
     # content = hfp.load('/media/julian/Daten/neuraldata/cremi_2016/develop/161011_locmax_paths_feature_extraction/intermediate/cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.true.h5',
@@ -382,13 +441,13 @@ if __name__ == '__main__':
 
     # hfp.stoplogger()
 
-
-    hfp = Hdf5Processing(data={'a': {'b': np.array([10, 10])}})
-
-    hfp['a', 'c'] = np.array([20, 10, 20, 30])
-    hfp['d', 'b'] = [[1, 1, 2], [2, 3, 4], [3, 2, 1], [2], [12, 3], [4, 3,4]]
-
-    print hfp
-    print hfp.datastructure2string()
-
-    hfp.write(filepath='/home/julian/Documents/test.h5')
+    #
+    # hfp = Hdf5Processing(data={'a': {'b': np.array([10, 10])}})
+    #
+    # hfp['a', 'c'] = np.array([20, 10, 20, 30])
+    # hfp['d', 'b'] = [[1, 1, 2], [2, 3, 4], [3, 2, 1], [2], [12, 3], [4, 3,4]]
+    #
+    # print hfp
+    # print hfp.datastructure2string()
+    #
+    # hfp.write(filepath='/home/julian/Documents/test.h5')
