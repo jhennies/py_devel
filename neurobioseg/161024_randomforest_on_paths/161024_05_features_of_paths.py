@@ -141,7 +141,7 @@ def features_of_paths(hfp, disttransf_images, feature_images, features):
 
     for k, v in hfp['true'].iteritems():
 
-        features['true', 'disttransf', k] = get_features(
+        features['true', k, 'disttransf'] = get_features(
             v, disttransf_images['disttransf'],
             thisparams['features'],
             thisparams['max_paths_per_label'],
@@ -150,7 +150,7 @@ def features_of_paths(hfp, disttransf_images, feature_images, features):
 
         for fk, fv in feature_images.iteritems():
 
-            features['true', fk, k] = get_features(
+            features['true', k, fk] = get_features(
                 v, fv,
                 thisparams['features'],
                 thisparams['max_paths_per_label'],
@@ -159,7 +159,7 @@ def features_of_paths(hfp, disttransf_images, feature_images, features):
 
     for k, v in hfp['false'].iteritems():
 
-        features['false', 'disttransf', k] = get_features(
+        features['false', k, 'disttransf'] = get_features(
             v, disttransf_images['disttransfm'],
             thisparams['features'],
             thisparams['max_paths_per_label'],
@@ -168,7 +168,7 @@ def features_of_paths(hfp, disttransf_images, feature_images, features):
 
         for fk, fv in feature_images.iteritems():
 
-            features['false', fk, k] = get_features(
+            features['false', k, fk] = get_features(
                 v, fv,
                 thisparams['features'],
                 thisparams['max_paths_per_label'],
