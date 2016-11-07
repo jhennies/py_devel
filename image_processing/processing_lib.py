@@ -5,6 +5,7 @@ from scipy import ndimage, misc
 import vigra
 from copy import deepcopy
 from vigra import graphs
+import math
 
 __author__ = 'jhennies'
 
@@ -387,3 +388,31 @@ def shortest_paths(indicator, pairs, bounds=None, hfp=None):
         pathsim[pathindices[0], pathindices[1], pathindices[2]] = 1
 
     return paths, pathsim
+
+def split(image, sections, axis=0, result_keys=None):
+
+    shp = list(image.shape)
+    # print shp
+    #
+    # print float(shp[axis]) / 2
+    # shp[axis] = round(float(shp[axis]) / 2)
+
+    if float(shp[axis]) / sections != shp[axis] / sections:
+        shp[axis] = shp[axis] / sections * sections
+
+        image = image[:shp[0], :shp[1], :shp[2]]
+
+    result = np.split(image, sections, axis=axis)
+
+    if result_keys is None:
+        return result
+    else:
+        if len(result_keys) != len(result):
+            raise RuntimeError('processing_lib.split: Number of result keys does not match the number of sections!')
+        resultdict = dict()
+
+        for i in xrange(len(result_keys)):
+
+            resultdict[result_keys[i]] = result[i]
+
+        return resultdict

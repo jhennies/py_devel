@@ -19,7 +19,7 @@ __author__ = 'jhennies'
 class Hdf5Processing(dict, YamlParams):
 
     def __init__(self, path=None, filename=None, filepath=None, data=None, skeys=None, tkeys=None, castkey=None,
-                 yaml=None, yamlspec=None):
+                 yaml=None, yamlspec=None, recursive_search=False):
 
         dict.__init__(self)
         YamlParams.__init__(self, filename=yaml)
@@ -65,10 +65,12 @@ class Hdf5Processing(dict, YamlParams):
                 self.setdata(data, tkeys)
 
         elif path is not None:
-            self.data_from_file(path+filename, skeys=skeys, tkeys=tkeys, castkey=castkey)
+            self.data_from_file(path+filename, skeys=skeys, tkeys=tkeys, castkey=castkey,
+                                recursive_search=recursive_search)
 
         elif filepath is not None:
-            self.data_from_file(filepath, skeys=skeys, tkeys=tkeys, castkey=castkey)
+            self.data_from_file(filepath, skeys=skeys, tkeys=tkeys, castkey=castkey,
+                                recursive_search=recursive_search)
 
     def __getitem__(self, item):
 
@@ -192,7 +194,8 @@ class Hdf5Processing(dict, YamlParams):
 
         of.close()
 
-    def get_h5_content(self, f, skeys=None, tkeys=None, offset='    ', castkey=None):
+    def get_h5_content(self, f, skeys=None, tkeys=None, offset='    ', castkey=None,
+                       recursive_search=False, integrate=False, selfinstance=None):
 
         # if isinstance(f, h5py.Dataset):
         #     print offset, '(Dataset)', f.name, 'len =', f.shape
@@ -202,45 +205,104 @@ class Hdf5Processing(dict, YamlParams):
         #
         # else :
         #     pass
-        #     # print 'WORNING: UNKNOWN ITEM IN HDF5 FILE', f.name
+        #     # print 'WARNING: UNKNOWN ITEM IN HDF5 FILE', f.name
         #     # sys.exit ( "EXECUTION IS TERMINATED" )
         # dict_f = {}
 
-        if isinstance(f, h5py.File) or isinstance(f, h5py.Group):
-            dict_f = dict(f)
-            if skeys is None:
-                skeys = dict_f.keys()
-            if type(skeys) is str:
-                skeys = (skeys,)
-            if tkeys is None:
-                tkeys = skeys
-            if type(tkeys) is str:
-                tkeys = (tkeys,)
-            akeys = dict(zip(skeys, tkeys))
-            rtrn_dict = {}
-            for key, val in dict_f.iteritems():
-                subg = val
-                # print offset, key
-                if castkey is not None:
-                    key = castkey(key)
-                    # print '{} type(key) = {}'.format(offset, type(key))
-                if key in skeys:
-                    rtrn_dict[akeys[key]] = self.get_h5_content(subg, offset=offset + '    ', castkey=castkey)
+        if recursive_search:
+
+            if integrate:
+
+                if isinstance(f, h5py.File) or isinstance(f, h5py.Group):
+                    if selfinstance is None:
+                        selfinstance = self
+                    if skeys is None:
+                        raise TypeError('hdf5_processing.Hdf5Processing.get_h5_content: skeys must be specified when recursive_search set to True!')
+                    if type(skeys) is str:
+                        skeys = (skeys,)
+                    rtrn_dict = selfinstance
+                    dict_f = dict(f)
+                    for key, val in dict_f.iteritems():
+                        subg = val
+                        if isinstance(subg, h5py.File) or isinstance(subg, h5py.Group) or key in skeys:
+                            content = self.get_h5_content(subg, skeys=skeys,
+                                                          recursive_search=True,
+                                                          integrate=True,
+                                                          selfinstance=type(self)(data=rtrn_dict)[key])
+                            if type(content) is type(self):
+                                if content:
+                                    rtrn_dict[key] = content
+                            else:
+                                rtrn_dict[key] = content
+                else:
+                    rtrn_dict = np.array(f)
+
+                return rtrn_dict
+
+            else:
+
+                if isinstance(f, h5py.File) or isinstance(f, h5py.Group):
+                    if skeys is None:
+                        raise TypeError('hdf5_processing.Hdf5Processing.get_h5_content: skeys must be specified when recursive_search set to True!')
+                    if type(skeys) is str:
+                        skeys = (skeys,)
+                    rtrn_dict = {}
+                    dict_f = dict(f)
+                    for key, val in dict_f.iteritems():
+                        subg = val
+                        if isinstance(subg, h5py.File) or isinstance(subg, h5py.Group) or key in skeys:
+                            content = self.get_h5_content(subg, skeys=skeys, recursive_search=True)
+                            if type(content) is dict:
+                                if content:
+                                    rtrn_dict[key] = content
+                            else:
+                                rtrn_dict[key] = content
+                else:
+                    rtrn_dict = np.array(f)
+
+                return rtrn_dict
 
         else:
-            # print offset, f
-            rtrn_dict = np.array(f)
 
-        return rtrn_dict
+            if isinstance(f, h5py.File) or isinstance(f, h5py.Group):
+                dict_f = dict(f)
+                if skeys is None:
+                    skeys = dict_f.keys()
+                if type(skeys) is str:
+                    skeys = (skeys,)
+                if tkeys is None:
+                    tkeys = skeys
+                if type(tkeys) is str:
+                    tkeys = (tkeys,)
+                akeys = dict(zip(skeys, tkeys))
+                rtrn_dict = {}
+                for key, val in dict_f.iteritems():
+                    subg = val
+                    # print offset, key
+                    if castkey is not None:
+                        key = castkey(key)
+                        # print '{} type(key) = {}'.format(offset, type(key))
+                    if key in skeys:
+                        rtrn_dict[akeys[key]] = self.get_h5_content(subg, offset=offset + '    ', castkey=castkey)
 
-    def load_h5(self, filepath, skeys=None, tkeys=None, castkey=None):
+            else:
+                # print offset, f
+                rtrn_dict = np.array(f)
+
+            return rtrn_dict
+
+    def load_h5(self, filepath, skeys=None, tkeys=None, castkey=None, recursive_search=False,
+                integrate=False):
 
         f = h5py.File(filepath)
 
-        return self.get_h5_content(f, skeys=skeys, tkeys=tkeys, castkey=castkey)
+        return self.get_h5_content(f, skeys=skeys, tkeys=tkeys, castkey=castkey,
+                                   recursive_search=recursive_search, integrate=integrate)
 
-    def data_from_file(self, filepath, skeys=None, tkeys=None, castkey=None):
-        newdata = self.load_h5(filepath, skeys=skeys, tkeys=tkeys, castkey=castkey)
+    def data_from_file(self, filepath, skeys=None, tkeys=None, castkey=None,
+                       recursive_search=False, integrate=False):
+        newdata = self.load_h5(filepath, skeys=skeys, tkeys=tkeys, castkey=castkey,
+                               recursive_search=recursive_search, integrate=integrate)
         self.setdata(newdata)
 
     def getdataitem(self, itemkey):
@@ -270,7 +332,7 @@ class Hdf5Processing(dict, YamlParams):
             pass
         return dstr
 
-    def data_iterator(self, maxdepth=None, data=None, depth=0, keylist=[]):
+    def data_iterator(self, maxdepth=None, data=None, depth=0, keylist=[], yield_short_kl=False):
 
         depth += 1
         if maxdepth is not None:
@@ -284,12 +346,18 @@ class Hdf5Processing(dict, YamlParams):
 
             for key, val in data.iteritems():
                 # print key, val
-                kl = keylist + [key,]
-                # yield {'depth': depth-1, 'key': key, 'val': val, 'keylist': kl}
-                yield [depth-1, key, val, kl]
+                if yield_short_kl:
+                    yield [depth-1, key, val, keylist]
+                    kl = keylist + [key,]
+                else:
+                    kl = keylist + [key,]
+                    # yield {'depth': depth-1, 'key': key, 'val': val, 'keylist': kl}
+                    yield [depth-1, key, val, kl]
                 # self.data_iterator(level=level, maxlevel=maxlevel, data=val)
 
-                for d in self.data_iterator(maxdepth=maxdepth, data=val, depth=depth, keylist=kl):
+                for d in self.data_iterator(
+                        maxdepth=maxdepth, data=val, depth=depth, keylist=kl,
+                        yield_short_kl=yield_short_kl):
                     yield d
 
         except:
@@ -371,6 +439,17 @@ class Hdf5Processing(dict, YamlParams):
     #             d['val'] = task(d['val'], *args, **kwargs)
     #             self._data[d['keylist']] = d['val']
 
+    def switch_levels(self, level1, level2):
+        newself = type(self)()
+        for d, k, v, kl in self.data_iterator(maxdepth=level2):
+            if d == level2:
+                newkl = list(kl)
+                newkl[level1] = kl[level2]
+                newkl[level2] = kl[level1]
+
+                newself[newkl] = self[kl]
+
+        return newself
 
 if __name__ == '__main__':
 
