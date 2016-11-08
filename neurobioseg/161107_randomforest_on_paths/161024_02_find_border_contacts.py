@@ -298,5 +298,5 @@ if __name__ == '__main__':
         ipl.stoplogger()
 
     except:
-        raise
+
         ipl.errout('Unexpected error')
