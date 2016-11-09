@@ -38,6 +38,7 @@ def localmax_on_disttransf_image_iteration(ipl):
     for d, k, v, kl in ipl.data_iterator(yield_short_kl=True):
 
         if k == params['locmaxbordernames'][2]:
+            ipl[kl].setlogger(ipl.getlogger())
             ipl[kl] = localmax_on_disttransf(ipl[kl], (params['locmaxbordernames'][2], params['locmaxbordernames'][3]), thisparams)
 
 

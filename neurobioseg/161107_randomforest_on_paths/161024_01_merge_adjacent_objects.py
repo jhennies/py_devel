@@ -156,7 +156,9 @@ def merge_adjacent_objects_image_iteration(ipl):
 
         if k == params['largeobjname']:
 
-            merged[kl] = merge_adjacent_objects(IPL(data={k: v}), k, thisparams)
+            data = IPL(data={k: v})
+            data.setlogger(ipl.getlogger())
+            merged[kl] = merge_adjacent_objects(data, k, thisparams)
 
     return merged
 

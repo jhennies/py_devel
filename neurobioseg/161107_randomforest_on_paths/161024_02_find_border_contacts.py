@@ -242,9 +242,11 @@ def find_border_contacts_image_iteration(ipl):
         if k == params['largeobjname']:
 
             if thisparams['return_bordercontact_images']:
+                ipl[kl].setlogger(ipl.getlogger())
                 [ipl[kl], bordercontacts[kl]] = find_border_contacts(ipl[kl], (params['largeobjname'], params['largeobjmnames'][0]),
                                      thisparams)
             else:
+                ipl[kl].setlogger(ipl.getlogger())
                 ipl[kl] = find_border_contacts(ipl[kl], (params['largeobjname'], params['largeobjmnames'][0]),
                                      thisparams)
 

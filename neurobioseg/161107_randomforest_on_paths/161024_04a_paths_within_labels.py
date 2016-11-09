@@ -112,6 +112,7 @@ def paths_within_labels_image_iteration(ipl):
 
         if k == params['locmaxbordernames'][0]:
 
+            ipl[kl].setlogger(ipl.getlogger())
             paths[kl] = paths_within_labels(ipl[kl], params['largeobjname'],
                                 (params['locmaxbordernames'][0], params['locmaxnames'][0]),
                                 params['locmaxbordernames'][2],

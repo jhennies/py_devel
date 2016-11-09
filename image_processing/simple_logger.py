@@ -14,6 +14,12 @@ class SimpleLogger():
     def __init__(self):
         pass
 
+    def setlogger(self, logger):
+        self._logger = logger
+
+    def getlogger(self):
+        return self._logger
+
     def startlogger(self, filename=None, type='a'):
 
         if filename is not None:

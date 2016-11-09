@@ -141,6 +141,7 @@ def paths_of_partners_image_iteration(ipl):
 
         if k == params['locmaxbordernames'][1]:
 
+            ipl[kl].setlogger(ipl.getlogger())
             paths[kl] = paths_of_partners(
                 ipl[kl],
                 params['largeobjmnames'][0], params['largeobjname'],

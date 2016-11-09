@@ -66,11 +66,11 @@ class Hdf5Processing(dict, YamlParams):
 
         elif path is not None:
             self.data_from_file(path+filename, skeys=skeys, tkeys=tkeys, castkey=castkey,
-                                recursive_search=recursive_search)
+                                recursive_search=recursive_search, integrate=True)
 
         elif filepath is not None:
             self.data_from_file(filepath, skeys=skeys, tkeys=tkeys, castkey=castkey,
-                                recursive_search=recursive_search)
+                                recursive_search=recursive_search, integrate=True)
 
     def __getitem__(self, item):
 
@@ -225,10 +225,14 @@ class Hdf5Processing(dict, YamlParams):
                     for key, val in dict_f.iteritems():
                         subg = val
                         if isinstance(subg, h5py.File) or isinstance(subg, h5py.Group) or key in skeys:
-                            content = self.get_h5_content(subg, skeys=skeys,
-                                                          recursive_search=True,
-                                                          integrate=True,
-                                                          selfinstance=type(self)(data=rtrn_dict)[key])
+                            if key in skeys:
+                                content = self.get_h5_content(subg)
+                            else:
+
+                                content = self.get_h5_content(subg, skeys=skeys,
+                                                              recursive_search=True,
+                                                              integrate=True,
+                                                              selfinstance=type(self)(data=rtrn_dict)[key])
                             if type(content) is type(self):
                                 if content:
                                     rtrn_dict[key] = content

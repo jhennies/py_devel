@@ -58,6 +58,7 @@ def remove_small_objects(ipl):
 
             ipl.logging('===============================\nWorking on image: {}', kl + [k])
 
+            ipl[kl].setlogger(ipl.getlogger())
             ipl[kl] = accumulate_small_objects(ipl[kl], k, thisparams)
 
 

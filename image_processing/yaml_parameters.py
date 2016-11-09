@@ -30,6 +30,9 @@ class YamlParams(SimpleLogger):
     def get_params(self):
         return self._params
 
+    def set_params(self, params):
+        self._params = params
+
     def yaml2log(self, filepath=None):
         if filepath is None:
             filepath = self._yaml
