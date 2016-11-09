@@ -128,18 +128,20 @@ if __name__ == '__main__':
 
     ipl = IPL(
         yaml=yamlfile,
-        yamlspec={'path': 'intermedfolder', 'filename': 'locmaxborderfile', 'skeys': {'locmaxbordernames': (0, 2)}},
+        yamlspec={'path': 'intermedfolder', 'filename': 'largeobjfile', 'skeys': 'largeobjname'},
         recursive_search=True
     )
+
     params = ipl.get_params()
     thisparams = params['paths_within_labels']
     ipl.startlogger(filename=params['resultfolder'] + 'paths_within_labels.log', type='w')
-    ipl.data_from_file(params['intermedfolder'] + params['largeobjfile'],
-                       skeys=params['largeobjname'],
-                       recursive_search=True,
-                       integrate=True)
+
     ipl.data_from_file(params['intermedfolder'] + params['locmaxfile'],
                        skeys=params['locmaxnames'][0],
+                       recursive_search=True,
+                       integrate=True)
+    ipl.data_from_file(params['intermedfolder'] + params['locmaxborderfile'],
+                       skeys=(params['locmaxbordernames'][0], params['locmaxbordernames'][2]),
                        recursive_search=True,
                        integrate=True)
 
