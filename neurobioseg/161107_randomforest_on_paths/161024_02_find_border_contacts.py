@@ -271,13 +271,13 @@ if __name__ == '__main__':
     thisparams = params['find_border_contacts']
     ipl.data_from_file(params['intermedfolder'] + params['largeobjmfile'],
                        skeys=params['largeobjmnames'][0], recursive_search=True, integrate=True)
-    ipl.startlogger(filename=params['resultfolder'] + 'find_orphans.log', type='w')
+    ipl.startlogger(filename=params['resultfolder'] + 'find_border_contacts.log', type='w')
 
     try:
 
         # Copy the script file and the parameters to the scriptsfolder
         copy(inspect.stack()[0][1], params['scriptsfolder'])
-        copy(yamlfile, params['scriptsfolder'] + 'find_orphans.parameters.yml')
+        copy(yamlfile, params['scriptsfolder'] + 'find_border_contacts.parameters.yml')
         # Write script and parameters to the logfile
         ipl.code2log(inspect.stack()[0][1])
         ipl.logging('')
