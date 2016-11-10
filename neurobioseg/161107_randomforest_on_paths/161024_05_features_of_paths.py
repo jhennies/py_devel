@@ -249,7 +249,7 @@ if __name__ == '__main__':
     # ipl.pop('pathsim')
     # ipl.pop('overlay')
 
-    ipl.startlogger(filename=params['intermedfolder']+'features_of_paths.log', type='w')
+    ipl.startlogger(filename=params['resultfolder']+'features_of_paths.log', type='w')
 
     try:
 
