@@ -157,7 +157,7 @@ def features_of_paths(ipl, disttransf_images, feature_images, thisparams):
         features['true', k, 'disttransf'] = get_features(
             v, disttransf_images['disttransf'],
             thisparams['features'],
-            thisparams['max_paths_per_label'],
+            thisparams['max_paths_per_label_true'],
             ipl=ipl
         )
 
@@ -167,7 +167,7 @@ def features_of_paths(ipl, disttransf_images, feature_images, thisparams):
             features['true', k, fk] = get_features(
                 v, fv,
                 thisparams['features'],
-                thisparams['max_paths_per_label'],
+                thisparams['max_paths_per_label_true'],
                 ipl=ipl
             )
 
@@ -179,7 +179,7 @@ def features_of_paths(ipl, disttransf_images, feature_images, thisparams):
         features['false', k, 'disttransf'] = get_features(
             v, disttransf_images['disttransfm'],
             thisparams['features'],
-            thisparams['max_paths_per_label'],
+            thisparams['max_paths_per_label_false'],
             ipl=ipl
         )
 
@@ -189,7 +189,7 @@ def features_of_paths(ipl, disttransf_images, feature_images, thisparams):
             features['false', k, fk] = get_features(
                 v, fv,
                 thisparams['features'],
-                thisparams['max_paths_per_label'],
+                thisparams['max_paths_per_label_false'],
                 ipl=ipl
             )
 
