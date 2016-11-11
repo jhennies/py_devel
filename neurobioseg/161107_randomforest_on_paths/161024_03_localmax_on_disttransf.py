@@ -44,7 +44,7 @@ def localmax_on_disttransf_image_iteration(ipl):
 
 if __name__ == '__main__':
 
-    resultsfolder = '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161107_random_forest_of_paths/'
+    resultsfolder = '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161110_random_forest_of_paths/'
 
     yamlfile = resultsfolder + '/parameters.yml'
 
