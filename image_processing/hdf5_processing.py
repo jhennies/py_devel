@@ -18,6 +18,14 @@ __author__ = 'jhennies'
 
 class Hdf5Processing(dict, YamlParams):
 
+    _datasource=None
+
+    def set_source(self, value):
+        self._datasource = value
+
+    def get_source(self):
+        return self._datasource
+
     def __init__(self, path=None, filename=None, filepath=None, data=None, skeys=None, tkeys=None, castkey=None,
                  yaml=None, yamlspec=None, recursive_search=False):
 
@@ -72,43 +80,24 @@ class Hdf5Processing(dict, YamlParams):
             self.data_from_file(filepath, skeys=skeys, tkeys=tkeys, castkey=castkey,
                                 recursive_search=recursive_search, integrate=True)
 
-    def __getitem__(self, item):
+    def __getitem__(self, items):
 
-        # # This atomatically creates items that are not there in the first place
-        # try:
-        #     return dict.__getitem__(self, item)
-        # except KeyError:
-        #     value = self[item] = type(self)()
-        #     return value
+        if type(items) is tuple or type(items) is list:
 
-        # if type(item) is tuple:
-        #     execstr = ('self' + "[{}]" * len(item)).format(*item)
-        #     print execstr
+            items = list(items)
+            if len(items) > 1:
+                firstitem = items.pop(0)
+                return dict.__getitem__(self, firstitem)[items]
 
-        if type(item) is tuple or type(item) is list:
-
-            item = list(item)
-            if len(item) > 1:
-                firstkey = item.pop(0)
-                # try:
-                # return Hdf5Processing(data=self[firstkey])[item]
-                return type(self)(data=self[firstkey])[item]
-                # except KeyError:
-                #     value = Hdf5Processing(data=self[firstkey])[item] = type(self)()
-                #     return value
             else:
-                return dict.__getitem__(self, item[0])
-
-            # except KeyError:
-            #     value = self[item.pop] = type(self)()
-            #     return value
+                return dict.__getitem__(self, items[0])
 
         else:
 
             try:
-                return dict.__getitem__(self, item)
+                return dict.__getitem__(self, items)
             except KeyError:
-                value = self[item] = type(self)()
+                value = self[items] = type(self)()
                 return value
 
     def __setitem__(self, key, val):
@@ -118,45 +107,17 @@ class Hdf5Processing(dict, YamlParams):
                 fkey = key.pop(0)
                 self[fkey][key] = val
             else:
-                # super(Hdf5Processing, self).__setitem__(key[0], val)
                 dict.__setitem__(self, key[0], val)
         else:
-            # super(Hdf5Processing, self).__setitem__(key, val)
             dict.__setitem__(self, key, val)
 
     def setdata(self, data, tkeys=None):
-
-        # if tkeys is not None:
-        #     if type(tkeys) is not tuple and type(tkeys) is not list:
-        #         tkeys = (tkeys,)
-        #
-        #     if len(tkeys) != len(data.keys()):
-        #         if len(tkeys) == 1:
-        #             # tkeys = [tkeys[0] + x for x in data.keys()]
-        #             tkeys = zip(tkeys * len(data.keys()), data.keys())
-        #         else:
-        #             raise RuntimeError('Hdf5Processing: Length of tkeys must be equal to length of data keys!')
-        #
-        # else:
-        #     tkeys = data.keys()
-
-        # for i in xrange(0, len(data.keys())):
-        #     try:
-        #         self[tkeys[i]] = type(self)(data=data[data.keys()[i]])
-        #     except:
-        #         self[tkeys[i]] = data[data.keys()[i]]
 
         for k in data.keys():
             try:
                 self[k] = type(self)(data=data[k])
             except:
                 self[k] = data[k]
-
-        # for key, val in data.iteritems():
-        #     try:
-        #         self[key] = type(self)(data=val)
-        #     except AttributeError:
-        #         self[key] = val
 
     def write_dataset(self, group, data):
 
