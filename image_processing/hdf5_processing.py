@@ -18,7 +18,7 @@ __author__ = 'jhennies'
 
 class Hdf5Processing(dict, YamlParams):
 
-    _source = None
+    _sources = None
 
     def __init__(self, path=None, filename=None, filepath=None, data=None, skeys=None, tkeys=None, castkey=None,
                  yaml=None, yamlspec=None, recursive_search=False, nodata=False):
@@ -263,24 +263,44 @@ class Hdf5Processing(dict, YamlParams):
     def get_sources(self):
         return self._sources
 
-    def populate(self):
+    def populate(self, key=None):
 
-        for d, k, v, kl in self.data_iterator(yield_short_kl=True):
+        if key is None:
+            for d, k, v, kl in self.data_iterator(yield_short_kl=True):
 
-            if type(v) is h5py.Dataset:
-                self.set_source(v, kl + [k])
-                self[kl + [k]] = np.array(v)
+                if kl:
+                    if type(self[kl][k]) is h5py.Dataset:
+                        self[kl].set_source(v, k)
+                        self[kl][k] = np.array(v)
+                else:
+                    if type(self[k]) is h5py.Dataset:
+                        self.set_source(v, k)
+                        self[k] = np.array(v)
+
+        else:
+
+            try:
+                self[key].populate()
+            except AttributeError:
+                if type(self[key]) is h5py.Dataset:
+                    lastkey = key.pop(-1)
+                    self[key].set_source(self[key][lastkey], lastkey)
+                    self[key][lastkey] = np.array(self[key][lastkey])
+                else:
+                    raise
 
     def unpopulate(self):
 
         for d, k, v, kl in self.data_iterator(yield_short_kl=True):
 
             if kl:
-                if type(self[kl].get_sources()[k]) is h5py.Dataset:
-                    self[kl + [k]] = self[kl].get_sources()[k]
+                if self[kl].get_sources() is not None:
+                    if type(self[kl].get_sources()[k]) is h5py.Dataset:
+                        self[kl + [k]] = self[kl].get_sources()[k]
             else:
-                if type(self.get_sources()[k]) is h5py.Dataset:
-                    self[k] = self.get_sources()[k]
+                if self.get_sources() is not None:
+                    if type(self.get_sources()[k]) is h5py.Dataset:
+                        self[k] = self.get_sources()[k]
 
     def get_h5_entries(self, f, skeys=None, tkeys=None, recursive_search=False):
 
@@ -350,7 +370,8 @@ class Hdf5Processing(dict, YamlParams):
     def getdataitem(self, itemkey):
         return self[itemkey]
 
-    def datastructure2string(self, data=None, dstr='', indent=0, maxdepth=None, depth=0, indentstr='.  '):
+    def datastructure2string(self, data=None, dstr='', indent=0, maxdepth=None, depth=0,
+                             indentstr='.  '):
 
         depth += 1
         if maxdepth is not None:
