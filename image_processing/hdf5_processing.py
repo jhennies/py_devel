@@ -144,114 +144,14 @@ class Hdf5Processing(dict, YamlParams):
 
     def write(self, filepath=None, of=None):
 
+        # TODO: Check if this works with the new population policies...
+
         if of is None:
             of = h5py.File(filepath)
 
         self.write_dataset(of, self)
 
         of.close()
-
-    def get_h5_content(self, f, skeys=None, tkeys=None, offset='    ', castkey=None,
-                       recursive_search=False, integrate=False, selfinstance=None, nodata=False):
-
-        # if isinstance(f, h5py.Dataset):
-        #     print offset, '(Dataset)', f.name, 'len =', f.shape
-        #
-        # if isinstance(f, h5py.Group):
-        #     print offset, '(Group)', f.name
-        #
-        # else :
-        #     pass
-        #     # print 'WARNING: UNKNOWN ITEM IN HDF5 FILE', f.name
-        #     # sys.exit ( "EXECUTION IS TERMINATED" )
-        # dict_f = {}
-
-        if recursive_search:
-
-            if integrate:
-
-                if isinstance(f, h5py.File) or isinstance(f, h5py.Group):
-                    if selfinstance is None:
-                        selfinstance = self
-                    if skeys is None:
-                        raise TypeError('hdf5_processing.Hdf5Processing.get_h5_content: skeys must be specified when recursive_search set to True!')
-                    if type(skeys) is str:
-                        skeys = (skeys,)
-
-                    rtrn_dict = selfinstance
-                    dict_f = dict(f)
-                    for key, val in dict_f.iteritems():
-                        subg = val
-                        if isinstance(subg, h5py.File) or isinstance(subg, h5py.Group) or key in skeys:
-                            if key in skeys:
-                                content = self.get_h5_content(subg, nodata=nodata)
-                            else:
-
-                                content = self.get_h5_content(subg, skeys=skeys,
-                                                              recursive_search=True,
-                                                              integrate=True,
-                                                              selfinstance=type(self)(data=rtrn_dict)[key], nodata=nodata)
-                            if type(content) is type(self):
-                                if content:
-                                    rtrn_dict[key] = content
-                            else:
-                                rtrn_dict[key] = content
-                else:
-                    rtrn_dict = np.array(f)
-
-                return rtrn_dict
-
-            else:
-
-                if isinstance(f, h5py.File) or isinstance(f, h5py.Group):
-                    if skeys is None:
-                        raise TypeError('hdf5_processing.Hdf5Processing.get_h5_content: skeys must be specified when recursive_search set to True!')
-                    if type(skeys) is str:
-                        skeys = (skeys,)
-                    rtrn_dict = {}
-                    dict_f = dict(f)
-                    for key, val in dict_f.iteritems():
-                        subg = val
-                        if isinstance(subg, h5py.File) or isinstance(subg, h5py.Group) or key in skeys:
-                            content = self.get_h5_content(subg, skeys=skeys, recursive_search=True, nodata=nodata)
-                            if type(content) is dict:
-                                if content:
-                                    rtrn_dict[key] = content
-                            else:
-                                rtrn_dict[key] = content
-                else:
-                    rtrn_dict = np.array(f)
-
-                return rtrn_dict
-
-        else:
-
-            if isinstance(f, h5py.File) or isinstance(f, h5py.Group):
-                dict_f = dict(f)
-                if skeys is None:
-                    skeys = dict_f.keys()
-                if type(skeys) is str:
-                    skeys = (skeys,)
-                if tkeys is None:
-                    tkeys = skeys
-                if type(tkeys) is str:
-                    tkeys = (tkeys,)
-                akeys = dict(zip(skeys, tkeys))
-                rtrn_dict = {}
-                for key, val in dict_f.iteritems():
-                    subg = val
-                    # print offset, key
-                    if castkey is not None:
-                        key = castkey(key)
-                        # print '{} type(key) = {}'.format(offset, type(key))
-                    if key in skeys:
-                        rtrn_dict[akeys[key]] = self.get_h5_content(subg, offset=offset + '    ', castkey=castkey, nodata=nodata)
-
-            else:
-                # print offset, f
-                rtrn_dict = np.array(f)
-
-            return rtrn_dict
 
     def set_source(self, source, key):
         try:
@@ -352,7 +252,6 @@ class Hdf5Processing(dict, YamlParams):
 
                     self[tkey] = v
 
-
     def load_h5(self, filepath, skeys=None, tkeys=None, castkey=None, recursive_search=False,
                 integrate=False, nodata=False):
 
@@ -370,30 +269,35 @@ class Hdf5Processing(dict, YamlParams):
     def getdataitem(self, itemkey):
         return self[itemkey]
 
-    def datastructure2string(self, data=None, dstr='', indent=0, maxdepth=None, depth=0,
-                             indentstr='.  '):
-
-        depth += 1
-        if maxdepth is not None:
-            if depth > maxdepth:
-                return dstr
+    def datastructure2string(self, maxdepth=None, data=None, indentstr='.  ', function=None):
 
         if data is None:
             data = self
 
-        # if type(data) is dict:
+        dstr = ''
 
-        try:
+        for d, k, v, kl in data.data_iterator(maxdepth=maxdepth):
+            if function is None or type(v) is type(self):
+                dstr += '{}{}\n'.format(indentstr*d, k)
+            else:
+                try:
+                    dstr += '{}{}: {}\n'.format(indentstr*d, k, str(function(v)))
+                except:
+                    dstr += '{}{}\n'.format(indentstr * d, k)
 
-            for key, val in data.iteritems():
-
-                # print key
-                dstr += '{}{}\n'.format(indentstr*indent, key)
-                dstr = self.datastructure2string(data=val, dstr=dstr, indent=indent+1, maxdepth=maxdepth, depth=depth, indentstr=indentstr)
-
-        except:
-            pass
         return dstr
+
+    def dss(self, maxdepth=None, data=None, indentstr='.  ', function=None):
+        """
+        Just a shorter version of datastructure2string()
+        :param maxdepth:
+        :param data:
+        :param indentstr:
+        :param function:
+        :return:
+        """
+        return self.datastructure2string(maxdepth=maxdepth, data=data, indentstr=indentstr,
+                                         function=function)
 
     def data_iterator(self, maxdepth=None, data=None, depth=0, keylist=[], yield_short_kl=False):
 
@@ -551,7 +455,19 @@ class Hdf5Processing(dict, YamlParams):
 
 if __name__ == '__main__':
 
-    pass
+    resultfolder = '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/'
+
+    yamlfile = resultfolder + '/parameters.yml'
+
+    ipl = Hdf5Processing(
+        yaml=yamlfile,
+        yamlspec={'path': 'datafolder', 'filename': 'labelsfile'},
+        skeys=[['x', '1'], ['x', '0']],
+        recursive_search=False,
+        nodata=True
+    )
+    print ipl.dss()
+
 
     # hfp = Hdf5Processing()
     # content = hfp.load('/media/julian/Daten/neuraldata/cremi_2016/develop/161011_locmax_paths_feature_extraction/intermediate/cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.true.h5',
