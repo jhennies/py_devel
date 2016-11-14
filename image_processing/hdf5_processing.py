@@ -16,14 +16,233 @@ import sys
 __author__ = 'jhennies'
 
 
-class Hdf5Processing(dict, YamlParams):
+class RecursiveDict(dict):
+
+    def __init__(self):
+        dict.__init__(self)
+
+    def __getitem__(self, items):
+
+        if type(items) is tuple or type(items) is list:
+
+            items = list(items)
+            if len(items) > 1:
+                firstitem = items.pop(0)
+                return dict.__getitem__(self, firstitem)[items]
+
+            else:
+                return dict.__getitem__(self, items[0])
+
+        else:
+
+            try:
+                return dict.__getitem__(self, items)
+            except KeyError:
+                value = self[items] = type(self)()
+                return value
+
+    def __setitem__(self, key, val):
+        if type(key) is tuple or type(key) is list:
+            if len(key) > 1:
+                key = list(key)
+                fkey = key.pop(0)
+                self[fkey][key] = val
+            else:
+                dict.__setitem__(self, key[0], val)
+        else:
+            dict.__setitem__(self, key, val)
+
+    def datastructure2string(self, maxdepth=None, data=None, indentstr='.  ', function=None):
+        if data is None:
+            data = self
+
+        dstr = ''
+
+        for d, k, v, kl in data.data_iterator(maxdepth=maxdepth):
+            if function is None or type(v) is type(self):
+                dstr += '{}{}\n'.format(indentstr * d, k)
+            else:
+                try:
+                    dstr += '{}{}: {}\n'.format(indentstr * d, k, str(function(v)))
+                except:
+                    dstr += '{}{}\n'.format(indentstr * d, k)
+
+        return dstr
+
+    def dss(self, maxdepth=None, data=None, indentstr='.  ', function=None):
+        """
+        Just a shorter version of datastructure2string()
+        :param maxdepth:
+        :param data:
+        :param indentstr:
+        :param function:
+        :return:
+        """
+        return self.datastructure2string(maxdepth=maxdepth, data=data, indentstr=indentstr,
+                                         function=function)
+
+    def data_iterator(self, maxdepth=None, data=None, depth=0, keylist=[], yield_short_kl=False):
+
+        depth += 1
+        if maxdepth is not None:
+            if depth-1 > maxdepth:
+                return
+
+        if data is None:
+            data = self
+
+        try:
+
+            for key, val in data.iteritems():
+                # print key, val
+                if yield_short_kl:
+                    yield [depth-1, key, val, keylist]
+                    kl = keylist + [key,]
+                else:
+                    kl = keylist + [key,]
+                    # yield {'depth': depth-1, 'key': key, 'val': val, 'keylist': kl}
+                    yield [depth-1, key, val, kl]
+                # self.data_iterator(level=level, maxlevel=maxlevel, data=val)
+
+                for d in self.data_iterator(
+                        maxdepth=maxdepth, data=val, depth=depth, keylist=kl,
+                        yield_short_kl=yield_short_kl):
+                    yield d
+
+        except:
+            pass
+
+    def simultaneous_iterator(self, data=None, keylist=None, max_count_per_item=None):
+
+        if data is None:
+            data = self
+
+        if max_count_per_item is None:
+            max_count_per_item = data.maxlength(depth=0)
+        else:
+            if max_count_per_item > data.maxlength(depth=0):
+                max_count_per_item = data.maxlength(depth=0)
+
+        if keylist is None:
+
+            for i in xrange(max_count_per_item):
+                keys = []
+                vals = []
+                for key, val in data.iteritems():
+                    try:
+                        vals.append(val[val.keys()[i]])
+                        keys.append((key, val.keys()[i]))
+                    except:
+                        pass
+                yield [i, keys, vals]
+
+        else:
+
+            for key in keylist:
+                keys = []
+                vals = []
+                for dkey, dval in data.iteritems():
+                    try:
+                        if key in dval.keys():
+                            vals.append(dval[key])
+                            keys.append((dkey, key))
+                    except:
+                        pass
+                yield [key, keys, vals]
+
+    def lengths(self, depth=0):
+
+        returndict = type(self)()
+        for d, k, v, kl in self.data_iterator():
+            if d == depth:
+                returndict[kl] = len(v)
+
+        return returndict
+
+    def maxlength(self, depth=0):
+
+        maxlen = 0
+        for d, k, v, kl in self.data_iterator():
+            if d == depth:
+                if len(v) > maxlen:
+                    maxlen = len(v)
+
+        return maxlen
+
+    def switch_levels(self, level1, level2):
+        newself = type(self)()
+        for d, k, v, kl in self.data_iterator(maxdepth=level2):
+            if d == level2:
+                newkl = list(kl)
+                newkl[level1] = kl[level2]
+                newkl[level2] = kl[level1]
+
+                newself[newkl] = self[kl]
+
+        return newself
+
+    def remove_layer(self, layername):
+
+        for d, k, v, kl in self.data_iterator(yield_short_kl=True):
+            if k == layername and type(v) is type(self):
+                # tself = type(self)(data=self[kl + [k]])
+                # del self[kl][k]
+                # self[kl] = tself
+                self[kl] = self[kl].pop(layername)
+
+    def inkeys(self, kl):
+
+        if kl:
+            if kl[0] in self.keys():
+                if type(self[kl[0]]) is type(self):
+                    return self[kl[0]].inkeys(kl[1:])
+                else:
+                    if len(kl) == 1:
+                        return True
+                    elif len(kl) > 1:
+                        return False
+                    else:
+                        raise RuntimeError('Hdf5Processing: This should not have happened!')
+            else:
+                return False
+        else:
+            return True
+
+    def rename_layer(self, layername, layernewname):
+
+        for d, k, v, kl in self.data_iterator(yield_short_kl=True):
+
+            if self.inkeys(kl + [k]):
+                if k == layername and type(v) is type(self):
+
+                    if kl:
+
+                        # if len(self[kl].keys()) == 1:
+
+                        # This is really ugly but somehow popping won't work
+                        self[kl + [layernewname]] = type(self)(data=self[kl + [k]])
+                        t = self[kl]
+                        del t[k]
+                        self[kl] = t
+
+                        # else:
+                        #     self[kl + [layernewname]] = self[kl].pop(layername)
+                        # print self[kl].datastructure2string(maxdepth=2)
+                    else:
+                        # print self.datastructure2string(maxdepth=2)
+                        # print type(self)
+                        self[layernewname] = self.pop(layername)
+                        # print self.datastructure2string(maxdepth=2)
+
+
+class Hdf5Processing(RecursiveDict, YamlParams):
 
     _sources = None
 
     def __init__(self, path=None, filename=None, filepath=None, data=None, skeys=None, tkeys=None, castkey=None,
                  yaml=None, yamlspec=None, recursive_search=False, nodata=False):
 
-        dict.__init__(self)
+        RecursiveDict.__init__(self)
         YamlParams.__init__(self, filename=yaml)
 
         # self._sources = dict()
@@ -75,37 +294,6 @@ class Hdf5Processing(dict, YamlParams):
         elif filepath is not None:
             self.data_from_file(filepath, skeys=skeys, tkeys=tkeys, castkey=castkey,
                                 recursive_search=recursive_search, integrate=True, nodata=nodata)
-
-    def __getitem__(self, items):
-
-        if type(items) is tuple or type(items) is list:
-
-            items = list(items)
-            if len(items) > 1:
-                firstitem = items.pop(0)
-                return dict.__getitem__(self, firstitem)[items]
-
-            else:
-                return dict.__getitem__(self, items[0])
-
-        else:
-
-            try:
-                return dict.__getitem__(self, items)
-            except KeyError:
-                value = self[items] = type(self)()
-                return value
-
-    def __setitem__(self, key, val):
-        if type(key) is tuple or type(key) is list:
-            if len(key) > 1:
-                key = list(key)
-                fkey = key.pop(0)
-                self[fkey][key] = val
-            else:
-                dict.__setitem__(self, key[0], val)
-        else:
-            dict.__setitem__(self, key, val)
 
     def setdata(self, data, tkeys=None):
 
@@ -275,192 +463,6 @@ class Hdf5Processing(dict, YamlParams):
                      recursive_search=recursive_search, integrate=integrate, nodata=nodata)
         if not nodata:
             self.populate()
-
-    def getdataitem(self, itemkey):
-        return self[itemkey]
-
-    def datastructure2string(self, maxdepth=None, data=None, indentstr='.  ', function=None):
-
-        if data is None:
-            data = self
-
-        dstr = ''
-
-        for d, k, v, kl in data.data_iterator(maxdepth=maxdepth):
-            if function is None or type(v) is type(self):
-                dstr += '{}{}\n'.format(indentstr*d, k)
-            else:
-                try:
-                    dstr += '{}{}: {}\n'.format(indentstr*d, k, str(function(v)))
-                except:
-                    dstr += '{}{}\n'.format(indentstr * d, k)
-
-        return dstr
-
-    def dss(self, maxdepth=None, data=None, indentstr='.  ', function=None):
-        """
-        Just a shorter version of datastructure2string()
-        :param maxdepth:
-        :param data:
-        :param indentstr:
-        :param function:
-        :return:
-        """
-        return self.datastructure2string(maxdepth=maxdepth, data=data, indentstr=indentstr,
-                                         function=function)
-
-    def data_iterator(self, maxdepth=None, data=None, depth=0, keylist=[], yield_short_kl=False):
-
-        depth += 1
-        if maxdepth is not None:
-            if depth-1 > maxdepth:
-                return
-
-        if data is None:
-            data = self
-
-        try:
-
-            for key, val in data.iteritems():
-                # print key, val
-                if yield_short_kl:
-                    yield [depth-1, key, val, keylist]
-                    kl = keylist + [key,]
-                else:
-                    kl = keylist + [key,]
-                    # yield {'depth': depth-1, 'key': key, 'val': val, 'keylist': kl}
-                    yield [depth-1, key, val, kl]
-                # self.data_iterator(level=level, maxlevel=maxlevel, data=val)
-
-                for d in self.data_iterator(
-                        maxdepth=maxdepth, data=val, depth=depth, keylist=kl,
-                        yield_short_kl=yield_short_kl):
-                    yield d
-
-        except:
-            pass
-
-    def lengths(self, depth=0):
-
-        returndict = type(self)()
-        for d, k, v, kl in self.data_iterator():
-            if d == depth:
-                returndict[kl] = len(v)
-
-        return returndict
-
-    def maxlength(self, depth=0):
-
-        maxlen = 0
-        for d, k, v, kl in self.data_iterator():
-            if d == depth:
-                if len(v) > maxlen:
-                    maxlen = len(v)
-
-        return maxlen
-
-    def simultaneous_iterator(self, data=None, keylist=None, max_count_per_item=None):
-
-        if data is None:
-            data = self
-
-        if max_count_per_item is None:
-            max_count_per_item = data.maxlength(depth=0)
-        else:
-            if max_count_per_item > data.maxlength(depth=0):
-                max_count_per_item = data.maxlength(depth=0)
-
-        if keylist is None:
-
-            for i in xrange(max_count_per_item):
-                keys = []
-                vals = []
-                for key, val in data.iteritems():
-                    try:
-                        vals.append(val[val.keys()[i]])
-                        keys.append((key, val.keys()[i]))
-                    except:
-                        pass
-                yield [i, keys, vals]
-
-        else:
-
-            for key in keylist:
-                keys = []
-                vals = []
-                for dkey, dval in data.iteritems():
-                    try:
-                        if key in dval.keys():
-                            vals.append(dval[key])
-                            keys.append((dkey, key))
-                    except:
-                        pass
-                yield [key, keys, vals]
-
-    def switch_levels(self, level1, level2):
-        newself = type(self)()
-        for d, k, v, kl in self.data_iterator(maxdepth=level2):
-            if d == level2:
-                newkl = list(kl)
-                newkl[level1] = kl[level2]
-                newkl[level2] = kl[level1]
-
-                newself[newkl] = self[kl]
-
-        return newself
-
-    def remove_layer(self, layername):
-
-        for d, k, v, kl in self.data_iterator(yield_short_kl=True):
-            if k == layername and type(v) is type(self):
-                # tself = type(self)(data=self[kl + [k]])
-                # del self[kl][k]
-                # self[kl] = tself
-                self[kl] = self[kl].pop(layername)
-
-    def inkeys(self, kl):
-
-        if kl:
-            if kl[0] in self.keys():
-                if type(self[kl[0]]) is type(self):
-                    return self[kl[0]].inkeys(kl[1:])
-                else:
-                    if len(kl) == 1:
-                        return True
-                    elif len(kl) > 1:
-                        return False
-                    else:
-                        raise RuntimeError('Hdf5Processing: This should not have happened!')
-            else:
-                return False
-        else:
-            return True
-
-    def rename_layer(self, layername, layernewname):
-
-        for d, k, v, kl in self.data_iterator(yield_short_kl=True):
-
-            if self.inkeys(kl + [k]):
-                if k == layername and type(v) is type(self):
-
-                    if kl:
-
-                        # if len(self[kl].keys()) == 1:
-
-                        # This is really ugly but somehow popping won't work
-                        self[kl + [layernewname]] = type(self)(data=self[kl + [k]])
-                        t = self[kl]
-                        del t[k]
-                        self[kl] = t
-
-                        # else:
-                        #     self[kl + [layernewname]] = self[kl].pop(layername)
-                        # print self[kl].datastructure2string(maxdepth=2)
-                    else:
-                        # print self.datastructure2string(maxdepth=2)
-                        # print type(self)
-                        self[layernewname] = self.pop(layername)
-                        # print self.datastructure2string(maxdepth=2)
 
 
 if __name__ == '__main__':
