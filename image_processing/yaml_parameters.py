@@ -12,6 +12,8 @@ class YamlParams(SimpleLogger):
 
     def __init__(self, filename=None):
 
+        SimpleLogger.__init__(self)
+
         if filename is not None:
             self.load_yaml(filename)
             self._yaml = filename
