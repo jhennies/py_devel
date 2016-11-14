@@ -189,18 +189,28 @@ class Hdf5Processing(dict, YamlParams):
                 else:
                     raise
 
-    def unpopulate(self):
+    def unpopulate(self, key=None):
 
-        for d, k, v, kl in self.data_iterator(yield_short_kl=True):
+        if key is None:
+            for d, k, v, kl in self.data_iterator(yield_short_kl=True):
 
-            if kl:
-                if self[kl].get_sources() is not None:
-                    if type(self[kl].get_sources()[k]) is h5py.Dataset:
-                        self[kl + [k]] = self[kl].get_sources()[k]
-            else:
-                if self.get_sources() is not None:
-                    if type(self.get_sources()[k]) is h5py.Dataset:
-                        self[k] = self.get_sources()[k]
+                if kl:
+                    if self[kl].get_sources() is not None:
+                        if type(self[kl].get_sources()[k]) is h5py.Dataset:
+                            self[kl + [k]] = self[kl].get_sources()[k]
+                else:
+                    if self.get_sources() is not None:
+                        if type(self.get_sources()[k]) is h5py.Dataset:
+                            self[k] = self.get_sources()[k]
+
+        else:
+
+            try:
+                self[key].unpopulate()
+            except AttributeError:
+                lastkey = key.pop(-1)
+                if type(self[key].get_sources()[lastkey]) is h5py.Dataset:
+                    self[key][lastkey] = self[key].get_sources()[lastkey]
 
     def get_h5_entries(self, f, skeys=None, tkeys=None, recursive_search=False):
 
@@ -468,6 +478,23 @@ if __name__ == '__main__':
     )
     print ipl.dss()
 
+    def populated(data):
+        if type(data) is h5py.Dataset:
+            return 'false'
+        else:
+            return 'TRUE'
+
+    def firstvalue(data):
+        return data[0, 0, 0]
+
+    print ipl.dss(function=populated)
+
+    ipl.populate()
+    ipl.unpopulate(['x', '0', 'raw'])
+
+    print ipl.dss(function=populated)
+
+    pass
 
     # hfp = Hdf5Processing()
     # content = hfp.load('/media/julian/Daten/neuraldata/cremi_2016/develop/161011_locmax_paths_feature_extraction/intermediate/cremi.splA.raw_neurons.crop.crop_10-200-200_110-712-712.paths.true.h5',
