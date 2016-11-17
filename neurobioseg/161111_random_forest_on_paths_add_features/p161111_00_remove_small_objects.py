@@ -6,7 +6,7 @@ from shutil import copy, copyfile
 import numpy as np
 import matplotlib.pyplot as plt
 import processing_libip as libip
-
+import sys
 
 
 __author__ = 'jhennies'
@@ -14,9 +14,9 @@ __author__ = 'jhennies'
 
 def remove_small_objects(ipl):
     """
-    :param hfp: A Hdf5ImageProcessing instance containing a labelimage named 'labels'
+    :param ipl: A Hdf5ImageProcessingLib instance containing labelimages named as specified in ipl.get_params()['labelsname']
 
-    hfp.get_params()
+    ipl.get_params()
 
         remove_small_objects
             bysize
@@ -24,11 +24,14 @@ def remove_small_objects(ipl):
 
         largeobjname
 
+        labelsname
+
     :param key: the source key for calculation
     """
 
     params = ipl.get_params()
     thisparams = params['remove_small_objects']
+    targetfile = params['intermedfolder'] + params['largeobjfile']
 
     for d, k, v, kl in ipl.data_iterator(yield_short_kl=True):
 
@@ -36,30 +39,34 @@ def remove_small_objects(ipl):
 
             ipl.logging('===============================\nWorking on image: {}', kl + [k])
 
-            ipl[kl].setlogger(ipl.getlogger())
-            ipl[kl] = libip.filter_small_objects(ipl[kl], k, params, thisparams)
+            # TODO: Implement copy full logger
+            ipl[kl].set_logger(ipl.get_logger())
+
+            # Load the image data into memory
+            ipl[kl].populate(k)
+
+            ipl[kl] = libip.filter_small_objects(ipl[kl], k, thisparams['bysize'], relabel=thisparams['relabel'])
+
+            # Write the result to file
+            ipl.write(filepath=targetfile, keys=[kl + [k]])
+            # Free memory (With this command the original reference to the source file is restored)
+            ipl[kl].unpopulate()
 
 
-def run_remove_small_objects(resultfolder):
-
-    yamlfile = resultfolder + '/parameters.yml'
+def run_remove_small_objects(yamlfile):
 
     ipl = IPL(
         yaml=yamlfile,
-        yamlspec={'path': 'datafolder', 'filename': 'labelsfile'},
-        skeys=[['x', '1'], ['x', '0']],
-        recursive_search=False,
+        yamlspec={'path': 'datafolder', 'filename': 'labelsfile', 'skeys': 'labelsname'},
+        recursive_search=True,
         nodata=True
     )
-    ipl.data_from_file(
-        filepath='/mnt/localdata01/jhennies/neuraldata/results/cremi_2016/161110_random_forest_of_paths/intermediate/'
-        + 'cremi.splA.raw_neurons.crop.split_xyz.locmaxborder.h5',
-        skeys=['disttransf', 'disttransfm'],
-        recursive_search=True, nodata=False
-    )
-    ipl.unpopulate()
+
+    # Set indentation of the logging
+    ipl.set_indent(1)
+
     params = ipl.get_params()
-    ipl.startlogger(filename=params['resultfolder'] + 'remove_small_objects.log', type='w')
+    ipl.startlogger(filename=params['resultfolder'] + 'remove_small_objects.log', type='w', name='RemoveSmallObjects')
 
     try:
 
@@ -73,8 +80,7 @@ def run_remove_small_objects(resultfolder):
 
         ipl.logging('\nFinal datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
 
-
-        ipl.write(filepath=params['intermedfolder'] + params['largeobjfile'])
+        # ipl.write(filepath=params['intermedfolder'] + params['largeobjfile'])
 
         ipl.logging('')
         ipl.stoplogger()
@@ -86,7 +92,7 @@ def run_remove_small_objects(resultfolder):
 
 if __name__ == '__main__':
 
-    resultfolder = '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/'
+    yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters.yml'
 
-    run_remove_small_objects(resultfolder)
+    run_remove_small_objects(yamlfile)
 

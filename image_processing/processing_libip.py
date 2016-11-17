@@ -25,6 +25,7 @@ def filter_small_objects(ipl, key, threshold, tkey=None, relabel=False):
 
     ipl.logging('Removing theses objects: {}', unique[counts <= threshold])
 
+
     # With accumulate set to True, this iterator does everything we need:
     # Each label with a count larger than size_exclusion is added to lblim which is initialized as np.zeros(...)
     for lbl, lblim in ipl.label_image_iterator(key=key,

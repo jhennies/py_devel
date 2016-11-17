@@ -16,29 +16,35 @@ import sys
 __author__ = 'jhennies'
 
 
-class RecursiveDict(dict):
+class RecursiveDict(dict, SimpleLogger):
 
-    def __init__(self):
+    def __init__(self, data=None, tkeys=None):
         dict.__init__(self)
 
-    def __getitem__(self, items):
+        if data is not None:
+            if tkeys is None:
+                self.setdata(data)
+            else:
+                self.setdata(data, tkeys)
 
-        if type(items) is tuple or type(items) is list:
+    def __getitem__(self, item):
 
-            items = list(items)
-            if len(items) > 1:
-                firstitem = items.pop(0)
-                return dict.__getitem__(self, firstitem)[items]
+        if type(item) is tuple or type(item) is list:
+
+            item = list(item)
+            if len(item) > 1:
+                first = item.pop(0)
+                return dict.__getitem__(self, first)[item]
 
             else:
-                return dict.__getitem__(self, items[0])
+                return dict.__getitem__(self, item[0])
 
         else:
 
             try:
-                return dict.__getitem__(self, items)
+                return dict.__getitem__(self, item)
             except KeyError:
-                value = self[items] = type(self)()
+                value = self[item] = type(self)()
                 return value
 
     def __setitem__(self, key, val):
@@ -51,6 +57,77 @@ class RecursiveDict(dict):
                 dict.__setitem__(self, key[0], val)
         else:
             dict.__setitem__(self, key, val)
+
+    def setdata(self, data):
+
+        for k in data.keys():
+            try:
+                self[k] = type(self)(data=data[k])
+            except:
+                self[k] = data[k]
+
+    def subset(self, *args, **kwargs):
+        """
+        Returnes subset of self
+        Note that the subset is returned by reference
+
+        :param args:
+        Lets assume self is has the datastructure:
+            a:
+                b:
+                    c: value1
+                    d: value2
+                e:
+                    f: value3
+            g:
+                h: value4
+
+        if search == False:
+
+        subset('a', 'g') would return the full dictionary
+        subset(('a', 'b')) would return
+            a:
+                b:
+                    c: value1
+                    d: value2
+        subset(('a', 'e'), 'g') would return
+            a:
+                e:
+                    f: value3
+            g:
+                h: value4
+
+        if search == True:
+
+        subset('c', 'h', search=True) would return
+            a:
+                b:
+                    c: value1
+            g:
+                h: value4
+
+        :param search=False:
+        :return:
+        """
+
+        if 'search' in kwargs.keys():
+            search = kwargs.pop('search')
+        else:
+            search = False
+
+        rtrndict = type(self)()
+        if not search:
+
+            for kl in args:
+                rtrndict[kl] = self[kl]
+
+        else:
+
+            for d, k, v, kl in self.data_iterator():
+                if k in args:
+                    rtrndict[kl] = self[kl]
+
+        return rtrndict
 
     def datastructure2string(self, maxdepth=None, data=None, indentstr='.  ', function=None):
         if data is None:
@@ -71,15 +148,17 @@ class RecursiveDict(dict):
 
     def dss(self, maxdepth=None, data=None, indentstr='.  ', function=None):
         """
-        Just a shorter version of datastructure2string()
+        Just a shorter version of datastructure2string() including the print statement
         :param maxdepth:
         :param data:
         :param indentstr:
         :param function:
         :return:
         """
-        return self.datastructure2string(maxdepth=maxdepth, data=data, indentstr=indentstr,
-                                         function=function)
+        self.logging('Dict datastructure: \n---\n{}',
+            self.datastructure2string(maxdepth=maxdepth, data=data, indentstr=indentstr,
+                                      function=function)
+        )
 
     def data_iterator(self, maxdepth=None, data=None, depth=0, keylist=[], yield_short_kl=False):
 
@@ -234,6 +313,12 @@ class RecursiveDict(dict):
                         self[layernewname] = self.pop(layername)
                         # print self.datastructure2string(maxdepth=2)
 
+    def dcp(self):
+        """
+        Deep copy this instance
+        """
+        return type(self)(data = self)
+
 
 class Hdf5Processing(RecursiveDict, YamlParams):
 
@@ -242,8 +327,10 @@ class Hdf5Processing(RecursiveDict, YamlParams):
     def __init__(self, path=None, filename=None, filepath=None, data=None, skeys=None, tkeys=None, castkey=None,
                  yaml=None, yamlspec=None, recursive_search=False, nodata=False):
 
-        RecursiveDict.__init__(self)
-        YamlParams.__init__(self, filename=yaml)
+        if type(yaml) is str:
+            YamlParams.__init__(self, filename=yaml)
+        elif isinstance(yaml, YamlParams):
+            YamlParams.__init__(self, yaml=yaml)
 
         # self._sources = dict()
 
@@ -281,27 +368,58 @@ class Hdf5Processing(RecursiveDict, YamlParams):
                         skeys = yamldict[yamlspec['skeys']]
 
 
+
         if data is not None:
-            if tkeys is None:
-                self.setdata(data)
+            RecursiveDict.__init__(self, data=data, tkeys=tkeys)
+        else:
+            RecursiveDict.__init__(self)
+
+            if path is not None:
+                self.data_from_file(path+filename, skeys=skeys, tkeys=tkeys, castkey=castkey,
+                                    recursive_search=recursive_search, nodata=nodata)
+
+            elif filepath is not None:
+                self.data_from_file(filepath, skeys=skeys, tkeys=tkeys, castkey=castkey,
+                                    recursive_search=recursive_search, nodata=nodata)
+
+    def set_f(self, f):
+        self._f = f
+
+    # def write_dataitem(self, group, keys):
+    #
+    #     if type(v) is type(self):
+    #         grp = group.create_group(str(k))
+    #         self.write_dataitem(grp, v)
+    #     else:
+    #         try:
+    #             group.create_dataset(k, data=v)
+    #         except AttributeError:
+    #             group.create_dataset(str(k), data=v)
+
+    def write(self, filepath=None, data=None, of=None, keys=None, search=False):
+        """
+        :param filepath: Full path to targetfile
+        :param data: Data to write (type = Hdf5Instance)
+        :param of: Filestream to targetfile
+        :param keys: Tuple of parameters for function subset()
+        :param search: See documenation in function subset()
+        :return:
+        """
+
+        if data is None:
+            data = self
+
+        if of is None:
+            if filepath is not None:
+                of = h5py.File(filepath)
             else:
-                self.setdata(data, tkeys)
+                raise RuntimeError('Hdf5Processing: Error: Specify either [of] or [filepath]!')
 
-        elif path is not None:
-            self.data_from_file(path+filename, skeys=skeys, tkeys=tkeys, castkey=castkey,
-                                recursive_search=recursive_search, integrate=True, nodata=nodata)
-
-        elif filepath is not None:
-            self.data_from_file(filepath, skeys=skeys, tkeys=tkeys, castkey=castkey,
-                                recursive_search=recursive_search, integrate=True, nodata=nodata)
-
-    def setdata(self, data, tkeys=None):
-
-        for k in data.keys():
-            try:
-                self[k] = type(self)(data=data[k])
-            except:
-                self[k] = data[k]
+        if keys is None:
+            data.write_dataset(of, self)
+            of.close()
+        else:
+            data.subset(*keys, search=search).write(filepath=filepath, of=of)
 
     def write_dataset(self, group, data):
 
@@ -309,37 +427,28 @@ class Hdf5Processing(RecursiveDict, YamlParams):
 
             if type(v) is type(self):
 
-                grp = group.create_group(str(k))
+                try:
+                    grp = group.create_group(str(k))
+                except ValueError:
+                    grp = group.get(str(k))
 
                 self.write_dataset(grp, v)
 
             else:
 
-                if type(v) is list:
-
-                    grp = group.create_group(str(k))
-                    for i in xrange(0, len(v)):
-                        grp.create_dataset(str(i), data=v[i])
-
-                elif type(v) is np.ndarray:
-                    try:
-                        group.create_dataset(k, data=v)
-                    except AttributeError:
-                        group.create_dataset(str(k), data=v)
-
-                else:
-                    print 'Warning in Hdf5Processing.write(): Nothing to write.'
-
-    def write(self, filepath=None, of=None):
-
-        # TODO: Check if this works with the new population policies...
-
-        if of is None:
-            of = h5py.File(filepath)
-
-        self.write_dataset(of, self)
-
-        of.close()
+                try:
+                    group.create_dataset(k, data=v)
+                except AttributeError:
+                    group.create_dataset(str(k), data=v)
+    #
+    # def write(self, filepath=None, of=None):
+    #
+    #     if of is None:
+    #         of = h5py.File(filepath)
+    #
+    #     self.write_dataset(of, self)
+    #
+    #     of.close()
 
     def set_source(self, source, key):
         try:
@@ -371,9 +480,13 @@ class Hdf5Processing(RecursiveDict, YamlParams):
                 self[key].populate()
             except AttributeError:
                 if type(self[key]) is h5py.Dataset:
-                    lastkey = key.pop(-1)
-                    self[key].set_source(self[key][lastkey], lastkey)
-                    self[key][lastkey] = np.array(self[key][lastkey])
+                    if type(key) is list or type(key) is tuple:
+                        lastkey = key.pop(-1)
+                        self[key].set_source(self[key][lastkey], lastkey)
+                        self[key][lastkey] = np.array(self[key][lastkey])
+                    else:
+                        self.set_source(self[key], key)
+                        self[key] = np.array(self[key])
                 else:
                     raise
 
@@ -450,51 +563,53 @@ class Hdf5Processing(RecursiveDict, YamlParams):
 
                     self[tkey] = v
 
-    def load_h5(self, filepath, skeys=None, tkeys=None, castkey=None, recursive_search=False,
-                integrate=False, nodata=False):
+    def data_from_file(self, filepath, skeys=None, tkeys=None, castkey=None,
+                       recursive_search=False, nodata=False):
 
         f = h5py.File(filepath)
-
         self.get_h5_entries(f, skeys=skeys, tkeys=tkeys, recursive_search=recursive_search)
 
-    def data_from_file(self, filepath, skeys=None, tkeys=None, castkey=None,
-                       recursive_search=False, integrate=False, nodata=False):
-        self.load_h5(filepath, skeys=skeys, tkeys=tkeys, castkey=castkey,
-                     recursive_search=recursive_search, integrate=integrate, nodata=nodata)
         if not nodata:
             self.populate()
 
 
 if __name__ == '__main__':
 
-    resultfolder = '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/'
+    a = RecursiveDict(data={'a': {'b': {'c': 1, 'd': 2}, 'e': {'f': 3}}, 'g': {'h': {'i': 4}}})
+    a.dss()
+    b = a.subset('c', 'h', search=True)
 
-    yamlfile = resultfolder + '/parameters.yml'
-
-    ipl = Hdf5Processing(
-        yaml=yamlfile,
-        yamlspec={'path': 'datafolder', 'filename': 'labelsfile'},
-        skeys=[['x', '1'], ['x', '0']],
-        recursive_search=False,
-        nodata=True
-    )
-    print ipl.dss()
-
-    def populated(data):
-        if type(data) is h5py.Dataset:
-            return 'false'
-        else:
-            return 'TRUE'
-
-    def firstvalue(data):
-        return data[0, 0, 0]
-
-    print ipl.dss(function=populated)
-
-    ipl.populate()
-    ipl.unpopulate(['x', '0', 'raw'])
-
-    print ipl.dss(function=populated)
+    # resultfolder = '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/'
+    #
+    # yamlfile = resultfolder + '/parameters.yml'
+    #
+    # ipl = Hdf5Processing(
+    #     yaml=yamlfile,
+    #     yamlspec={'path': 'intermedfolder'},
+    #     filename='test.h5',
+    #     skeys=('disttransf', 'disttransfm'),
+    #     recursive_search=True,
+    #     nodata=True
+    # )
+    # ipl.dss()
+    #
+    # def populated(data):
+    #     if type(data) is h5py.Dataset:
+    #         return 'false'
+    #     else:
+    #         return 'TRUE'
+    #
+    # # def firstvalue(data):
+    # #     return data[0, 0, 0]
+    # #
+    # # print ipl.dss(function=populated)
+    # #
+    # # ipl.populate()
+    # # ipl.unpopulate(['x', '0', 'raw'])
+    #
+    # ipl.dss(function=populated)
+    #
+    # ipl.write(filepath=ipl.get_params()['intermedfolder'] + 'test2.h5')
 
     pass
 
