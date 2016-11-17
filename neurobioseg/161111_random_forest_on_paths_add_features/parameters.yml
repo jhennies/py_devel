@@ -10,40 +10,22 @@ rawdatafile:    'cremi.splA.raw_neurons.crop.split_xyz.h5'
 rawdataname:    'raw'
 labelsfile:     'cremi.splA.raw_neurons.crop.split_xyz.h5'
 labelsname:     'neuron_ids'
-largeobjfile:   'cremi.splA.raw_neurons.crop.split_xyz.largeobj.h5'
+probsfile:      'cremi.splA.train.probs.crop.split_xyz.h5'
+probsname:      'data'
+largeobjfile:   'cremi.splA.train.largeobj.crop.split_xyz.h5'
 largeobjname:   'largeobj'
-largeobjmfile:  'cremi.splA.raw_neurons.crop.split_xyz.largeobjm.h5'
+largeobjmfile:  'cremi.splA.train.largeobjm.crop.split_xyz.h5'
 largeobjmnames:
     - 'largeobjm'
     - 'mergeids_small'
     - 'mergeids_random'
     - 'mergeids_all'
     - 'change_hash'
-locmaxborderfile:       'cremi.splA.raw_neurons.crop.split_xyz.locmaxborder.h5'
-locmaxbordernames:
-    - 'border_locmax'
-    - 'border_locmax_m'
-    - 'disttransf'
-    - 'disttransfm'
-bordercontactsfile:     'cremi.splA.raw_neurons.crop.split_xyz.bordercontacts.h5'
-bordercontactsnames:
-    - 'orphans'
-    - 'orphansm'
-    - 'onecontact'
-    - 'onecontactm'
-    - 'multiplecontact'
-    - 'multiplecontactm'
-locmaxfile:     'cremi.splA.raw_neurons.crop.split_xyz.locmax.h5'
-locmaxnames:
-    - 'locmax'
-    - 'locmaxm'
-pathstruefile:  'cremi.splA.raw_neurons.crop.split_xyz.paths.true.h5'
-pathsfalsefile: 'cremi.splA.raw_neurons.crop.split_xyz.paths.false.h5'
-featurefile:    'cremi.splA.raw_neurons.crop.split_xyz.features.h5'
-randforestfile: 'cremi.splA.raw_neurons.crop.split_xyz.randforest.h5'
+featurefile:    'cremi.splA.train.features.crop.split_xyz.h5'
 
-run_remove_small_objects: True
-run_merge_adjacent_objects: False
+run_remove_small_objects: False
+run_merge_adjacent_objects: True
+run_compute_feature_images: False
 
 remove_small_objects:
     bysize: 10000
@@ -52,38 +34,33 @@ remove_small_objects:
 merge_adjacent_objects:
     seed: None
     numberbysize: 0
-    numberbyrandom: 15
+    numberbyrandom: 100
+    algorithm: pairs
 
-find_border_contacts:
+compute_feature_images:
     anisotropy: [10, 1, 1]
-    return_bordercontact_images: False
-
-localmax_on_disttransf:
-    anisotropy: [10, 1, 1]
-    sigma: 20
-
-paths_within_labels:
-    ignore: []
-    penaltypower: 10
-    max_paths_per_label: 20
-
-paths_of_partners:
-    ignore: []
-    penaltypower: 10
-    max_paths_per_label: 20
-
-features_of_paths:
-    anisotropy: [10, 1, 1]
-    radius_paths_ends: 10
     features:
-        - 'Sum'
-        - 'Skewness'
-        - 'Variance'
-        - 'Mean'
-        - 'Count'
-        - 'Maximum'
-        - 'Minimum'
-    max_paths_per_label_true: 5
-    max_paths_per_label_false: 10
+        rawdata:
+            - raw
+            - gaussian: 1
+            - gaussian: 3
+            - gaussian: 5
+            - gaussian: 10
+        probs:
+            - raw
+            - gaussian: 1
+            - gaussian: 3
+            - gaussian: 5
+            - gaussian: 10
+        largeobj:
+            - disstransf:
+                - raw
+                - gaussian: 1
+                - gaussian: 3
+                - gaussian: 5
+                - gaussian: 10
+
+
+
 
 

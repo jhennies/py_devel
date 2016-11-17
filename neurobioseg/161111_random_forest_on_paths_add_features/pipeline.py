@@ -1,10 +1,13 @@
 
 from p161111_00_remove_small_objects import run_remove_small_objects
+from p161111_01_merge_adjacent_objects import run_merge_adjacent_objects
+from p161111_02_compute_feature_images import run_compute_feature_images
 from yaml_parameters import YamlParams
 import os
 from shutil import copy
 import inspect
 import argparse
+from hdf5_processing import RecursiveDict as rd
 
 __author__ = 'jhennies'
 
@@ -57,8 +60,16 @@ if __name__ == '__main__':
     # The pipeline
     # _________________________________________________________________________________________
     if params['run_remove_small_objects']:
-        yaml.logging('Running remove_small_objects ...')
+        yaml.logging('Removing small objects ...')
         run_remove_small_objects(yaml.get_filename())
+
+    if params['run_merge_adjacent_objects']:
+        yaml.logging('Merging adjacent objects ...')
+        run_merge_adjacent_objects(yaml.get_filename())
+
+    if params['run_compute_feature_images']:
+        yaml.logging('Computing feature images ...')
+        run_compute_feature_images(yaml.get_filename())
     # _________________________________________________________________________________________
 
     yaml.stoplogger()

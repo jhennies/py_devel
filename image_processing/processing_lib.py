@@ -389,7 +389,7 @@ def shortest_paths(indicator, pairs, bounds=None, hfp=None):
 
     return paths, pathsim
 
-def split(image, sections, axis=0, result_keys=None):
+def split(image, sections, axis=0, result_keys=None, rtrntype=dict):
 
     shp = list(image.shape)
     # print shp
@@ -409,7 +409,7 @@ def split(image, sections, axis=0, result_keys=None):
     else:
         if len(result_keys) != len(result):
             raise RuntimeError('processing_lib.split: Number of result keys does not match the number of sections!')
-        resultdict = dict()
+        resultdict = rtrntype()
 
         for i in xrange(len(result_keys)):
 
