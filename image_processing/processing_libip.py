@@ -198,10 +198,6 @@ def merge_adjacent_objects(
     :param key: the source key for calculation
     """
 
-    # numberbysize = thisparams['numberbysize']
-    # numberbyrandom = thisparams['numberbyrandom']
-    # targetnames = params['largeobjmnames']
-
     # This removes the redundancy from the hash
     def reduce_hash(hash):
         br = False

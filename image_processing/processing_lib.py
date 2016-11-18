@@ -219,7 +219,13 @@ def unique(image, return_counts=False):
     return np.unique(image, return_counts=return_counts)
 
 
-def gaussian_smoothing(image, sigma):
+def gaussian_smoothing(image, sigma, anisotropy=None):
+    if anisotropy:
+        if type(sigma) is not list and type(sigma) is not tuple and type(sigma) is not np.array:
+            sigma = np.array([sigma]*3).astype(np.float32) / anisotropy
+        else:
+            sigma = np.array(sigma) / anisotropy
+    image = image.astype(np.float32)
     return vigra.filters.gaussianSmoothing(image, sigma)
 
 

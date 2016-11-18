@@ -32,7 +32,7 @@ remove_small_objects:
     relabel: True
 
 merge_adjacent_objects:
-    seed: None
+    seed: ~
     numberbysize: 0
     numberbyrandom: 100
     algorithm: pairs
@@ -41,24 +41,70 @@ compute_feature_images:
     anisotropy: [10, 1, 1]
     features:
         rawdata:
-            - raw
-            - gaussian: 1
-            - gaussian: 3
-            - gaussian: 5
-            - gaussian: 10
+            raw: ~
+            gauss_1:
+                params: [1]
+                func: gaussian
+            gauss_3:
+                params: [3]
+                func: gaussian
+            gauss_5:
+                params: [5]
+                func: gaussian
+            gauss_10:
+                params: [10]
+                func: gaussian
         probs:
-            - raw
-            - gaussian: 1
-            - gaussian: 3
-            - gaussian: 5
-            - gaussian: 10
+            raw: ~
+            gauss_1:
+                params: [1]
+                func: gaussian
+            gauss_3:
+                params: [3]
+                func: gaussian
+            gauss_5:
+                params: [5]
+                func: gaussian
+            gauss_10:
+                params: [10]
+                func: gaussian
         largeobj:
-            - disstransf:
-                - raw
-                - gaussian: 1
-                - gaussian: 3
-                - gaussian: 5
-                - gaussian: 10
+            disttransf:
+                params: ~
+                func: disttransf
+                raw: ~
+                gauss_1:
+                    params: [1]
+                    func: gaussian
+                gauss_3:
+                    params: [3]
+                    func: gaussian
+                gauss_5:
+                    params: [5]
+                    func: gaussian
+                gauss_10:
+                    params: [10]
+                    func: gaussian
+        largeobjm:
+            disttransf:
+                params: ~
+                func: disttransf
+                raw: ~
+                gauss_1:
+                    params: [1]
+                    func: gaussian
+                gauss_3:
+                    params: [3]
+                    func: gaussian
+                gauss_5:
+                    params: [5]
+                    func: gaussian
+                gauss_10:
+                    params: [10]
+                    func: gaussian
+
+
+
 
 
 

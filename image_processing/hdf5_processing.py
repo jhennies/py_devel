@@ -248,6 +248,13 @@ class RecursiveDict(dict, SimpleLogger):
 
         return maxlen
 
+    def maxdepth(self):
+        maxd = 0
+        for d, k, v, kl in self.data_iterator():
+            if d > maxd:
+                maxd = d
+        return d
+
     def switch_levels(self, level1, level2):
         newself = type(self)()
         for d, k, v, kl in self.data_iterator(maxdepth=level2):
