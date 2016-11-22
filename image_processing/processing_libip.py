@@ -221,7 +221,10 @@ def merge_adjacent_objects(
         ipl.logging('labels = {}', labels)
 
         # Seed the randomize function
-        random.seed(seed)
+        if seed:
+            random.seed(seed)
+        else:
+            random.seed()
 
         ipl.astype(np.uint32, keys=key)
         (grag, rag) = graphs.gridRegionAdjacencyGraph(ipl[key], ignoreLabel=0)

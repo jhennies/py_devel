@@ -47,8 +47,11 @@ def remove_small_objects(ipl):
 
             ipl[kl] = libip.filter_small_objects(ipl[kl], k, thisparams['bysize'], relabel=thisparams['relabel'])
 
+            # Rename the entry
+            ipl[kl].rename_entry(params['labelsname'], params['largeobjname'])
+
             # Write the result to file
-            ipl.write(filepath=targetfile, keys=[kl + [k]])
+            ipl.write(filepath=targetfile, keys=[kl + [params['largeobjname']]])
             # Free memory (With this command the original reference to the source file is restored)
             ipl[kl].unpopulate()
 

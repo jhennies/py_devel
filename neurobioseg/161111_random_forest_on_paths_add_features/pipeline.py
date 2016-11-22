@@ -16,12 +16,10 @@ if __name__ == '__main__':
 
     # Parse command line inputs
     parser = argparse.ArgumentParser(description='Run post-processing pipeline for neuron segmentation')
-    parser.add_argument('ResultFolder', type=str, help='The results and intermediate results are stored to this location')
     parser.add_argument('ParameterFile', type=str, help='The parameter file in yaml format')
 
     args = parser.parse_args()
 
-    resultfolder = args.ResultFolder
     yamlfile = args.ParameterFile
 
     yaml = YamlParams(filename=yamlfile)
@@ -30,7 +28,6 @@ if __name__ == '__main__':
     yaml.startlogger(filename=params['resultfolder'] + 'pipeline.log', type='w', name='Pipeline')
 
     yaml.logging('Starting script with:')
-    yaml.logging('    ResultFolder = {}', resultfolder)
     yaml.logging('    ParameterFile = {}\n', yamlfile)
 
     # Create folder for scripts
