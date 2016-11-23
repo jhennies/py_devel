@@ -76,51 +76,51 @@ def boundary_disttransf(ipl, key, tkey, anisotropy=[1, 1, 1]):
     )
     
     
-def compute_faces(ipl, keys, tkeys):
-    
+def compute_faces(ipl, key):
+
+    faces = IPL(data={key: ipl[key]})
+    shp = faces[key].shape
     ipl.logging('Computing faces ...')
-    ipl.get_faces_with_neighbors(keys=keys, tkeys=tkeys)
+    faces.get_faces_with_neighbors(keys=key, rtrntype=IPL)
 
     # startpoints = ipl['faces', keys[0]].keys()
     additionalinfo = IPL()
-    for key in keys:
-        shp = ipl[key].shape
-        startpoints = {'xyf': shp[2],
-                       'xyb': shp[2],
-                       'xzf': shp[1],
-                       'xzb': shp[1],
-                       'yzf': shp[0],
-                       'yzb': shp[0]}
-        areas = {'xyf': np.s_[shp[2]:shp[2] + shp[0], shp[2]:shp[2] + shp[1]],
-                 'xyb': np.s_[shp[2]:shp[2] + shp[0], shp[2]:shp[2] + shp[1]],
-                 'xzf': np.s_[shp[1]:shp[1] + shp[0], shp[1]:shp[1] + shp[2]],
-                 'xzb': np.s_[shp[1]:shp[1] + shp[0], shp[1]:shp[1] + shp[2]],
-                 'yzf': np.s_[shp[0]:shp[0] + shp[1], shp[0]:shp[0] + shp[2]],
-                 'yzb': np.s_[shp[0]:shp[0] + shp[1], shp[0]:shp[0] + shp[2]]}
+    startpoints = IPL(data={'xyf': shp[2],
+                   'xyb': shp[2],
+                   'xzf': shp[1],
+                   'xzb': shp[1],
+                   'yzf': shp[0],
+                   'yzb': shp[0]})
+    areas = IPL(data={'xyf': np.s_[shp[2]:shp[2] + shp[0], shp[2]:shp[2] + shp[1]],
+             'xyb': np.s_[shp[2]:shp[2] + shp[0], shp[2]:shp[2] + shp[1]],
+             'xzf': np.s_[shp[1]:shp[1] + shp[0], shp[1]:shp[1] + shp[2]],
+             'xzb': np.s_[shp[1]:shp[1] + shp[0], shp[1]:shp[1] + shp[2]],
+             'yzf': np.s_[shp[0]:shp[0] + shp[1], shp[0]:shp[0] + shp[2]],
+             'yzb': np.s_[shp[0]:shp[0] + shp[1], shp[0]:shp[0] + shp[2]]})
 
-        additionalinfo[key, 'startpoints'] = startpoints
-        additionalinfo[key, 'areas'] = areas
+    additionalinfo[key, 'startpoints'] = startpoints
+    additionalinfo[key, 'areas'] = areas
 
-    return additionalinfo
+    return (faces, additionalinfo)
     
     
-def find_border_centroids(ipl, keys, areas, imkey, disttransfkey, resultkey):
+def find_border_centroids(ipl, faces, key, facesinfo, facesd, resultkey, resultshp):
     """
-    :param ipl:
-    :param keys:
-    :param areas: supply area in the format area=np.s_[numpy indexing], i.e. area=np.s_[:,:,:] for a full 3d image
-            Note that this affects only the determination of which labels are iterated over, when labellist is supplied
-            this parameter has no effect
-    :param imkey:
-    :param disttransfkey:
+    :param ipl: the result is stored here using resultkey
+    :param faces: ipl containing faces as returned by compute_faces
+    :param key: key of the image in ipl
+    :param facesinfo: ipl containing facesinfo as returned by compute_faces
+    :param facesd: ipl containing the faces of the distance transform as returned by compute_faces
     :param resultkey:
     :return:
     """
 
-    for k, bounds in keys.iteritems():
+    ipl[resultkey, key] = np.zeros(resultshp)
+
+    for k, startpoint in facesinfo[key, 'startpoints'].iteritems():
 
         # bounds = (shp[0],) * 2
-        for lbl, lblim in ipl['faces', imkey].label_image_iterator(key=k, background=0, area=areas[k]):
+        for lbl, lblim in faces[key].label_image_iterator(key=k, background=0, area=facesinfo[key, 'areas', k]):
 
             ipl.logging('---\nLabel {} found in image {}', lbl, k)
 
@@ -138,7 +138,7 @@ def find_border_centroids(ipl, keys, areas, imkey, disttransfkey, resultkey):
                 curobj = conncomp == l
 
                 # Get disttancetransf of the object
-                curdist = np.array(ipl['faces', disttransfkey, k])
+                curdist = np.array(facesd[key, k])
                 curdist[curobj == False] = 0
 
                 # Detect the global maximum of this object
@@ -150,7 +150,7 @@ def find_border_centroids(ipl, keys, areas, imkey, disttransfkey, resultkey):
                 centroid = (int((bds[1][0] + bds[1][1]-1) / 2), int((bds[0][0] + bds[0][1]-1) / 2))
 
                 # Now translate the calculated centroid to the position within the orignial 3D volume
-                centroidm = (centroid[0] - bounds, centroid[1] - bounds)
+                centroidm = (centroid[0] - startpoint, centroid[1] - startpoint)
                 # ipl.logging('centroidxy = {}', centroidm)
                 # Set the pixel
                 try:
@@ -158,19 +158,64 @@ def find_border_centroids(ipl, keys, areas, imkey, disttransfkey, resultkey):
                         raise IndexError
                     else:
                         if k == 'xyf':
-                            ipl[resultkey][centroidm[0], centroidm[1], 0] = lbl
+                            ipl[resultkey, key][centroidm[0], centroidm[1], 0] = lbl
                         elif k == 'xyb':
-                            ipl[resultkey][centroidm[0], centroidm[1], -1] = lbl
+                            ipl[resultkey, key][centroidm[0], centroidm[1], -1] = lbl
                         elif k == 'xzf':
-                            ipl[resultkey][centroidm[0], 0, centroidm[1]] = lbl
+                            ipl[resultkey, key][centroidm[0], 0, centroidm[1]] = lbl
                         elif k == 'xzb':
-                            ipl[resultkey][centroidm[0], -1, centroidm[1]] = lbl
+                            ipl[resultkey, key][centroidm[0], -1, centroidm[1]] = lbl
                         elif k == 'yzf':
-                            ipl[resultkey][0, centroidm[0], centroidm[1]] = lbl
+                            ipl[resultkey, key][0, centroidm[0], centroidm[1]] = lbl
                         elif k == 'yzb':
-                            ipl[resultkey][-1, centroidm[0], centroidm[1]] = lbl
+                            ipl[resultkey, key][-1, centroidm[0], centroidm[1]] = lbl
                 except IndexError:
                     pass
+
+
+def find_orphans(ipl, bordercontacts, key, tkey):
+
+    non_orphan_labels = []
+    for k, v in ipl['faces', key].iteritems():
+        non_orphan_labels = np.unique(np.append(v, non_orphan_labels))
+
+    all_labels = np.unique(ipl[key])
+    orphan_labels = list(set(all_labels).difference(non_orphan_labels))
+
+    if orphan_labels:
+        bordercontacts[tkey] = ipl.getlabel(orphan_labels, keys=key, return_only=True)
+
+
+def find_border_contacts(ipl, keys, tkey, debug=False):
+    # Each key in keys needs a corresponding entry in 'disttransf'.
+    # Example for keys=('labels1', 'labels2')
+    # ipl:
+    #   'labels1': labelimage
+    #   'labels2': labelimage
+    #   'disttransf':
+    #       'labels1': distance transform of 'labels1'
+    #       'labels2': distance transform of 'labels2'
+
+    for key in keys:
+
+        ipl.logging('Finding border contacts for key = {}', key)
+
+        ipl.populate(key)
+        ipl['disttransf'].populate(key)
+
+        # For each of the 6 faces compute the objects which are touching it and the corresponding local maxima of the
+        # distance transform
+        faces, faces_info = compute_faces(ipl, key)
+        facesd, facesd_info = compute_faces(ipl['disttransf'], key)
+
+        find_border_centroids(ipl, faces, key, faces_info, facesd, tkey, ipl[key].shape)
+
+        if debug:
+            ipl[tkey, 'overlay_{}'.format(key)] = np.array([
+                (ipl[tkey, key] > 0).astype(np.float32),
+                (ipl[key].astype(np.float32)/np.amax(ipl[key])).astype(np.float32),
+                (ipl['disttransf', key]/np.amax(ipl['disttransf', key])).astype(np.float32)
+            ])
 
 
 def merge_adjacent_objects(

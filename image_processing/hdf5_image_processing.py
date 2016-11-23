@@ -188,10 +188,7 @@ class Hdf5ImageProcessing(Hdf5Processing):
     def deepcopy_entry(self, skey, tkey):
         self[tkey] = deepcopy(self[skey])
 
-    def rename_entry(self, old, new):
-        # self[new] = self[old]
-        # del self[old]
-        self[new] = self.pop(old)
+
 
 ###############################################################################################
 
@@ -248,6 +245,9 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
 
     def power(self, value, **kwargs):
         return self.anytask(lib.power, value, **kwargs)
+
+    def shape(self, **kwargs):
+        return self.anytask(lib.shape, **kwargs)
 
     # _________________________________________________________________________________________
     # Iterators

@@ -96,7 +96,7 @@ def compute_features(image, general_params, subfeature_params):
 def compute_selected_features(ipl, params):
 
     thisparams = rdict(data=params['compute_feature_images'])
-    targetfile = params['intermedfolder'] + params['featurefile']
+    targetfile = params['intermedfolder'] + params['featureimsfile']
 
     maxd = ipl.maxdepth()
 
@@ -132,7 +132,7 @@ def compute_feature_images(ipl):
 
     params = ipl.get_params()
     thisparams = rdict(params['compute_feature_images'])
-    targetfile = params['intermedfolder'] + params['featurefile']
+    # targetfile = params['intermedfolder'] + params['featureimsfile']
 
     # Load the necessary images
     load_images(ipl, thisparams['features'].keys())

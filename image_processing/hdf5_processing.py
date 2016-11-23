@@ -129,6 +129,22 @@ class RecursiveDict(dict, SimpleLogger):
 
         return rtrndict
 
+    def rename_entry(self, old, new, search=False):
+        """
+        Renames an entry, regardless of being node or leaf
+        :param old:
+        :param new:
+        :param search:
+        :return:
+        """
+
+        if search:
+            for d, k, v, kl in self.data_iterator(yield_short_kl=True):
+                if k == old:
+                    self[kl][new] = self[kl].pop(old)
+        else:
+            self[new] = self.pop(old)
+
     def datastructure2string(self, maxdepth=None, data=None, indentstr='.  ', function=None):
         if data is None:
             data = self
@@ -319,6 +335,39 @@ class RecursiveDict(dict, SimpleLogger):
                         # print type(self)
                         self[layernewname] = self.pop(layername)
                         # print self.datastructure2string(maxdepth=2)
+
+    def reduce_from_leafs(self):
+        """
+        If the branches at the leafs have only one entry, i.e.
+        a:
+            b:
+                c: leaf1
+            d:
+                e: leaf2
+        f:
+            g:
+                h: leaf3
+        the last level is removed resulting in:
+        a:
+            b: leaf1
+            d: leaf2
+        f:
+            g: leaf3
+
+        A further iteration would yield:
+        a:
+            b: leaf1
+            d: leaf2
+        f: leaf3
+
+        :return:
+        """
+
+        for d, k, v, kl in self.data_iterator(yield_short_kl=True):
+
+            if type(v) is not type(self):
+                if len(self[kl].keys()) == 1:
+                    self[kl] = v
 
     def dcp(self):
         """

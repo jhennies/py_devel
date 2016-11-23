@@ -2,6 +2,7 @@
 from p161111_00_remove_small_objects import run_remove_small_objects
 from p161111_01_merge_adjacent_objects import run_merge_adjacent_objects
 from p161111_02_compute_feature_images import run_compute_feature_images
+from p161111_03_find_border_contacts import run_find_border_contacts
 from yaml_parameters import YamlParams
 import os
 from shutil import copy
@@ -67,6 +68,10 @@ if __name__ == '__main__':
     if params['run_compute_feature_images']:
         yaml.logging('Computing feature images ...')
         run_compute_feature_images(yaml.get_filename())
+
+    if params['run_find_border_contacts']:
+        yaml.logging('Finding border contacts ...')
+        run_find_border_contacts(yaml.get_filename())
     # _________________________________________________________________________________________
 
     yaml.stoplogger()

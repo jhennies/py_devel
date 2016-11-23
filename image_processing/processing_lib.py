@@ -271,9 +271,9 @@ def getvaluesfromcoords(image, coordinates):
 
     return values
 
-def get_faces_with_neighbors(image):
+def get_faces_with_neighbors(image, rtrntype=dict):
 
-    faces = dict()
+    faces = rtrntype()
 
     # --- XY ---
     # w = x + 2*z, h = y + 2*z

@@ -1,31 +1,34 @@
-datafolder: '/mnt/localdata02/jhennies/neuraldata/cremi_2016/'
-resultfolder: '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/'
-intermedfolder: '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/intermediate/'
-scriptsfolder: '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/scripts/'
+datafolder: '/media/julian/Daten/datasets/cremi_2016/'
+resultfolder: '/media/julian/Daten/datasets/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/'
+intermedfolder: '/media/julian/Daten/datasets/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/intermediate/'
+scriptsfolder: '/media/julian/Daten/datasets/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/scripts/'
 
 createfolders: True
 overwriteresults: True
 
-rawdatafile:    'cremi.splA.raw_neurons.crop.split_xyz.h5'
+rawdatafile:    'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 rawdataname:    'raw'
-labelsfile:     'cremi.splA.raw_neurons.crop.split_xyz.h5'
+labelsfile:     'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 labelsname:     'neuron_ids'
-probsfile:      'cremi.splA.train.probs.crop.split_xyz.h5'
+probsfile:      'cremi.splA.train.probs.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 probsname:      'data'
-largeobjfile:   'cremi.splA.train.largeobj.crop.split_xyz.h5'
+largeobjfile:   'cremi.splA.train.largeobj.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 largeobjname:   'largeobj'
-largeobjmfile:  'cremi.splA.train.largeobjm.crop.split_xyz.h5'
+largeobjmfile:  'cremi.splA.train.largeobjm.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 largeobjmnames:
     - 'largeobjm'
     - 'mergeids_small'
     - 'mergeids_random'
     - 'mergeids_all'
     - 'change_hash'
-featurefile:    'cremi.splA.train.features.crop.split_xyz.h5'
+featureimsfile: 'cremi.splA.train.featureims.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+borderctname:   'centroids'
 
-run_remove_small_objects: False
+run_remove_small_objects: True
 run_merge_adjacent_objects: True
-run_compute_feature_images: False
+run_compute_feature_images: True
+run_find_border_contacts: True
 
 remove_small_objects:
     bysize: 10000
@@ -34,7 +37,7 @@ remove_small_objects:
 merge_adjacent_objects:
     seed: ~
     numberbysize: 0
-    numberbyrandom: 100
+    numberbyrandom: 10
     algorithm: pairs
 
 compute_feature_images:
@@ -103,7 +106,8 @@ compute_feature_images:
                     params: [10]
                     func: gaussian
 
-
+find_border_contacts:
+    p = 1
 
 
 
