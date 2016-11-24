@@ -1,7 +1,7 @@
 datafolder: '/media/julian/Daten/datasets/cremi_2016/'
-resultfolder: '/media/julian/Daten/datasets/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/'
-intermedfolder: '/media/julian/Daten/datasets/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/intermediate/'
-scriptsfolder: '/media/julian/Daten/datasets/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/scripts/'
+resultfolder: /media/julian/Daten/datasets/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/
+intermedfolder: /media/julian/Daten/datasets/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/intermed/
+scriptsfolder: /media/julian/Daten/datasets/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/scripts/
 
 createfolders: True
 overwriteresults: True
@@ -25,11 +25,14 @@ featureimsfile: 'cremi.splA.train.featureims.crop.crop_x10_110_y200_712_z200_712
 borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 borderctname:   'centroids'
 pathstruefile:  'cremi.splA.train.pathstrue.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+pathsfalsefile: 'cremi.splA.train.pathsfalse.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 
-run_remove_small_objects: True
-run_merge_adjacent_objects: True
-run_compute_feature_images: True
-run_find_border_contacts: True
+run_remove_small_objects: False
+run_merge_adjacent_objects: False
+run_compute_feature_images: False
+run_find_border_contacts: False
+run_paths_of_labels: False
+run_paths_of_merges: True
 
 remove_small_objects:
     bysize: 10000
@@ -111,6 +114,12 @@ find_border_contacts:
     p: 1
 
 paths_of_labels:
+    penaltypower: 10
+    ignorelabels: []
+    max_end_count: 5
+    max_end_count_seed: ~
+
+paths_of_merges:
     penaltypower: 10
     ignorelabels: []
     max_end_count: 5

@@ -533,3 +533,138 @@ def paths_of_labels(
     )
 
     return paths
+
+
+def find_shortest_path_labelpairs(ipl, penaltypower, bounds, disttransf, locmax,
+                       labels, labelgroup,
+                       max_end_count=[], max_end_count_seed=[]):
+
+    # Modify distancetransform
+    #
+    # a) Invert: the lowest values (i.e. the lowest penalty for the shortest path detection) should be at the center of
+    #    the current process
+    disttransf = lib.invert_image(disttransf)
+    #
+    # b) Set all values outside the process to infinity
+    disttransf = lib.filter_values(disttransf, np.amax(disttransf), type='eq', setto=np.inf)
+    #
+    # c) Increase the value difference between pixels near the boundaries and pixels central within the processes
+    #    This increases the likelihood of the paths to follow the center of processes, thus avoiding short-cuts
+    disttransf = lib.power(disttransf, penaltypower)
+
+    # The situation:
+    # We have multiple objects (n > 1) of unknown number.
+    # We want to extract the local maxima within each object individually and create a
+    #   list of all possible partners (pairs)
+    # Each partner of a pair has to be located within a different object (label area)
+    #
+    # Approach 1:
+    #   For each locmax iterate over all other locmaxs and write pairs, which satisfy the
+    #   desired condition, to the pairs list
+    #
+    # Approach 2:
+    #   For each label object iterate over all the others and append all possible locmax
+    #   pairs to the pairs list
+    #   Probably faster than approach 1 when implemented correctly? Someone should test that...
+
+    # Approach 2 in its implemented form
+    pairs = []
+    for i in xrange(0, len(labelgroup)-1):
+
+        # Find the path endpoints within one label object
+        indices_i = np.where((labels == labelgroup[i]) & (locmax > 0))
+        indices_i = zip(indices_i[0], indices_i[1], indices_i[2])
+        # Throw out some if the list is too long
+        if max_end_count:
+            if len(indices_i) > max_end_count:
+                ipl.logging('Reducing number of coordinates in indices_i to {}', max_end_count)
+                random.seed()
+                indices_i = random.sample(indices_i, max_end_count)
+
+        if indices_i:
+            for j in xrange(i+1, len(labelgroup)):
+
+                # Find the path endpoints within an merged label object
+                indices_j = np.where((labels == labelgroup[j]) & (locmax > 0))
+                indices_j = zip(indices_j[0], indices_j[1], indices_j[2])
+                # Throw out some if the list is too long
+                if max_end_count:
+                    if len(indices_j) > max_end_count:
+                        ipl.logging('Reducing number of coordinates in indices_j to {}', max_end_count)
+                        random.seed()
+                        indices_j = random.sample(indices_j, max_end_count)
+
+                if indices_j:
+                    ipl.logging('Ind_i = {}\nInd_j = {}', indices_i, indices_j)
+                    # Now, lets do some magic!
+                    pairs = pairs + zip(indices_i * len(indices_j), sorted(indices_j * len(indices_i)))
+
+    paths, pathim = lib.shortest_paths(disttransf, pairs, bounds=bounds, hfp=ipl)
+
+    return paths, pathim
+
+
+def paths_of_labelpairs(
+        ipl, lblsmkey, lblskey, changehashkey, pathendkey, disttransfkey, thisparams, ignore,
+        max_end_count=[], max_end_count_seed=[]
+):
+
+    # This results in the format:
+    # more_keys = (locmaxkeys[0], ..., locmaxkeys[n], disttransfkey, lblskey)
+    more_keys = (pathendkey, disttransfkey, lblskey)
+
+    paths = IPL()
+    paths['pathsim'] = np.zeros(ipl[lblsmkey].shape)
+
+    # Determine labellist from change_hash (keys are strings due to h5 saving)
+    labellist = ipl[changehashkey].keys()
+    labellist = [int(x) for x in labellist]
+
+    for lbl, lblim, more_ims, bounds in ipl.label_image_bounds_iterator(
+        key=lblsmkey, background=0, more_keys=more_keys,
+        maskvalue=0, value=0, labellist=labellist
+    ):
+        if lbl in ignore:
+            continue
+        # The format of more_ims is:
+        # more_ims = {locmaxkeys[0]: locmax_1,
+        #                ...
+        #             locmaxkeys[n]: locmax_n,
+        #             disttransfkey: disttransf,
+        #             lblskey: lables}
+
+        ipl.logging('======================\nWorking on label = {}', lbl)
+        # ipl.logging('more_ims structure:\n---\n{}', more_ims.datastructure2string())
+        ipl.logging('bounds = {}', bounds)
+
+        if np.amax(more_ims[pathendkey]) > 0:
+            ps, pathsim = find_shortest_path_labelpairs(
+                ipl, thisparams['penaltypower'], bounds,
+                more_ims[disttransfkey],
+                more_ims[pathendkey],
+                more_ims[lblskey],
+                ipl[changehashkey][str(lbl)],
+                max_end_count=max_end_count,
+                max_end_count_seed=max_end_count_seed
+            )
+
+            # Only store the path if the path-calculation successfully determined a path
+            # Otherwise an empty list would be stored
+            if ps:
+                ipl.logging('Number of paths found: {}', len(ps))
+
+                pskeys = range(0, len(ps))
+                ps = IPL(data=dict(zip(pskeys, ps)))
+
+                paths['path', lbl] = ps
+                # paths[lblsmkey, locmaxkeys[i], 'pathsim'] = pathsim
+
+                paths['pathsim'][bounds][pathsim > 0] = pathsim[pathsim > 0]
+
+        paths['overlay'] = np.array([
+            paths['pathsim'],
+            ipl[lblskey].astype(np.float32) / np.amax(ipl[lblskey]),
+            vigra.filters.multiBinaryDilation(ipl[pathendkey].astype(np.uint8), 5)
+        ])
+
+    return paths

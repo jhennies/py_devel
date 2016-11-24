@@ -1,8 +1,13 @@
 
+import sys
+sys.path.append('../../image_processing/')
+
 from p161111_00_remove_small_objects import run_remove_small_objects
 from p161111_01_merge_adjacent_objects import run_merge_adjacent_objects
 from p161111_02_compute_feature_images import run_compute_feature_images
 from p161111_03_find_border_contacts import run_find_border_contacts
+from p161111_04a_paths_of_labels import run_paths_of_labels
+from p161111_04b_paths_of_merges import run_paths_of_merges
 from yaml_parameters import YamlParams
 import os
 from shutil import copy
@@ -13,15 +18,53 @@ from hdf5_processing import RecursiveDict as rd
 __author__ = 'jhennies'
 
 
+from tempfile import mkstemp
+from shutil import move
+from os import remove, close
+import re
+
+def replace(file_path, pattern, subst):
+    #Create temp file
+    fh, abs_path = mkstemp()
+    with open(abs_path,'w') as new_file:
+        with open(file_path) as old_file:
+            for line in old_file:
+                newline = re.sub(pattern, subst, line)
+                new_file.write(newline)
+                # new_file.write(line.replace(pattern, subst))
+    close(fh)
+    #Remove original file
+    remove(file_path)
+    #Move new file
+    move(abs_path, file_path)
+
+
 if __name__ == '__main__':
 
     # Parse command line inputs
     parser = argparse.ArgumentParser(description='Run post-processing pipeline for neuron segmentation')
-    parser.add_argument('ParameterFile', type=str, help='The parameter file in yaml format')
+    parser.add_argument(
+        'ParameterFile', type=str,
+        help='The parameter file in yaml format'
+    )
+    parser.add_argument(
+        '-f', '--ResultFolder', type=str, nargs=1,
+        help='Result folder, when specified result folder in parameter file will be ignored'
+    )
 
     args = parser.parse_args()
 
     yamlfile = args.ParameterFile
+    resultfolder = None
+    if args.ResultFolder is not None:
+        resultfolder = args.ResultFolder[0]
+
+    if resultfolder is not None:
+        replace('./parameters.yml', '^resultfolder: .*$', "resultfolder: {}".format(resultfolder))
+        replace('./parameters.yml', '^intermedfolder: .*$', 'intermedfolder: {}{}'.format(resultfolder, 'intermed/'))
+        replace('./parameters.yml', '^scriptsfolder: .*$', 'scriptsfolder: {}{}'.format(resultfolder, 'scripts/'))
+        if not os.path.exists(resultfolder):
+            os.makedirs(resultfolder)
 
     yaml = YamlParams(filename=yamlfile)
     params = yaml.get_params()
@@ -72,6 +115,14 @@ if __name__ == '__main__':
     if params['run_find_border_contacts']:
         yaml.logging('Finding border contacts ...')
         run_find_border_contacts(yaml.get_filename())
+
+    if params['run_paths_of_labels']:
+        yaml.logging('Calculating paths of labels ...')
+        run_paths_of_labels(yaml.get_filename())
+
+    if params['run_paths_of_merges']:
+        yaml.logging('Calculating paths of merges ...')
+        run_paths_of_merges(yaml.get_filename())
     # _________________________________________________________________________________________
 
     yaml.stoplogger()
