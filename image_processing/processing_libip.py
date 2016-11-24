@@ -425,3 +425,111 @@ def merge_adjacent_objects(
                 ipl.filter_values(x, type='eq', setto=k, keys=targetnames[0])
 
     return ipl
+
+
+def find_shortest_path(ipl, penaltypower, bounds, disttransf, locmax,
+                       max_end_count=[], max_end_count_seed=[]):
+
+    # Modify distancetransform
+    #
+    # a) Invert: the lowest values (i.e. the lowest penalty for the shortest path detection) should be at the center of
+    #    the current process
+    disttransf = lib.invert_image(disttransf)
+    #
+    # b) Set all values outside the process to infinity
+    disttransf = lib.filter_values(disttransf, np.amax(disttransf), type='eq', setto=np.inf)
+    #
+    # c) Increase the value difference between pixels near the boundaries and pixels central within the processes
+    #    This increases the likelihood of the paths to follow the center of processes, thus avoiding short-cuts
+    disttransf = lib.power(disttransf, penaltypower)
+
+    # Get local maxima
+    indices = np.where(locmax)
+    coords = zip(indices[0], indices[1], indices[2])
+    ipl.logging('Local maxima coordinates: {}', coords)
+
+    # Select a certain number of path end points
+    if max_end_count:
+        if len(coords) > max_end_count:
+            ipl.logging('Reducing number of coordinates to {}', max_end_count)
+            if max_end_count_seed:
+                random.seed(max_end_count_seed)
+            else:
+                random.seed()
+            coords = random.sample(coords, max_end_count)
+            ipl.logging('Modified coordinate list: {}', coords)
+
+    # Make pairwise list of coordinates that will serve as source and target
+    pairs = []
+    for i in xrange(0, len(coords)-1):
+        for j in xrange(i+1, len(coords)):
+            pairs.append((coords[i], coords[j]))
+
+    paths, pathim = lib.shortest_paths(disttransf, pairs, bounds=bounds, hfp=ipl)
+
+    # # Make sure no empty paths lists are returned
+    # paths = [x for x in paths if x.any()]
+    return paths, pathim
+
+
+def paths_of_labels(
+        ipl, labelkey, pathendkey, disttransfkey, thisparams, ignore=[],
+        max_end_count=[], max_end_count_seed=[]
+):
+
+    # if type(locmaxkeys) is str:
+    #     locmaxkeys = (locmaxkeys,)
+
+    # This results in the format:
+    # more_keys = (locmaxkeys[0], ..., locmaxkeys[n], disttransfkey)
+    more_keys = (pathendkey, disttransfkey)
+
+    paths = IPL()
+    # for k in locmaxkeys:
+    paths['pathsim'] = np.zeros(ipl[labelkey].shape)
+
+    for lbl, lblim, more_ims, bounds in ipl.label_image_bounds_iterator(
+        key=labelkey, background=0, more_keys=more_keys,
+        maskvalue=0, value=0
+    ):
+        if lbl in ignore:
+            continue
+        # The format of more_ims is:
+        # more_ims = {locmaxkeys[0]: locmax_1,
+        #                ...
+        #             locmaxkeys[n]: locmax_n,
+        #             disttransfkey: disttransf}
+
+        ipl.logging('======================\nWorking on label = {}', lbl)
+        # ipl.logging('more_ims structure:\n---\n{}', more_ims.datastructure2string())
+        ipl.logging('bounds = {}', bounds)
+
+        if np.amax(more_ims[pathendkey]) > 0:
+            ps, pathsim = find_shortest_path(
+                ipl, thisparams['penaltypower'], bounds,
+                more_ims[disttransfkey], more_ims[pathendkey],
+                max_end_count=max_end_count,
+                max_end_count_seed=max_end_count_seed
+            )
+
+            # Only store the path if the path-calculation successfully determined a path
+            # Otherwise an empty list would be stored
+            if ps:
+                ipl.logging('Number of paths found: {}', len(ps))
+
+                pskeys = range(0, len(ps))
+                ps = IPL(data=dict(zip(pskeys, ps)))
+
+                paths['path', lbl] = ps
+                # paths['pathsim'] = pathsim
+
+                paths['pathsim'][bounds][pathsim > 0] = pathsim[pathsim > 0]
+
+
+    paths['overlay'] = np.array(
+        [paths['pathsim'],
+        ipl[labelkey].astype(np.float32) / np.amax(ipl[labelkey]),
+        vigra.filters.multiBinaryDilation(ipl[pathendkey].astype(np.uint8), 5)]
+    )
+
+    return paths

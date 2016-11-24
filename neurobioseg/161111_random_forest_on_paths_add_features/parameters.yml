@@ -24,6 +24,7 @@ largeobjmnames:
 featureimsfile: 'cremi.splA.train.featureims.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 borderctname:   'centroids'
+pathstruefile:  'cremi.splA.train.pathstrue.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 
 run_remove_small_objects: True
 run_merge_adjacent_objects: True
@@ -107,7 +108,13 @@ compute_feature_images:
                     func: gaussian
 
 find_border_contacts:
-    p = 1
+    p: 1
+
+paths_of_labels:
+    penaltypower: 10
+    ignorelabels: []
+    max_end_count: 5
+    max_end_count_seed: ~
 
 
 
