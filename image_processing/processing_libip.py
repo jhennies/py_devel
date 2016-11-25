@@ -668,3 +668,107 @@ def paths_of_labelpairs(
         ])
 
     return paths
+
+
+def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=None):
+
+    newfeats = IPL()
+
+    keylist = range(0, max_paths_per_label)
+    keylist = [str(x) for x in keylist]
+
+    # Iterate over all paths, yielding a list of one path per label object until no paths are left
+    for i, keys, vals in paths.simultaneous_iterator(
+            max_count_per_item=max_paths_per_label,
+            keylist=keylist):
+
+        if ipl is not None:
+            ipl.logging('Working in iteration = {}', i)
+            ipl.logging('Keys: {}', keys)
+
+        if not keys:
+            continue
+
+        # Create a working image
+        image = np.zeros(np.array(featureimages.yield_an_item()).shape, dtype=np.uint32)
+        # And fill it with one path per label object
+        c = 0
+        for curk, curv in (dict(zip(keys, vals))).iteritems():
+            curv = np.array(curv)
+            curv = lib.swapaxes(curv, 0, 1)
+            lib.positions2value(image, curv, c)
+            c += 1
+
+        for d, k, v, kl in featureimages.data_iterator():
+
+            if type(v) is not IPL:
+
+                # Extract the region features of the working image
+                # TODO: Extract feature 'Count' manually due to anisotropy
+                newnewfeats = IPL(
+                    data=vigra.analysis.extractRegionFeatures(
+                        np.array(v).astype(np.float32),
+                        image, ignoreLabel=0,
+                        features=featurelist
+                    )
+                )
+                # Append to the recently computed list of features
+                for nk, nv in newnewfeats.iteritems():
+                    nv = nv[1:]
+                    if nk in newfeats:
+                        try:
+                            newfeats[kl + [nk]] = np.concatenate((newfeats[kl + [nk]], nv))
+                        except ValueError:
+                            pass
+                    else:
+                        newfeats[kl + [nk]] = nv
+
+    return newfeats
+
+
+def features_of_paths(ipl, paths_true, paths_false, featureims_true, featureims_false):
+    # def features_of_paths(ipl, disttransf_images, feature_images, thisparams):
+    """
+    The following datastructure is necessary for the dicts 'disttransf_images' and 'feature_images':
+    true
+    .   [locmax_name]
+    .   .   [feature_name]
+    false
+    .   [locmax_name]
+    .   .   [feature_name]
+
+    ipl has this datastructure:
+    true
+    .   [locmax_name]
+    .   .   [labels]
+    .   .   .   [paths]
+    false
+    .   [locmax_name]
+    .   .   [labels]
+    .   .   .   [paths]
+
+    :param ipl:
+    :param disttransf_images:
+    :param feature_images:
+    :param thisparams:
+    :return:
+    """
+
+    params = ipl.get_params()
+    thisparams = params['features_of_paths']
+
+    features = IPL()
+
+    features['true'] = get_features(
+        paths_true, featureims_true,
+        thisparams['features'],
+        thisparams['max_paths_per_label'], ipl=ipl
+    )
+
+    features['false'] = get_features(
+        paths_false, featureims_false,
+        thisparams['features'],
+        thisparams['max_paths_per_label'], ipl=ipl
+    )
+
+    return features

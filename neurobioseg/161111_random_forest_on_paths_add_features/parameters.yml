@@ -26,13 +26,15 @@ borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.s
 borderctname:   'centroids'
 pathstruefile:  'cremi.splA.train.pathstrue.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 pathsfalsefile: 'cremi.splA.train.pathsfalse.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 
 run_remove_small_objects: False
 run_merge_adjacent_objects: False
 run_compute_feature_images: False
 run_find_border_contacts: False
 run_paths_of_labels: False
-run_paths_of_merges: True
+run_paths_of_merges: False
+run_features_of_paths: True
 
 remove_small_objects:
     bysize: 10000
@@ -124,6 +126,17 @@ paths_of_merges:
     ignorelabels: []
     max_end_count: 5
     max_end_count_seed: ~
+
+features_of_paths:
+    features:
+        - Sum
+        - Mean
+        - Variance
+        - Maximum
+        - Minimum
+        - Kurtosis
+    max_paths_per_label: 25
+
 
 
 

@@ -79,8 +79,12 @@ def features_along_paths(paths, feature_im, features_out):
 def get_features(paths, featureimage, featurelist, max_paths_per_label, ipl=None):
 
     newfeats = IPL()
+
+    # TODO: Selection of a limited amount of paths should be random
     keylist = range(0, max_paths_per_label)
     keylist = [str(x) for x in keylist]
+
+    # Iterate over all paths, yielding a list of one path per label object until no paths are left
     for i, keys, vals in paths.simultaneous_iterator(
             max_count_per_item=max_paths_per_label,
             keylist=keylist):
@@ -88,15 +92,16 @@ def get_features(paths, featureimage, featurelist, max_paths_per_label, ipl=None
         if ipl is not None:
             ipl.logging('Working in iteration = {}', i)
 
+        # Create a working image
         image = np.zeros(featureimage.shape, dtype=np.uint32)
-
+        # And fill it with one path per label object
         c = 1
         for curk, curv in (dict(zip(keys, vals))).iteritems():
-
             curv = lib.swapaxes(curv, 0, 1)
             lib.positions2value(image, curv, c)
             c += 1
 
+        # Extract the region features of the working image
         newnewfeats = IPL(
             data=vigra.analysis.extractRegionFeatures(
                 featureimage,

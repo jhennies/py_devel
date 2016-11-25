@@ -292,6 +292,12 @@ class RecursiveDict(dict, SimpleLogger):
                 # self[kl] = tself
                 self[kl] = self[kl].pop(layername)
 
+    def delete_items(self, key):
+
+        for d, k, v, kl in self.data_iterator(yield_short_kl=True):
+            if k == key:
+                del self[kl][k]
+
     def inkeys(self, kl):
 
         if kl:
@@ -374,6 +380,11 @@ class RecursiveDict(dict, SimpleLogger):
         Deep copy this instance
         """
         return type(self)(data = self)
+
+    def yield_an_item(self):
+        for d, k, v, kl in self.data_iterator():
+            if type(v) is not type(self):
+                return v
 
 
 class Hdf5Processing(RecursiveDict, YamlParams):
