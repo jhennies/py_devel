@@ -111,11 +111,11 @@ def run_features_of_paths(yamlfile):
 
         # ipl.logging('\nInitial datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
 
-        features = features_of_paths(ipl)
+        features_of_paths(ipl)
 
         # ipl.logging('\nFinal datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
 
-        features.write(filepath=params['intermedfolder'] + params['featuresfile'])
+        # features.write(filepath=params['intermedfolder'] + params['featuresfile'])
 
         ipl.logging('')
         ipl.stoplogger()

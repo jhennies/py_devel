@@ -765,10 +765,19 @@ def features_of_paths(ipl, paths_true, paths_false, featureims_true, featureims_
         thisparams['max_paths_per_label'], ipl=ipl
     )
 
+    features.write(
+        filepath=params['intermedfolder'] + params['featuresfile'],
+        keys='true', search=True
+    )
+    features['true'] = None
+
     features['false'] = get_features(
         paths_false, featureims_false,
         thisparams['features'],
         thisparams['max_paths_per_label'], ipl=ipl
     )
 
-    return features
+    features.write(
+        filepath=params['intermedfolder'] + params['featuresfile'],
+        keys='false', search=True
+    )
