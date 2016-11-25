@@ -692,7 +692,7 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
         # Create a working image
         image = np.zeros(np.array(featureimages.yield_an_item()).shape, dtype=np.uint32)
         # And fill it with one path per label object
-        c = 0
+        c = 1
         for curk, curv in (dict(zip(keys, vals))).iteritems():
             curv = np.array(curv)
             curv = lib.swapaxes(curv, 0, 1)
@@ -715,7 +715,7 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
                 # Append to the recently computed list of features
                 for nk, nv in newnewfeats.iteritems():
                     nv = nv[1:]
-                    if nk in newfeats:
+                    if newfeats.inkeys(kl+[nk]):
                         try:
                             newfeats[kl + [nk]] = np.concatenate((newfeats[kl + [nk]], nv))
                         except ValueError:
@@ -726,7 +726,7 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
     return newfeats
 
 
-def features_of_paths(ipl, paths_true, paths_false, featureims_true, featureims_false):
+def features_of_paths(ipl, paths_true, paths_false, featureims_true, featureims_false, kl):
     # def features_of_paths(ipl, disttransf_images, feature_images, thisparams):
     """
     The following datastructure is necessary for the dicts 'disttransf_images' and 'feature_images':
@@ -765,11 +765,11 @@ def features_of_paths(ipl, paths_true, paths_false, featureims_true, featureims_
         thisparams['max_paths_per_label'], ipl=ipl
     )
 
-    features.write(
-        filepath=params['intermedfolder'] + params['featuresfile'],
-        keys='true', search=True
-    )
-    features['true'] = None
+    # features.write(
+    #     filepath=params['intermedfolder'] + params['featuresfile'],
+    #     keys=kl + ['true'], search=True
+    # )
+    # features[kl + ['true']] = None
 
     features['false'] = get_features(
         paths_false, featureims_false,
@@ -777,7 +777,9 @@ def features_of_paths(ipl, paths_true, paths_false, featureims_true, featureims_
         thisparams['max_paths_per_label'], ipl=ipl
     )
 
-    features.write(
-        filepath=params['intermedfolder'] + params['featuresfile'],
-        keys='false', search=True
-    )
+    # features.write(
+    #     filepath=params['intermedfolder'] + params['featuresfile'],
+    #     keys=kl + ['false'], search=True
+    # )
+
+    return features

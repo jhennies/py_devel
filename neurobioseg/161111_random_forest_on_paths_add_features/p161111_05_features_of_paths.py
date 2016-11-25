@@ -81,16 +81,17 @@ def features_of_paths(ipl):
             # # Load the image data into memory
             # ipl[kl].populate()
 
-            features = libip.features_of_paths(
+            ipl[kl] = libip.features_of_paths(
                 ipl,
                 paths_true[kl][k], paths_false[kl][k],
-                featureims_true[kl], featureims_false[kl]
+                featureims_true[kl], featureims_false[kl],
+                kl
             )
 
-            # # Write the result to file
-            # ipl.write(filepath=targetfile, keys=[kl])
+            # Write the result to file
+            ipl.write(filepath=targetfile, keys=[kl])
             # # Free memory
-            # ipl[kl] = None
+            ipl[kl] = None
 
 
 
@@ -121,6 +122,7 @@ def run_features_of_paths(yamlfile):
         ipl.stoplogger()
 
     except:
+        raise
         ipl.errout('Unexpected error')
 
 

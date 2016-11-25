@@ -9,6 +9,7 @@ from p161111_03_find_border_contacts import run_find_border_contacts
 from p161111_04a_paths_of_labels import run_paths_of_labels
 from p161111_04b_paths_of_merges import run_paths_of_merges
 from p161111_05_features_of_paths import run_features_of_paths
+from p161111_06a_random_forest import run_random_forest
 from yaml_parameters import YamlParams
 import os
 from shutil import copy
@@ -128,6 +129,10 @@ if __name__ == '__main__':
     if params['run_features_of_paths']:
         yaml.logging('Extracting features along paths ...')
         run_features_of_paths(yaml.get_filename())
+
+    if params['run_random_forest']:
+        yaml.logging('Running random forst on paths ...')
+        run_random_forest(yaml.get_filename())
     # _________________________________________________________________________________________
 
     yaml.stoplogger()

@@ -27,6 +27,10 @@ borderctname:   'centroids'
 pathstruefile:  'cremi.splA.train.pathstrue.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 pathsfalsefile: 'cremi.splA.train.pathsfalse.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+resultsfile:     'cremi.splA.train.results.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+resultsnames:
+    - 'random_forest'
+    - 'mil'
 
 run_remove_small_objects: False
 run_merge_adjacent_objects: False
@@ -34,7 +38,8 @@ run_compute_feature_images: False
 run_find_border_contacts: False
 run_paths_of_labels: False
 run_paths_of_merges: False
-run_features_of_paths: True
+run_features_of_paths: False
+run_random_forest: True
 
 remove_small_objects:
     bysize: 10000
@@ -112,8 +117,7 @@ compute_feature_images:
                     params: [10]
                     func: gaussian
 
-find_border_contacts:
-    p: 1
+find_border_contacts: ~
 
 paths_of_labels:
     penaltypower: 10
@@ -136,6 +140,8 @@ features_of_paths:
         - Minimum
         - Kurtosis
     max_paths_per_label: 25
+
+random_forest: ~
 
 
 
