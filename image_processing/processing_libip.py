@@ -7,6 +7,7 @@ from hdf5_image_processing import Hdf5ImageProcessingLib as IPL
 import random
 from vigra import graphs
 from sklearn.ensemble import RandomForestClassifier as Skrf
+from hdf5_processing import RecursiveDict as rdict
 
 __author__ = 'jhennies'
 
@@ -147,7 +148,13 @@ def find_border_centroids(ipl, faces, key, facesinfo, facesd, resultkey, results
                 curdist[curdist < amax] = 0
                 curdist[curdist > 0] = lbl
                 # Only one pixel is allowed to be selected
-                bds = lib.find_bounding_rect(curdist)
+                try:
+                    bds = lib.find_bounding_rect(curdist)
+                except ValueError:
+                    # A value error is thrown when the current object is just one pixel in size
+                    # This can be ignored without ignoring relevant border contacts
+                    pass
+
                 centroid = (int((bds[1][0] + bds[1][1]-1) / 2), int((bds[0][0] + bds[0][1]-1) / 2))
 
                 # Now translate the calculated centroid to the position within the orignial 3D volume
@@ -700,6 +707,7 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
             lib.positions2value(image, curv, c)
             c += 1
 
+        # TODO: If this loop iterated over the parameter list it would be more broadly applicable
         for d, k, v, kl in featureimages.data_iterator():
 
             if type(v) is not IPL:
@@ -892,13 +900,13 @@ def rf_make_forest_input(features):
 
 def random_forest(trainfeatures, testfeatures):
 
-    print '\n---\n'
-    print 'trainfeatures: '
-    print trainfeatures
-    print '\n---\n'
-    print 'testfeatures'
-    print testfeatures
-    print '\n---\n'
+    # print '\n---\n'
+    # print 'trainfeatures: '
+    # print trainfeatures
+    # print '\n---\n'
+    # print 'testfeatures'
+    # print testfeatures
+    # print '\n---\n'
 
     # Done: For a first test, use half for training and half for testing
     # Done: Compute the class true features
@@ -911,9 +919,46 @@ def random_forest(trainfeatures, testfeatures):
 
     result = rf.predict(testdata)
 
-    print result.shape
-    print testlabels.shape
+    # print result.shape
+    # print testlabels.shape
 
-    result = zip(result, testlabels)
+    return zip(result, testlabels)
 
-    return result
+
+def evaluation(x):
+
+    def tp(l):
+        return len([x for x in l if (x[0] + x[1] == 0)])
+
+    def fp(l):
+        return len([x for x in l if (x[0] + x[1] == 1 and x[0] == 0)])
+
+    def fn(l):
+        return len([x for x in l if (x[0] + x[1] == 1 and x[0] == 1)])
+
+    def tn(l):
+        return len([x for x in l if (x[0] + x[1] == 2)])
+
+    def p(l):
+        return len([x for x in l if (x[0] == 0)])
+
+    def n(l):
+        return len([x for x in l if (x[0] == 1)])
+
+    def recall(l):
+        return float(tp(l)) / (tp(l) + fn(l))
+
+    def precision(l):
+        return float(tp(l)) / (tp(l) + fp(l))
+
+    def f1(l):
+        return float(2 * tp(l)) / (2 * tp(l) + fp(l) + fn(l))
+
+    def accuracy(l):
+        return float(tp(l) + tn(l)) / (p(l) + n(l))
+
+    return rdict(data={
+        'precision': precision(x), 'recall': recall(x), 'f1': f1(x), 'accuracy': accuracy(x)
+    })
+
+
