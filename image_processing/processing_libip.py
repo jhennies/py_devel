@@ -792,8 +792,19 @@ def rf_concatenate_feature_arrays(features):
     :param features:
     :return:
     """
-    features = np.concatenate(features.values(), axis=0)
-    return features
+    # features = np.concatenate(features.values(), axis=0)
+    # return features
+
+    rtrnfeats = None
+    for d, k, v, kl in features.data_iterator():
+        if type(v) is not type(features):
+            # For all leaves:
+            if rtrnfeats is not None:
+                rtrnfeats = np.concatenate((rtrnfeats, v), axis=1)
+            else:
+                rtrnfeats = v
+
+    return rtrnfeats
 
 
 def rf_combine_feature_arrays(features):
@@ -802,8 +813,12 @@ def rf_combine_feature_arrays(features):
     :param features:
     :return:
     """
-    for k, v in features.iteritems():
-        features[k] = np.concatenate(v.values(), axis=1)
+    # for k, v in features.iteritems():
+    #     features[k] = np.concatenate(v.values(), axis=1)
+    for d, k, v, kl in features.data_iterator():
+        if type(v) is type(features):
+            if type(v[v.keys()[0]]) is not type(features):
+                features[kl] = np.concatenate(v.values(), axis=1)
 
     return features
 
@@ -814,19 +829,40 @@ def rf_features_to_array(features):
     :param features:
     :return:
     """
-    for d, k, v, kl in features.data_iterator(maxdepth=1):
-        if d == 1:
-            features[kl] = np.array(map(list, zip(*v.values())))
+    for d, k, v, kl in features.data_iterator():
+        # if d == 1:
+        if type(v) is type(features):
+            if type(v[v.keys()[0]]) is not type(features):
+                features[kl] = np.array(map(list, zip(*v.values())))
 
     return features
 
 
 def rf_make_feature_array(features):
+    def shp(x):
+        return x.shape
+
+    # print 'features datastructure 0'
+    # print features.datastructure2string(maxdepth=1, function=shp)
 
     rf_features_to_array(features)
+    # print '...'
+    # print 'features datastructure 1'
+    # print features.datastructure2string(function=shp)
+
     rf_combine_feature_arrays(features)
+    # print '...'
+    # print 'features datastructure 2'
+    # print features.datastructure2string(function=shp)
+
     # From here on we need to use the return value since features changes type
     features = rf_concatenate_feature_arrays(features)
+    # print '...'
+    # print 'concatenated features'
+    # print features
+    # print '...'
+    # print features.shape
+
     return features
 
 
@@ -856,6 +892,14 @@ def rf_make_forest_input(features):
 
 def random_forest(trainfeatures, testfeatures):
 
+    print '\n---\n'
+    print 'trainfeatures: '
+    print trainfeatures
+    print '\n---\n'
+    print 'testfeatures'
+    print testfeatures
+    print '\n---\n'
+
     # Done: For a first test, use half for training and half for testing
     # Done: Compute the class true features
 
@@ -871,3 +915,5 @@ def random_forest(trainfeatures, testfeatures):
     print testlabels.shape
 
     result = zip(result, testlabels)
+
+    return result
