@@ -1,7 +1,7 @@
-datafolder: '/media/julian/Daten/datasets/cremi_2016/'
-resultfolder: /media/julian/Daten/datasets/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/
-intermedfolder: /media/julian/Daten/datasets/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/intermed/
-scriptsfolder: /media/julian/Daten/datasets/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/scripts/
+datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
+resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161128_random_forest_of_paths_add_features_cropped_develop/
+intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161128_random_forest_of_paths_add_features_cropped_develop/intermed/
+scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161128_random_forest_of_paths_add_features_cropped_develop/scripts/
 
 createfolders: True
 overwriteresults: True
@@ -32,14 +32,14 @@ resultsnames:
     - 'random_forest'
     - 'mil'
 
-run_remove_small_objects: False
-run_merge_adjacent_objects: False
-run_compute_feature_images: False
-run_find_border_contacts: False
-run_paths_of_labels: False
-run_paths_of_merges: False
-run_features_of_paths: False
-run_random_forest: True
+run_remove_small_objects: True
+run_merge_adjacent_objects: True
+run_compute_feature_images: True
+run_find_border_contacts: True
+run_paths_of_labels: True
+run_paths_of_merges: True
+run_features_of_paths: True
+run_random_forest: False
 
 remove_small_objects:
     bysize: 10000
@@ -122,13 +122,13 @@ find_border_contacts: ~
 paths_of_labels:
     penaltypower: 10
     ignorelabels: []
-    max_end_count: 5
+    max_end_count: 3
     max_end_count_seed: ~
 
 paths_of_merges:
     penaltypower: 10
     ignorelabels: []
-    max_end_count: 5
+    max_end_count: 3
     max_end_count_seed: ~
 
 features_of_paths:
@@ -139,7 +139,7 @@ features_of_paths:
         - Maximum
         - Minimum
         - Kurtosis
-    max_paths_per_label: 25
+    max_paths_per_label: 5
 
 random_forest: ~
 

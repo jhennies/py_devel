@@ -23,8 +23,11 @@ def load_images(ipl):
     params = ipl.get_params()
 
     # Paths within labels (true paths)
+    ipl.logging('Loading features ...')
+    ipl.logging('   File path = {}', params['intermedfolder'] + params['featuresfile'])
     ipl.data_from_file(
-        filepath=params['intermedfolder'] + params['featuresfile'],nodata=True
+        filepath=params['intermedfolder'] + params['featuresfile'],
+        nodata=True
     )
 
 
@@ -38,26 +41,54 @@ def random_forest(ipl):
     load_images(ipl)
     ipl.logging('\nInitial datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
 
+    result = IPL()
+
     for d, k, v, kl in ipl.data_iterator(yield_short_kl=True):
 
-        if k == 'true':
+        if k == '0':
 
             ipl.logging('===============================\nWorking on group: {}', kl)
 
             # TODO: Implement copy full logger
             ipl[kl].set_logger(ipl.get_logger())
 
-            # # Load the image data into memory
-            # ipl[kl].populate()
+            # Load the image data into memory
+            ipl[kl].populate()
 
-            a = IPL()
-            a['true'] = libip.rf_make_feature_array(ipl[kl]['true'])
+            # def shp(x):
+            #     return x.shape
+
+            # print ipl[kl]['0', 'true']
+            # print ipl[kl].dss(function=shp)
+
+            ipl[kl]['0', 'true'] = libip.rf_make_feature_array(ipl[kl]['0', 'true'])
+            ipl.logging("Computed feature array for ['0', 'true'] with shape {}", ipl[kl]['0', 'true'].shape)
+            ipl[kl]['0', 'false'] = libip.rf_make_feature_array(ipl[kl]['0', 'false'])
+            ipl.logging("Computed feature array for ['0', 'false'] with shape {}", ipl[kl]['0', 'false'].shape)
+            ipl[kl]['1', 'true'] = libip.rf_make_feature_array(ipl[kl]['1', 'true'])
+            ipl.logging("Computed feature array for ['1', 'true'] with shape {}", ipl[kl]['1', 'true'].shape)
+            ipl[kl]['1', 'false'] = libip.rf_make_feature_array(ipl[kl]['1', 'false'])
+            ipl.logging("Computed feature array for ['1', 'false'] with shape {}", ipl[kl]['1', 'false'].shape)
+
+            # print '...'
+            # print ipl[kl]['0']
+
+            result[kl + ['0']] = libip.random_forest(ipl[kl]['0'], ipl[kl]['1'])
+            result[kl + ['1']] = libip.random_forest(ipl[kl]['1'], ipl[kl]['0'])
+
+            ipl.logging("[kl]['0']")
+            for i in result[kl]['0']:
+                ipl.logging('{}', i)
+            ipl.logging("[kl]['1']")
+            for i in result[kl]['1']:
+                ipl.logging('{}', i)
 
             # # Write the result to file
             # ipl.write(filepath=targetfile, keys=[kl])
-            # # Free memory
-            # ipl[kl] = None
+            # Free memory
+            ipl[kl] = None
 
+    return result
 
 
 def run_random_forest(yamlfile):
@@ -77,7 +108,7 @@ def run_random_forest(yamlfile):
 
         # ipl.logging('\nInitial datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
 
-        random_forest(ipl)
+        result = random_forest(ipl)
 
         # ipl.logging('\nFinal datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
 
