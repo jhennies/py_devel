@@ -25,12 +25,12 @@ def split_in_xyz(ipl):
 if __name__ == "__main__":
 
     infiles = [
-        '/media/julian/Daten/datasets/cremi_2016/cremi.splA.train.probs.crop.h5',
-        '/media/julian/Daten/datasets/cremi_2016/cremi.splA.train.raw_neurons.crop.h5'
+        '/mnt/localdata02/jhennies/neuraldata/cremi_2016/cremi.splA.train.probs.crop.h5',
+        '/mnt/localdata02/jhennies/neuraldata/cremi_2016/cremi.splA.train.raw_neurons.crop.h5'
     ]
     outfiles = [
-        '/media/julian/Daten/datasets/cremi_2016/cremi.splA.train.probs.crop.crop_x10_110_y200:712_z200_712.split_xyz.h5',
-        '/media/julian/Daten/datasets/cremi_2016/cremi.splA.train.raw_neurons.crop.crop_x10_110_y200:712_z200_712.split_xyz.h5'
+        '/mnt/localdata02/jhennies/neuraldata/cremi_2016/cremi.splA.train.probs.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5',
+        '/mnt/localdata02/jhennies/neuraldata/cremi_2016/cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
     ]
 
     for i in xrange(0, len(infiles)):
