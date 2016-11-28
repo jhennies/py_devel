@@ -6,6 +6,7 @@ import processing_lib as lib
 from hdf5_image_processing import Hdf5ImageProcessingLib as IPL
 import random
 from vigra import graphs
+from sklearn.ensemble import RandomForestClassifier as Skrf
 
 __author__ = 'jhennies'
 
@@ -783,3 +784,90 @@ def features_of_paths(ipl, paths_true, paths_false, featureims_true, featureims_
     # )
 
     return features
+
+
+def rf_concatenate_feature_arrays(features):
+    """
+    Concatenate feature array to gain a list of more entries
+    :param features:
+    :return:
+    """
+    features = np.concatenate(features.values(), axis=0)
+    return features
+
+
+def rf_combine_feature_arrays(features):
+    """
+    Combine arrays to gain entries with more features
+    :param features:
+    :return:
+    """
+    for k, v in features.iteritems():
+        features[k] = np.concatenate(v.values(), axis=1)
+
+    return features
+
+
+def rf_features_to_array(features):
+    """
+    Make an array from the datastructure
+    :param features:
+    :return:
+    """
+    for d, k, v, kl in features.data_iterator(maxdepth=1):
+        if d == 1:
+            features[kl] = np.array(map(list, zip(*v.values())))
+
+    return features
+
+
+def rf_make_feature_array(features):
+
+    rf_features_to_array(features)
+    rf_combine_feature_arrays(features)
+    # From here on we need to use the return value since features changes type
+    features = rf_concatenate_feature_arrays(features)
+    return features
+
+
+def rf_eliminate_invalid_entries(data):
+
+    data[np.isnan(data)] = 0
+    data[np.isinf(data)] = 0
+
+    data = data.astype(np.float32)
+
+    return data
+
+
+def rf_make_forest_input(features):
+
+    lentrue = features['true'].shape[0]
+    lenfalse = features['false'].shape[0]
+
+    classes = np.concatenate((np.ones((lentrue,)), np.zeros((lenfalse,))))
+
+    data = np.concatenate((features['true'], features['false']), axis=0)
+
+    data = rf_eliminate_invalid_entries(data)
+
+    return [data, classes]
+
+
+def random_forest(trainfeatures, testfeatures):
+
+    # Done: For a first test, use half for training and half for testing
+    # Done: Compute the class true features
+
+    traindata, trainlabels = rf_make_forest_input(trainfeatures)
+    testdata, testlabels = rf_make_forest_input(testfeatures)
+
+    rf = Skrf()
+    rf.fit(traindata, trainlabels)
+
+    result = rf.predict(testdata)
+
+    print result.shape
+    print testlabels.shape
+
+    result = zip(result, testlabels)
