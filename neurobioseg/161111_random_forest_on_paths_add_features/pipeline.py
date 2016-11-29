@@ -119,7 +119,7 @@ if __name__ == '__main__':
         copy('p161111_00_remove_small_objects.py', params['scriptsfolder'])
         copy(yamlfile, paramfile_rso)
     if params['run_merge_adjacent_objects']:
-        copy('p161111_01_remove_small_objects.py', params['scriptsfolder'])
+        copy('p161111_01_merge_adjacent_objects.py', params['scriptsfolder'])
         copy(yamlfile, paramfile_mao)
     if params['run_compute_feature_images']:
         copy('p161111_02_compute_feature_images.py', params['scriptsfolder'])

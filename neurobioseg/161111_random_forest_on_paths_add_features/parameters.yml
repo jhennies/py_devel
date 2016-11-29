@@ -1,7 +1,7 @@
 datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
-resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161128_random_forest_of_paths_add_features_full_trainset_100merges/
-intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161128_random_forest_of_paths_add_features_full_trainset_100merges/intermed/
-scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161128_random_forest_of_paths_add_features_full_trainset_100merges/scripts/
+resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161129_neurobioseg_feats_raw-gauss_disttransf-gauss/
+intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161129_neurobioseg_feats_raw-gauss_disttransf-gauss/intermed/
+scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161129_neurobioseg_feats_raw-gauss_disttransf-gauss/scripts/
 
 createfolders: True
 overwriteresults: True
@@ -55,20 +55,6 @@ compute_feature_images:
     anisotropy: [10, 1, 1]
     features:
         rawdata:
-            raw: ~
-            gauss_1:
-                params: [1]
-                func: gaussian
-            gauss_3:
-                params: [3]
-                func: gaussian
-            gauss_5:
-                params: [5]
-                func: gaussian
-            gauss_10:
-                params: [10]
-                func: gaussian
-        probs:
             raw: ~
             gauss_1:
                 params: [1]
