@@ -42,6 +42,7 @@ def random_forest(ipl):
     ipl.logging('\nInitial datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
 
     result = IPL()
+    evaluation = rdict()
 
     for d, k, v, kl in ipl.data_iterator(yield_short_kl=True):
 
@@ -76,19 +77,29 @@ def random_forest(ipl):
             result[kl + ['0']] = libip.random_forest(ipl[kl]['0'], ipl[kl]['1'])
             result[kl + ['1']] = libip.random_forest(ipl[kl]['1'], ipl[kl]['0'])
 
+            evaluation[kl + ['0']] = libip.evaluation(result[kl]['0'])
+            evaluation[kl + ['1']] = libip.evaluation(result[kl]['1'])
+
+            ipl.logging('+++ RESULTS +++')
             ipl.logging("[kl]['0']")
             for i in result[kl]['0']:
                 ipl.logging('{}', i)
+            for key, value in evaluation[kl]['0'].iteritems():
+                ipl.logging('{} = {}', key, value)
+
+            ipl.logging('+++')
             ipl.logging("[kl]['1']")
             for i in result[kl]['1']:
                 ipl.logging('{}', i)
+            for key, value in evaluation[kl]['1'].iteritems():
+                ipl.logging('{} = {}', key, value)
 
             # # Write the result to file
             # ipl.write(filepath=targetfile, keys=[kl])
             # Free memory
             ipl[kl] = None
 
-    return result
+    return IPL(data=result), IPL(data=evaluation)
 
 
 def run_random_forest(yamlfile):
@@ -107,12 +118,12 @@ def run_random_forest(yamlfile):
         copy(yamlfile, params['scriptsfolder'] + 'random_forest.parameters.yml')
 
         # ipl.logging('\nInitial datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
-
-        result = random_forest(ipl)
+        result = IPL()
+        result['result'], result['evaluation'] = random_forest(ipl)
 
         # ipl.logging('\nFinal datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
 
-        # features.write(filepath=params['intermedfolder'] + params['featuresfile'])
+        result.write(filepath=params['resultfolder'] + params['resultsfile'])
 
         ipl.logging('')
         ipl.stoplogger()

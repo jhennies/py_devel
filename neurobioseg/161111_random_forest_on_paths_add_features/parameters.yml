@@ -1,45 +1,45 @@
 datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
-resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161128_random_forest_of_paths_add_features_cropped_develop/
-intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161128_random_forest_of_paths_add_features_cropped_develop/intermed/
-scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161128_random_forest_of_paths_add_features_cropped_develop/scripts/
+resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161128_random_forest_of_paths_add_features_full_trainset_100merges/
+intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161128_random_forest_of_paths_add_features_full_trainset_100merges/intermed/
+scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161128_random_forest_of_paths_add_features_full_trainset_100merges/scripts/
 
 createfolders: True
 overwriteresults: True
 
-rawdatafile:    'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+rawdatafile:    'cremi.splA.train.raw_neurons.crop.split_xyz.h5'
 rawdataname:    'raw'
-labelsfile:     'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+labelsfile:     'cremi.splA.train.raw_neurons.crop.split_xyz.h5'
 labelsname:     'neuron_ids'
-probsfile:      'cremi.splA.train.probs.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+probsfile:      'cremi.splA.train.probs.crop.split_xyz.h5'
 probsname:      'data'
-largeobjfile:   'cremi.splA.train.largeobj.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+largeobjfile:   'cremi.splA.train.largeobj.crop.split_xyz.h5'
 largeobjname:   'largeobj'
-largeobjmfile:  'cremi.splA.train.largeobjm.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+largeobjmfile:  'cremi.splA.train.largeobjm.crop.split_xyz.h5'
 largeobjmnames:
     - 'largeobjm'
     - 'mergeids_small'
     - 'mergeids_random'
     - 'mergeids_all'
     - 'change_hash'
-featureimsfile: 'cremi.splA.train.featureims.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
-borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+featureimsfile: 'cremi.splA.train.featureims.crop.split_xyz.h5'
+borderctfile:   'cremi.splA.train.borderct.crop.split_xyz.h5'
 borderctname:   'centroids'
-pathstruefile:  'cremi.splA.train.pathstrue.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
-pathsfalsefile: 'cremi.splA.train.pathsfalse.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
-featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
-resultsfile:     'cremi.splA.train.results.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+pathstruefile:  'cremi.splA.train.pathstrue.crop.split_xyz.h5'
+pathsfalsefile: 'cremi.splA.train.pathsfalse.crop.split_xyz.h5'
+featuresfile:   'cremi.splA.train.features.crop.split_xyz.h5'
+resultsfile:     'cremi.splA.train.results.crop.split_xyz.h5'
 resultsnames:
     - 'random_forest'
     - 'mil'
 
-run_remove_small_objects: True
+run_remove_small_objects: False
 run_merge_adjacent_objects: True
 run_compute_feature_images: True
 run_find_border_contacts: True
 run_paths_of_labels: True
 run_paths_of_merges: True
 run_features_of_paths: True
-run_random_forest: False
+run_random_forest: True
 
 remove_small_objects:
     bysize: 10000
@@ -48,7 +48,7 @@ remove_small_objects:
 merge_adjacent_objects:
     seed: ~
     numberbysize: 0
-    numberbyrandom: 10
+    numberbyrandom: 100
     algorithm: pairs
 
 compute_feature_images:
@@ -122,13 +122,13 @@ find_border_contacts: ~
 paths_of_labels:
     penaltypower: 10
     ignorelabels: []
-    max_end_count: 3
+    max_end_count: 5
     max_end_count_seed: ~
 
 paths_of_merges:
     penaltypower: 10
     ignorelabels: []
-    max_end_count: 3
+    max_end_count: 5
     max_end_count_seed: ~
 
 features_of_paths:
@@ -139,13 +139,7 @@ features_of_paths:
         - Maximum
         - Minimum
         - Kurtosis
+        - Skewness
     max_paths_per_label: 5
 
 random_forest: ~
-
-
-
-
-
-
-

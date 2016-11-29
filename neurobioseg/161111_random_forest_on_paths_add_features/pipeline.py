@@ -98,41 +98,42 @@ if __name__ == '__main__':
 
     # Copy script and parameter file to the script folder
     copy(inspect.stack()[0][1], params['scriptsfolder'])
-    copy(yamlfile, params['scriptsfolder'] + 'pipeline.parameters.yml')
+    yamlfilename = params['scriptsfolder'] + 'pipeline.parameters.yml'
+    copy(yamlfile, yamlfilename)
 
     # The pipeline
     # _________________________________________________________________________________________
     if params['run_remove_small_objects']:
         yaml.logging('Removing small objects ...')
-        run_remove_small_objects(yaml.get_filename())
+        run_remove_small_objects(yamlfilename)
 
     if params['run_merge_adjacent_objects']:
         yaml.logging('Merging adjacent objects ...')
-        run_merge_adjacent_objects(yaml.get_filename())
+        run_merge_adjacent_objects(yamlfilename)
 
     if params['run_compute_feature_images']:
         yaml.logging('Computing feature images ...')
-        run_compute_feature_images(yaml.get_filename())
+        run_compute_feature_images(yamlfilename)
 
     if params['run_find_border_contacts']:
         yaml.logging('Finding border contacts ...')
-        run_find_border_contacts(yaml.get_filename())
+        run_find_border_contacts(yamlfilename)
 
     if params['run_paths_of_labels']:
         yaml.logging('Calculating paths of labels ...')
-        run_paths_of_labels(yaml.get_filename())
+        run_paths_of_labels(yamlfilename)
 
     if params['run_paths_of_merges']:
         yaml.logging('Calculating paths of merges ...')
-        run_paths_of_merges(yaml.get_filename())
+        run_paths_of_merges(yamlfilename)
 
     if params['run_features_of_paths']:
         yaml.logging('Extracting features along paths ...')
-        run_features_of_paths(yaml.get_filename())
+        run_features_of_paths(yamlfilename)
 
     if params['run_random_forest']:
         yaml.logging('Running random forst on paths ...')
-        run_random_forest(yaml.get_filename())
+        run_random_forest(yamlfilename)
     # _________________________________________________________________________________________
 
     yaml.stoplogger()
