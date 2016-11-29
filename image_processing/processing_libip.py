@@ -482,7 +482,7 @@ def find_shortest_path(ipl, penaltypower, bounds, disttransf, locmax,
 
 def paths_of_labels(
         ipl, labelkey, pathendkey, disttransfkey, thisparams, ignore=[],
-        max_end_count=[], max_end_count_seed=[]
+        max_end_count=[], max_end_count_seed=[], debug=False
 ):
 
     # if type(locmaxkeys) is str:
@@ -533,12 +533,12 @@ def paths_of_labels(
 
                 paths['pathsim'][bounds][pathsim > 0] = pathsim[pathsim > 0]
 
-
-    paths['overlay'] = np.array(
-        [paths['pathsim'],
-        ipl[labelkey].astype(np.float32) / np.amax(ipl[labelkey]),
-        vigra.filters.multiBinaryDilation(ipl[pathendkey].astype(np.uint8), 5)]
-    )
+    if debug:
+        paths['overlay'] = np.array(
+            [paths['pathsim'],
+            ipl[labelkey].astype(np.float32) / np.amax(ipl[labelkey]),
+            vigra.filters.multiBinaryDilation(ipl[pathendkey].astype(np.uint8), 5)]
+        )
 
     return paths
 
@@ -614,7 +614,7 @@ def find_shortest_path_labelpairs(ipl, penaltypower, bounds, disttransf, locmax,
 
 def paths_of_labelpairs(
         ipl, lblsmkey, lblskey, changehashkey, pathendkey, disttransfkey, thisparams, ignore,
-        max_end_count=[], max_end_count_seed=[]
+        max_end_count=[], max_end_count_seed=[], debug=False
 ):
 
     # This results in the format:
@@ -669,11 +669,12 @@ def paths_of_labelpairs(
 
                 paths['pathsim'][bounds][pathsim > 0] = pathsim[pathsim > 0]
 
-        paths['overlay'] = np.array([
-            paths['pathsim'],
-            ipl[lblskey].astype(np.float32) / np.amax(ipl[lblskey]),
-            vigra.filters.multiBinaryDilation(ipl[pathendkey].astype(np.uint8), 5)
-        ])
+        if debug:
+            paths['overlay'] = np.array([
+                paths['pathsim'],
+                ipl[lblskey].astype(np.float32) / np.amax(ipl[lblskey]),
+                vigra.filters.multiBinaryDilation(ipl[pathendkey].astype(np.uint8), 5)
+            ])
 
     return paths
 

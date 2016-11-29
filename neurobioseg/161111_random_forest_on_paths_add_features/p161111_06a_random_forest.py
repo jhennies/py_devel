@@ -113,9 +113,9 @@ def run_random_forest(yamlfile):
 
     try:
 
-        # Copy the script file and the parameters to the scriptsfolder
-        copy(inspect.stack()[0][1], params['scriptsfolder'])
-        copy(yamlfile, params['scriptsfolder'] + 'random_forest.parameters.yml')
+        # # Copy the script file and the parameters to the scriptsfolder
+        # copy(inspect.stack()[0][1], params['scriptsfolder'])
+        # copy(yamlfile, params['scriptsfolder'] + 'random_forest.parameters.yml')
 
         # ipl.logging('\nInitial datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
         result = IPL()

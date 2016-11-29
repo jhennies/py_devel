@@ -107,7 +107,7 @@ def find_border_contacts(ipl):
                 ipl[kl],
                 (params['largeobjname'], params['largeobjmnames'][0]),
                 params['borderctname'],
-                debug=True
+                debug=False
             )
 
             # Write the result to file
@@ -127,9 +127,9 @@ def run_find_border_contacts(yamlfile):
 
     try:
 
-        # Copy the script file and the parameters to the scriptsfolder
-        copy(inspect.stack()[0][1], params['scriptsfolder'])
-        copy(yamlfile, params['scriptsfolder'] + 'find_border_contacts.parameters.yml')
+        # # Copy the script file and the parameters to the scriptsfolder
+        # copy(inspect.stack()[0][1], params['scriptsfolder'])
+        # copy(yamlfile, params['scriptsfolder'] + 'find_border_contacts.parameters.yml')
 
         # ipl.logging('\nInitial datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
 

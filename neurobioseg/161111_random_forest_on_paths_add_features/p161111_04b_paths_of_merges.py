@@ -95,7 +95,8 @@ def paths_of_merges(ipl):
                 thisparams,
                 ignore=thisparams['ignorelabels'],
                 max_end_count=thisparams['max_end_count'],
-                max_end_count_seed=thisparams['max_end_count_seed']
+                max_end_count_seed=thisparams['max_end_count_seed'],
+                debug=False
             )
 
             # Write the result to file
@@ -116,9 +117,9 @@ def run_paths_of_merges(yamlfile):
 
     try:
 
-        # Copy the script file and the parameters to the scriptsfolder
-        copy(inspect.stack()[0][1], params['scriptsfolder'])
-        copy(yamlfile, params['scriptsfolder'] + 'paths_of_merges.parameters.yml')
+        # # Copy the script file and the parameters to the scriptsfolder
+        # copy(inspect.stack()[0][1], params['scriptsfolder'])
+        # copy(yamlfile, params['scriptsfolder'] + 'paths_of_merges.parameters.yml')
 
         # ipl.logging('\nInitial datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
 

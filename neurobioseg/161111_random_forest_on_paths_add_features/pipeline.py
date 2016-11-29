@@ -101,39 +101,78 @@ if __name__ == '__main__':
     yamlfilename = params['scriptsfolder'] + 'pipeline.parameters.yml'
     copy(yamlfile, yamlfilename)
 
+    # Parameter files
+    paramfile_rso = params['scriptsfolder'] + 'remove_small_objects.parameters.yml'
+    paramfile_mao = params['scriptsfolder'] + 'merge_adjacent_objects.parameters.yml'
+    paramfile_cfi = params['scriptsfolder'] + 'compute_feature_images.parameters.yml'
+    paramfile_fbc = params['scriptsfolder'] + 'find_border_contacts.parameters.yml'
+    paramfile_pol = params['scriptsfolder'] + 'paths_of_labels.parameters.yml'
+    paramfile_pom = params['scriptsfolder'] + 'paths_of_merges.parameters.yml'
+    paramfile_fop = params['scriptsfolder'] + 'features_of_paths.parameters.yml'
+    paramfile_rdf = params['scriptsfolder'] + 'random_forest.parameters.yml'
+
+    # Copy the script files and parameter files of the pipeline components
+    # Copying the parameter file for each pipeline component may seem redundant (it is the same parameter file every
+    #   time) but it makes sense if one re-computes part of the pipeline with different parameters. Also it doesn't take
+    #   much disk space
+    if params['run_remove_small_objects']:
+        copy('p161111_00_remove_small_objects.py', params['scriptsfolder'])
+        copy(yamlfile, paramfile_rso)
+    if params['run_merge_adjacent_objects']:
+        copy('p161111_01_remove_small_objects.py', params['scriptsfolder'])
+        copy(yamlfile, paramfile_mao)
+    if params['run_compute_feature_images']:
+        copy('p161111_02_compute_feature_images.py', params['scriptsfolder'])
+        copy(yamlfile, paramfile_cfi)
+    if params['run_find_border_contacts']:
+        copy('p161111_03_find_border_contacts.py', params['scriptsfolder'])
+        copy(yamlfile, paramfile_fbc)
+    if params['run_paths_of_labels']:
+        copy('p161111_04a_paths_of_labels.py', params['scriptsfolder'])
+        copy(yamlfile, paramfile_pol)
+    if params['run_paths_of_merges']:
+        copy('p161111_04b_paths_of_merges.py', params['scriptsfolder'])
+        copy(yamlfile, paramfile_pom)
+    if params['run_features_of_paths']:
+        copy('p161111_05_features_of_paths.py', params['scriptsfolder'])
+        copy(yamlfile, paramfile_fop)
+    if params['run_random_forest']:
+        copy('p161111_06a_random_forest.py', params['scriptsfolder'])
+        copy(yamlfile, paramfile_rdf)
+
     # The pipeline
     # _________________________________________________________________________________________
     if params['run_remove_small_objects']:
         yaml.logging('Removing small objects ...')
-        run_remove_small_objects(yamlfilename)
+        run_remove_small_objects(paramfile_rso)
 
     if params['run_merge_adjacent_objects']:
         yaml.logging('Merging adjacent objects ...')
-        run_merge_adjacent_objects(yamlfilename)
+        run_merge_adjacent_objects(paramfile_mao)
 
     if params['run_compute_feature_images']:
         yaml.logging('Computing feature images ...')
-        run_compute_feature_images(yamlfilename)
+        run_compute_feature_images(paramfile_cfi)
 
     if params['run_find_border_contacts']:
         yaml.logging('Finding border contacts ...')
-        run_find_border_contacts(yamlfilename)
+        run_find_border_contacts(paramfile_fbc)
 
     if params['run_paths_of_labels']:
         yaml.logging('Calculating paths of labels ...')
-        run_paths_of_labels(yamlfilename)
+        run_paths_of_labels(paramfile_pol)
 
     if params['run_paths_of_merges']:
         yaml.logging('Calculating paths of merges ...')
-        run_paths_of_merges(yamlfilename)
+        run_paths_of_merges(paramfile_pom)
 
     if params['run_features_of_paths']:
         yaml.logging('Extracting features along paths ...')
-        run_features_of_paths(yamlfilename)
+        run_features_of_paths(paramfile_fop)
 
     if params['run_random_forest']:
         yaml.logging('Running random forst on paths ...')
-        run_random_forest(yamlfilename)
+        run_random_forest(paramfile_rdf)
     # _________________________________________________________________________________________
 
     yaml.stoplogger()

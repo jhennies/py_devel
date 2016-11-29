@@ -65,9 +65,9 @@ def run_merge_adjacent_objects(yamlfile):
 
     try:
 
-        # Copy the script file and the parameters to the scriptsfolder
-        copy(inspect.stack()[0][1], params['scriptsfolder'])
-        copy(yamlfile, params['scriptsfolder'] + 'merge_adjacent_objects.parameters.yml')
+        # # Copy the script file and the parameters to the scriptsfolder
+        # copy(inspect.stack()[0][1], params['scriptsfolder'])
+        # copy(yamlfile, params['scriptsfolder'] + 'merge_adjacent_objects.parameters.yml')
 
         # ipl.logging('\nInitial datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
 
