@@ -219,7 +219,13 @@ def unique(image, return_counts=False):
     return np.unique(image, return_counts=return_counts)
 
 
-def gaussian_smoothing(image, sigma):
+def gaussian_smoothing(image, sigma, anisotropy=None):
+    if anisotropy:
+        if type(sigma) is not list and type(sigma) is not tuple and type(sigma) is not np.array:
+            sigma = np.array([sigma]*3).astype(np.float32) / anisotropy
+        else:
+            sigma = np.array(sigma) / anisotropy
+    image = image.astype(np.float32)
     return vigra.filters.gaussianSmoothing(image, sigma)
 
 
@@ -265,9 +271,9 @@ def getvaluesfromcoords(image, coordinates):
 
     return values
 
-def get_faces_with_neighbors(image):
+def get_faces_with_neighbors(image, rtrntype=dict):
 
-    faces = dict()
+    faces = rtrntype()
 
     # --- XY ---
     # w = x + 2*z, h = y + 2*z
@@ -389,7 +395,7 @@ def shortest_paths(indicator, pairs, bounds=None, hfp=None):
 
     return paths, pathsim
 
-def split(image, sections, axis=0, result_keys=None):
+def split(image, sections, axis=0, result_keys=None, rtrntype=dict):
 
     shp = list(image.shape)
     # print shp
@@ -409,7 +415,7 @@ def split(image, sections, axis=0, result_keys=None):
     else:
         if len(result_keys) != len(result):
             raise RuntimeError('processing_lib.split: Number of result keys does not match the number of sections!')
-        resultdict = dict()
+        resultdict = rtrntype()
 
         for i in xrange(len(result_keys)):
 

@@ -163,7 +163,7 @@ if __name__ == '__main__':
         yamlspec={'path': 'intermedfolder', 'filename': 'featurefile'}
     )
     params = features.get_params()
-    thisparams = params['localmax_on_disttransf']
+    thisparams = params['random_forest']
     features.startlogger(filename=params['resultfolder'] + 'random_forest.log', type='w')
 
     try:
