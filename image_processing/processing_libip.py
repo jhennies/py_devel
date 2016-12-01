@@ -848,6 +848,7 @@ def rf_features_to_array(features):
 
 
 def rf_make_feature_array(features):
+
     def shp(x):
         return x.shape
 
@@ -899,7 +900,7 @@ def rf_make_forest_input(features):
     return [data, classes]
 
 
-def random_forest(trainfeatures, testfeatures):
+def random_forest(trainfeatures, testfeatures, debug=False):
 
     # print '\n---\n'
     # print 'trainfeatures: '
@@ -915,6 +916,18 @@ def random_forest(trainfeatures, testfeatures):
     traindata, trainlabels = rf_make_forest_input(trainfeatures)
     testdata, testlabels = rf_make_forest_input(testfeatures)
 
+    print traindata.shape
+    print testdata.shape
+    print trainlabels.shape
+
+    if debug:
+        # Check if any item from traindata also occurs in testdata
+        c = 0
+        for i in traindata.tolist():
+            if i in testdata.tolist():
+                c += 1
+        print '{} items were identical.'.format(c)
+
     rf = Skrf()
     rf.fit(traindata, trainlabels)
 
@@ -924,6 +937,18 @@ def random_forest(trainfeatures, testfeatures):
     # print testlabels.shape
 
     return zip(result, testlabels)
+
+
+from sklearn.metrics import f1_score, accuracy_score, recall_score, precision_score
+
+def new_eval(result, truth):
+
+    return {
+        'precision': precision_score(truth, result, average='binary', pos_label=0),
+        'recall': recall_score(truth, result, average='binary', pos_label=0),
+        'f1': f1_score(truth, result, average='binary', pos_label=0),
+        'accuracy': accuracy_score(truth, result)
+    }
 
 
 def evaluation(x):

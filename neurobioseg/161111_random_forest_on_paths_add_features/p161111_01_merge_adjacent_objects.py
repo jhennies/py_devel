@@ -54,14 +54,17 @@ def merge_adjacent_objects(ipl):
 
 
 
-def run_merge_adjacent_objects(yamlfile):
+def run_merge_adjacent_objects(yamlfile, logging=True):
 
     ipl = IPL(yaml=yamlfile)
 
     ipl.set_indent(1)
 
     params = rdict(data=ipl.get_params())
-    ipl.startlogger(filename=params['resultfolder'] + 'merge_adjacent_objects.log', type='w', name='MergeAdjacentObjects')
+    if logging:
+        ipl.startlogger(filename=params['resultfolder'] + 'merge_adjacent_objects.log', type='w', name='MergeAdjacentObjects')
+    else:
+        ipl.startlogger()
 
     try:
 
@@ -89,4 +92,4 @@ if __name__ == '__main__':
 
     yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters.yml'
 
-    run_merge_adjacent_objects(yamlfile)
+    run_merge_adjacent_objects(yamlfile, logging=False)

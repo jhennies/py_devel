@@ -594,7 +594,10 @@ class Hdf5Processing(RecursiveDict, YamlParams):
         # From here on, skeys is not None ...
 
         if type(skeys) is str:
-            skeys=(skeys,)
+            if recursive_search:
+                skeys = (skeys,)
+            else:
+                skeys=[[skeys]]
         if tkeys is None:
             tkeys = skeys
         elif type(tkeys) is str:

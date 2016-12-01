@@ -116,14 +116,17 @@ def find_border_contacts(ipl):
             # ipl[kl].unpopulate()
 
 
-def run_find_border_contacts(yamlfile):
+def run_find_border_contacts(yamlfile, logging=True):
 
     ipl = IPL(yaml=yamlfile)
 
     ipl.set_indent(1)
 
     params = rdict(data=ipl.get_params())
-    ipl.startlogger(filename=params['resultfolder'] + 'find_border_contacts.log', type='w', name='FindBorderContacts')
+    if logging:
+        ipl.startlogger(filename=params['resultfolder'] + 'find_border_contacts.log', type='w', name='FindBorderContacts')
+    else:
+        ipl.startlogger()
 
     try:
 
@@ -150,4 +153,4 @@ def run_find_border_contacts(yamlfile):
 if __name__ == '__main__':
     yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters.yml'
 
-    run_find_border_contacts(yamlfile)
+    run_find_border_contacts(yamlfile, logging=False)

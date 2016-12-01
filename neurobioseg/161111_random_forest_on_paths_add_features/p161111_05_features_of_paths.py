@@ -29,6 +29,7 @@ def load_images(ipl):
 
     params = ipl.get_params()
 
+    ipl.logging('Loading true paths ...')
     # Paths within labels (true paths)
     paths_true.data_from_file(
         filepath=params['intermedfolder'] + params['pathstruefile'],
@@ -36,6 +37,7 @@ def load_images(ipl):
         recursive_search=True, nodata=True
     )
 
+    ipl.logging('Loading false paths ...')
     # Paths of merges (false paths)
     paths_false.data_from_file(
         filepath=params['intermedfolder'] + params['pathsfalsefile'],
@@ -43,6 +45,7 @@ def load_images(ipl):
         recursive_search=True, nodata=True
     )
 
+    ipl.logging('Loading features for true paths ...')
     # Load features for true paths
     featureims_true.data_from_file(
         filepath=params['intermedfolder'] + params['featureimsfile'],
@@ -50,6 +53,7 @@ def load_images(ipl):
     )
     featureims_true.delete_items(params['largeobjmnames'][0])
 
+    ipl.logging('Loading features for false paths ...')
     # Load features for false paths
     featureims_false.data_from_file(
         filepath=params['intermedfolder'] + params['featureimsfile'],
@@ -95,14 +99,17 @@ def features_of_paths(ipl):
 
 
 
-def run_features_of_paths(yamlfile):
+def run_features_of_paths(yamlfile, logging=True):
 
     ipl = IPL(yaml=yamlfile)
 
     ipl.set_indent(1)
 
     params = rdict(data=ipl.get_params())
-    ipl.startlogger(filename=params['resultfolder'] + 'features_of_paths.log', type='w', name='FeaturesOfPaths')
+    if logging:
+        ipl.startlogger(filename=params['resultfolder'] + 'features_of_paths.log', type='w', name='FeaturesOfPaths')
+    else:
+        ipl.startlogger()
 
     try:
 
@@ -130,4 +137,4 @@ if __name__ == '__main__':
 
     yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters.yml'
 
-    run_features_of_paths(yamlfile)
+    run_features_of_paths(yamlfile, logging=False)

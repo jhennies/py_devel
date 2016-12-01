@@ -1,0 +1,145 @@
+datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
+resultfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/161129_neurobioseg_feats_raw_disttransf/
+intermedfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/161129_neurobioseg_feats_raw_disttransf/intermed/
+scriptsfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/161129_neurobioseg_feats_raw_disttransf/scripts/
+
+createfolders: True
+overwriteresults: True
+
+rawdatafile:    'cremi.splA.train.raw_neurons.crop.split_xyz.h5'
+rawdataname:    'raw'
+labelsfile:     'cremi.splA.train.raw_neurons.crop.split_xyz.h5'
+labelsname:     'neuron_ids'
+probsfile:      'cremi.splA.train.probs.crop.split_xyz.h5'
+probsname:      'data'
+largeobjfile:   'cremi.splA.train.largeobj.crop.split_xyz.h5'
+largeobjname:   'largeobj'
+largeobjmfile:  'cremi.splA.train.largeobjm.crop.split_xyz.h5'
+largeobjmnames:
+    - 'largeobjm'
+    - 'mergeids_small'
+    - 'mergeids_random'
+    - 'mergeids_all'
+    - 'change_hash'
+featureimsfile: 'cremi.splA.train.featureims.crop.split_xyz.h5'
+borderctfile:   'cremi.splA.train.borderct.crop.split_xyz.h5'
+borderctname:   'centroids'
+pathstruefile:  'cremi.splA.train.pathstrue.crop.split_xyz.h5'
+pathsfalsefile: 'cremi.splA.train.pathsfalse.crop.split_xyz.h5'
+featuresfile:   'cremi.splA.train.features.crop.split_xyz.h5'
+resultsfile:     'cremi.splA.train.results.crop.split_xyz.h5'
+resultsnames:
+    - 'random_forest'
+    - 'mil'
+
+run_remove_small_objects: False
+run_merge_adjacent_objects: True
+run_compute_feature_images: True
+run_find_border_contacts: True
+run_paths_of_labels: True
+run_paths_of_merges: True
+run_features_of_paths: True
+run_random_forest: True
+
+remove_small_objects:
+    bysize: 10000
+    relabel: True
+
+merge_adjacent_objects:
+    seed: ~
+    numberbysize: 0
+    numberbyrandom: 100
+    algorithm: pairs
+
+compute_feature_images:
+    anisotropy: [10, 1, 1]
+    features:
+        rawdata:
+            raw: ~
+            gauss_1:
+                params: [1]
+                func: gaussian
+            gauss_3:
+                params: [3]
+                func: gaussian
+            gauss_5:
+                params: [5]
+                func: gaussian
+            gauss_10:
+                params: [10]
+                func: gaussian
+        probs:
+            raw: ~
+            gauss_1:
+                params: [1]
+                func: gaussian
+            gauss_3:
+                params: [3]
+                func: gaussian
+            gauss_5:
+                params: [5]
+                func: gaussian
+            gauss_10:
+                params: [10]
+                func: gaussian
+        largeobj:
+            disttransf:
+                params: ~
+                func: disttransf
+                raw: ~
+                gauss_1:
+                    params: [1]
+                    func: gaussian
+                gauss_3:
+                    params: [3]
+                    func: gaussian
+                gauss_5:
+                    params: [5]
+                    func: gaussian
+                gauss_10:
+                    params: [10]
+                    func: gaussian
+        largeobjm:
+            disttransf:
+                params: ~
+                func: disttransf
+                raw: ~
+                gauss_1:
+                    params: [1]
+                    func: gaussian
+                gauss_3:
+                    params: [3]
+                    func: gaussian
+                gauss_5:
+                    params: [5]
+                    func: gaussian
+                gauss_10:
+                    params: [10]
+                    func: gaussian
+
+find_border_contacts: ~
+
+paths_of_labels:
+    penaltypower: 10
+    ignorelabels: []
+    max_end_count: 5
+    max_end_count_seed: ~
+
+paths_of_merges:
+    penaltypower: 10
+    ignorelabels: []
+    max_end_count: 5
+    max_end_count_seed: ~
+
+features_of_paths:
+    features:
+        - Sum
+        - Mean
+        - Variance
+        - Maximum
+        - Minimum
+        - Kurtosis
+        - Skewness
+    max_paths_per_label: 5
+
+random_forest: ~
