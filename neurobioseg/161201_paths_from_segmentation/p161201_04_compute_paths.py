@@ -16,8 +16,6 @@ def load_images(ipl):
     """
     These images are loaded:
     largeobj (labels)
-    largeobjm (merged labels)
-    changehash (change hash created by label merging)
     borderct (border contact image)
     disttransf (distance transform of labels)
     :param ipl:
@@ -38,42 +36,34 @@ def load_images(ipl):
     ipl.reduce_from_leafs()
     ipl.rename_entry(params['largeobjmnames'][0], 'disttransf', search=True)
 
-    # Load labels
+    # Load segmentation labels
+    ipl.data_from_file(
+        filepath=params['intermedfolder'] + params['largeobjmfile'],
+        skeys=params['largeobjmnames'][0],
+        recursive_search=True, nodata=True
+    )
+
+    # Load ground truth labels
     ipl.data_from_file(
         filepath=params['intermedfolder'] + params['largeobjfile'],
         skeys=params['largeobjname'],
         recursive_search=True, nodata=True
     )
 
-    # Load merged labels and change hash
-    ipl.data_from_file(
-        filepath=params['intermedfolder'] + params['largeobjmfile'],
-        skeys=(params['largeobjmnames'][0], params['largeobjmnames'][4]),
-        recursive_search=True, nodata=True
-    )
-
-    # TODO: This is at least questionable:
-    # TODO:     Probably the border contacts of the merged labels are a better solution
     # Load border contact image
-    # ipl.data_from_file(
-    #     filepath=params['intermedfolder'] + params['borderctfile'],
-    #     skeys=params['largeobjname'],
-    #     recursive_search=True, nodata=True
-    # )
     ipl.data_from_file(
         filepath=params['intermedfolder'] + params['borderctfile'],
         skeys=params['largeobjmnames'][0],
         recursive_search=True, nodata=True
     )
-
     ipl.reduce_from_leafs()
 
 
-def paths_of_merges(ipl, debug=False):
+def compute_paths(ipl):
 
     params = ipl.get_params()
-    thisparams = rdict(params['paths_of_merges'])
-    targetfile = params['intermedfolder'] + params['pathsfalsefile']
+    thisparams = rdict(params['compute_paths'])
+    targetfile = params['intermedfolder'] + params['pathsfile']
 
     # Load the necessary images
     load_images(ipl)
@@ -92,18 +82,19 @@ def paths_of_merges(ipl, debug=False):
             # Load the image data into memory
             ipl[kl].populate()
 
-            ipl[kl] = libip.paths_of_labelpairs(
+            # The first step would be to just compute the paths, regardless whether they cross a
+            # label barrier or not
+            ipl[kl] = libip.compute_paths_with_class(
                 ipl[kl],
                 params['largeobjmnames'][0],
-                params['largeobjname'],
-                params['largeobjmnames'][4],
                 params['borderctname'],
                 'disttransf',
+                params['largeobjname'],
                 thisparams,
                 ignore=thisparams['ignorelabels'],
                 max_end_count=thisparams['max_end_count'],
                 max_end_count_seed=thisparams['max_end_count_seed'],
-                debug=debug
+                debug=params['debug']
             )
 
             # Write the result to file
@@ -112,8 +103,7 @@ def paths_of_merges(ipl, debug=False):
             ipl[kl] = None
 
 
-
-def run_paths_of_merges(yamlfile, logging=True):
+def run_compute_paths(yamlfile, logging=True):
 
     ipl = IPL(yaml=yamlfile)
 
@@ -121,7 +111,7 @@ def run_paths_of_merges(yamlfile, logging=True):
 
     params = rdict(data=ipl.get_params())
     if logging:
-        ipl.startlogger(filename=params['resultfolder'] + 'paths_of_merges.log', type='w', name='PathsOfMerges')
+        ipl.startlogger(filename=params['resultfolder'] + 'compute_paths.log', type='w', name='ComputePaths')
     else:
         ipl.startlogger()
 
@@ -129,11 +119,11 @@ def run_paths_of_merges(yamlfile, logging=True):
 
         # # Copy the script file and the parameters to the scriptsfolder
         # copy(inspect.stack()[0][1], params['scriptsfolder'])
-        # copy(yamlfile, params['scriptsfolder'] + 'paths_of_merges.parameters.yml')
+        # copy(yamlfile, params['scriptsfolder'] + 'paths_of_labels.parameters.yml')
 
         # ipl.logging('\nInitial datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
 
-        paths_of_merges(ipl, params['debug'])
+        compute_paths(ipl)
 
         # ipl.logging('\nFinal datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
 
@@ -151,4 +141,4 @@ if __name__ == '__main__':
 
     yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters_ref.yml'
 
-    run_paths_of_merges(yamlfile, logging=False)
+    run_compute_paths(yamlfile, logging=False)

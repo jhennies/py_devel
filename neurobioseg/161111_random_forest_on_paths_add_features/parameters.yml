@@ -1,10 +1,12 @@
 datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
-resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161130_neurobioseg_x_feats_exc-disttransf/
-intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161130_neurobioseg_x_feats_exc-disttransf/intermed/
-scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161130_neurobioseg_x_feats_exc-disttransf/scripts/
+resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161201_neurobioseg_x_feats_all_paths-on-correct-dt/
+intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161201_neurobioseg_x_feats_all_paths-on-correct-dt/intermed/
+scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161201_neurobioseg_x_feats_all_paths-on-correct-dt/scripts/
 
 createfolders: True
 overwriteresults: True
+
+debug: True
 
 rawdatafile:    'cremi.splA.train.raw_neurons.crop.split_x.h5'
 rawdataname:    'raw'
@@ -32,12 +34,12 @@ resultsnames:
     - 'random_forest'
     - 'mil'
 
-run_remove_small_objects: False
-run_merge_adjacent_objects: False
+run_remove_small_objects: True
+run_merge_adjacent_objects: True
 run_compute_feature_images: True
-run_find_border_contacts: False
-run_paths_of_labels: False
-run_paths_of_merges: False
+run_find_border_contacts: True
+run_paths_of_labels: True
+run_paths_of_merges: True
 run_features_of_paths: True
 run_random_forest: True
 
@@ -82,7 +84,41 @@ compute_feature_images:
             gauss_10:
                 params: [10]
                 func: gaussian
-
+        largeobj:
+            disttransf:
+                params: ~
+                func: disttransf
+                raw: ~
+                gauss_1:
+                    params: [1]
+                    func: gaussian
+                gauss_3:
+                    params: [3]
+                    func: gaussian
+                gauss_5:
+                    params: [5]
+                    func: gaussian
+                gauss_10:
+                    params: [10]
+                    func: gaussian
+        largeobjm:
+            disttransf:
+                params: ~
+                func: disttransf
+                raw: ~
+                gauss_1:
+                    params: [1]
+                    func: gaussian
+                gauss_3:
+                    params: [3]
+                    func: gaussian
+                gauss_5:
+                    params: [5]
+                    func: gaussian
+                gauss_10:
+                    params: [10]
+                    func: gaussian
+                    
 find_border_contacts: ~
 
 paths_of_labels:

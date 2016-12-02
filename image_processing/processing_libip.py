@@ -436,7 +436,8 @@ def merge_adjacent_objects(
 
 
 def find_shortest_path(ipl, penaltypower, bounds, disttransf, locmax,
-                       max_end_count=[], max_end_count_seed=[]):
+                       max_end_count=[], max_end_count_seed=[], yield_in_bounds=False,
+                       return_pathim=True):
 
     # Modify distancetransform
     #
@@ -473,11 +474,18 @@ def find_shortest_path(ipl, penaltypower, bounds, disttransf, locmax,
         for j in xrange(i+1, len(coords)):
             pairs.append((coords[i], coords[j]))
 
-    paths, pathim = lib.shortest_paths(disttransf, pairs, bounds=bounds, hfp=ipl)
+    return lib.shortest_paths(disttransf, pairs, bounds=bounds, hfp=ipl,
+                              yield_in_bounds=yield_in_bounds, return_pathim=return_pathim)
+    # if yield_in_bounds:
+    #     paths, pathim, paths_in_bounds = lib.shortest_paths(disttransf, pairs, bounds=bounds, hfp=ipl, yield_in_bounds=True)
+    #     return paths, pathim, paths_in_bounds
+    # else:
+    #     paths, pathim = lib.shortest_paths(disttransf, pairs, bounds=bounds, hfp=ipl, return_pathim=return_pathim)
+    #     return paths, pathim
 
-    # # Make sure no empty paths lists are returned
-    # paths = [x for x in paths if x.any()]
-    return paths, pathim
+    # # # Make sure no empty paths lists are returned
+    # # paths = [x for x in paths if x.any()]
+    # return paths, pathim
 
 
 def paths_of_labels(
@@ -987,4 +995,107 @@ def evaluation(x):
         'precision': precision(x), 'recall': recall(x), 'f1': f1(x), 'accuracy': accuracy(x)
     })
 
+
+def create_paths_image(paths, shp):
+    pathsim = np.zeros(shp)
+
+    for d, k, v, kl in paths.data_iterator():
+        if type(v) is not type(paths):
+
+            pathsim = lib.positions2value(pathsim, np.swapaxes(v, 0, 1), 1)
+
+    return pathsim
+
+
+def compute_paths_with_class(
+        ipl, labelkey, pathendkey, disttransfkey, gtkey, thisparams, ignore=[],
+        max_end_count=[], max_end_count_seed=[], debug=False
+):
+
+    more_keys = (pathendkey, disttransfkey, gtkey)
+
+    paths = IPL()
+    # for k in locmaxkeys:
+    if debug:
+        ipl.logging('Running compute_paths_with_class in debug mode ...')
+        paths['truepathsim'] = np.zeros(ipl[labelkey].shape)
+        paths['falsepathsim'] = np.zeros(ipl[labelkey].shape)
+
+    for lbl, lblim, more_ims, bounds in ipl.label_image_bounds_iterator(
+        key=labelkey, background=0, more_keys=more_keys,
+        maskvalue=0, value=0
+    ):
+        if lbl in ignore:
+            continue
+        # The format of more_ims is:
+        # more_ims = {locmaxkeys[0]: locmax_1,
+        #                ...
+        #             locmaxkeys[n]: locmax_n,
+        #             disttransfkey: disttransf}
+
+        ipl.logging('======================\nWorking on label = {}', lbl)
+        # ipl.logging('more_ims structure:\n---\n{}', more_ims.datastructure2string())
+        ipl.logging('bounds = {}', bounds)
+
+        if np.amax(more_ims[pathendkey]) > 0:
+
+            # Compute the shortest paths (Note that this actually computes all paths within
+            # an object
+            ps, ps_in_bounds = find_shortest_path(
+                ipl, thisparams['penaltypower'], bounds,
+                more_ims[disttransfkey], more_ims[pathendkey],
+                max_end_count=max_end_count,
+                max_end_count_seed=max_end_count_seed,
+                yield_in_bounds=True, return_pathim=False
+            )
+
+            # Determine if the shortest path is starting and ending in two different ground
+            #   truth objects and sort the paths accordingly
+            # TODO: Alternatively do this by checking if a label change occurs along the
+            # TODO:     path. Two label changes would result in equal end point labels but
+            # TODO:     the path should be classified as false
+            ps_true = []
+            ps_false = []
+            for i in xrange(0, len(ps)):
+                # Compare the start and end point
+                if more_ims[gtkey][tuple(ps_in_bounds[i][0])] == more_ims[gtkey][tuple(ps_in_bounds[i][-1])]:
+                    ps_true.append(ps[i])
+                    ipl.logging('Path label = True')
+                else:
+                    ps_false.append(ps[i])
+                    ipl.logging('Path label = False')
+
+            # Only store the path if the path-calculation successfully determined a path
+            # Otherwise an empty list would be stored
+            if ps_true:
+                ipl.logging('Number of true paths found: {}', len(ps_true))
+
+                pskeys = range(0, len(ps_true))
+                ps_true = IPL(data=dict(zip(pskeys, ps_true)))
+
+                paths['truepaths', lbl] = ps_true
+
+            if ps_false:
+                ipl.logging('Number of false paths found: {}', len(ps_false))
+
+                pskeys = range(0, len(ps_false))
+                ps_false = IPL(data=dict(zip(pskeys, ps_false)))
+
+                paths['falsepaths', lbl] = ps_false
+
+    if debug:
+        pathsim = create_paths_image(paths['truepaths'], ipl[labelkey].shape)
+        paths['overlay_true'] = np.array(
+            [pathsim,
+            ipl[labelkey].astype(np.float32) / np.amax(ipl[gtkey]),
+            vigra.filters.multiBinaryDilation(ipl[pathendkey].astype(np.uint8), 5)]
+        )
+        pathsim = create_paths_image(paths['falsepaths'], ipl[labelkey].shape)
+        paths['overlay_false'] = np.array(
+            [pathsim,
+            ipl[labelkey].astype(np.float32) / np.amax(ipl[gtkey]),
+            vigra.filters.multiBinaryDilation(ipl[pathendkey].astype(np.uint8), 5)]
+        )
+
+    return paths
 

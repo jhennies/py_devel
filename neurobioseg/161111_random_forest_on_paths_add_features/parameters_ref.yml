@@ -3,6 +3,8 @@ resultfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/161129_neu
 intermedfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/161129_neurobioseg_feats_raw_disttransf/intermed/
 scriptsfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/161129_neurobioseg_feats_raw_disttransf/scripts/
 
+debug: True
+
 createfolders: True
 overwriteresults: True
 
