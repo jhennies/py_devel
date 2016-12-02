@@ -783,22 +783,11 @@ def features_of_paths(ipl, paths_true, paths_false, featureims_true, featureims_
         thisparams['max_paths_per_label'], ipl=ipl
     )
 
-    # features.write(
-    #     filepath=params['intermedfolder'] + params['featuresfile'],
-    #     keys=kl + ['true'], search=True
-    # )
-    # features[kl + ['true']] = None
-
     features['false'] = get_features(
         paths_false, featureims_false,
         thisparams['features'],
         thisparams['max_paths_per_label'], ipl=ipl
     )
-
-    # features.write(
-    #     filepath=params['intermedfolder'] + params['featuresfile'],
-    #     keys=kl + ['false'], search=True
-    # )
 
     return features
 
@@ -1018,8 +1007,8 @@ def compute_paths_with_class(
     # for k in locmaxkeys:
     if debug:
         ipl.logging('Running compute_paths_with_class in debug mode ...')
-        paths['truepathsim'] = np.zeros(ipl[labelkey].shape)
-        paths['falsepathsim'] = np.zeros(ipl[labelkey].shape)
+        # paths['truepathsim'] = np.zeros(ipl[labelkey].shape)
+        # paths['falsepathsim'] = np.zeros(ipl[labelkey].shape)
 
     for lbl, lblim, more_ims, bounds in ipl.label_image_bounds_iterator(
         key=labelkey, background=0, more_keys=more_keys,
