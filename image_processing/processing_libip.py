@@ -730,6 +730,8 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
                         features=featurelist
                     )
                 )
+                # Pick out the features that we asked for
+                newnewfeats = newnewfeats.subset(*featurelist)
                 # Append to the recently computed list of features
                 for nk, nv in newnewfeats.iteritems():
                     nv = nv[1:]
@@ -1076,13 +1078,13 @@ def compute_paths_with_class(
         pathsim = create_paths_image(paths['truepaths'], ipl[labelkey].shape)
         paths['overlay_true'] = np.array(
             [pathsim,
-            ipl[labelkey].astype(np.float32) / np.amax(ipl[gtkey]),
+            ipl[gtkey].astype(np.float32) / np.amax(ipl[gtkey]),
             vigra.filters.multiBinaryDilation(ipl[pathendkey].astype(np.uint8), 5)]
         )
         pathsim = create_paths_image(paths['falsepaths'], ipl[labelkey].shape)
         paths['overlay_false'] = np.array(
             [pathsim,
-            ipl[labelkey].astype(np.float32) / np.amax(ipl[gtkey]),
+            ipl[gtkey].astype(np.float32) / np.amax(ipl[gtkey]),
             vigra.filters.multiBinaryDilation(ipl[pathendkey].astype(np.uint8), 5)]
         )
 
