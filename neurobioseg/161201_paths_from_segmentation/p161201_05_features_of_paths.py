@@ -124,6 +124,6 @@ def run_features_of_paths(yamlfile, logging=True):
 
 if __name__ == '__main__':
 
-    yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters.yml'
+    yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters_ref.yml'
 
     run_features_of_paths(yamlfile, logging=False)

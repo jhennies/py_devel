@@ -439,3 +439,26 @@ def split(image, sections, axis=0, result_keys=None, rtrntype=dict):
             resultdict[result_keys[i]] = result[i]
 
         return resultdict
+
+
+def compute_path_length(path, anisotropy):
+    """
+    Computes the length of a path
+
+    :param path:
+        np.array([[x11, x12, ..., x1n], [x21, x22, ..., x2n], ..., [xm1, xm2, ..., xmn]])
+        with n dimensions and m coordinates
+    :param anisotropy: [a1, a2, ..., an]
+    :return: path length (float)
+    """
+
+    pathlen = 0.
+    for i in xrange(1, len(path)):
+
+        add2pathlen = 0.
+        for j in xrange(0, len(path[0, :])):
+            add2pathlen += (anisotropy[j] * (path[i, j] - path[i-1, j])) ** 2
+
+        pathlen += add2pathlen ** (1./2)
+
+    return pathlen

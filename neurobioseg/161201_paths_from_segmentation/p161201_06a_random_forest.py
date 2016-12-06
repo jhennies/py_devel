@@ -98,22 +98,53 @@ def random_forest(ipl, debug=False):
             # TODO: Implement copy full logger
             ipl[kl].set_logger(ipl.get_logger())
 
+            # Note:
+            #   Due to the feature input being a dictionary organized by the feature images where
+            #   the feature values come from
+            #
+            #   [kl]
+            #       '0'|'1'
+            #           'true'|'false'
+            #               [featureims]
+            #                   'Sum':      [s1, ..., sN]
+            #                   'Variance': [v1, ..., vN]
+            #                   ...
+            #               [Pathlength]:   [l1, ..., lN]
+            #
+            #   the exact order in which items are iterated over by data_iterator() is not known.
+            #
+            # Solution:
+            #   Iterate over it once and store the keylist in an array (which conserves the order)
+            #   When accumulating the featrues for each of the four corresponding subsets, namely
+            #   training and testing set with true and false paths each, i.e.
+            #   ['0'|'1']['true'|'false'],
+            #   the the keylist is used, thus maintaining the correct order in every subset.
+            #
+            # And that is what is happening here:
+            keylist = []
+            for d2, k2, v2, kl2 in ipl[kl]['0', 'true'].data_iterator():
+                if type(v2) is not type(ipl[kl]['0', 'true']):
+                    keylist.append(kl2)
+
             # Load the image data into memory
             ipl[kl].populate()
 
-            # def shp(x):
-            #     return x.shape
+            # ipl[kl]['0', 'true'] = libip.rf_make_feature_array(ipl[kl]['0', 'true'])
+            # ipl.logging("Computed feature array for ['0', 'true'] with shape {}", ipl[kl]['0', 'true'].shape)
+            # ipl[kl]['0', 'false'] = libip.rf_make_feature_array(ipl[kl]['0', 'false'])
+            # ipl.logging("Computed feature array for ['0', 'false'] with shape {}", ipl[kl]['0', 'false'].shape)
+            # ipl[kl]['1', 'true'] = libip.rf_make_feature_array(ipl[kl]['1', 'true'])
+            # ipl.logging("Computed feature array for ['1', 'true'] with shape {}", ipl[kl]['1', 'true'].shape)
+            # ipl[kl]['1', 'false'] = libip.rf_make_feature_array(ipl[kl]['1', 'false'])
+            # ipl.logging("Computed feature array for ['1', 'false'] with shape {}", ipl[kl]['1', 'false'].shape)
 
-            # print ipl[kl]['0', 'true']
-            # print ipl[kl].dss(function=shp)
-
-            ipl[kl]['0', 'true'] = libip.rf_make_feature_array(ipl[kl]['0', 'true'])
+            ipl[kl]['0', 'true'] = libip.rf_make_feature_array_with_keylist(ipl[kl]['0', 'true'], keylist)
             ipl.logging("Computed feature array for ['0', 'true'] with shape {}", ipl[kl]['0', 'true'].shape)
-            ipl[kl]['0', 'false'] = libip.rf_make_feature_array(ipl[kl]['0', 'false'])
+            ipl[kl]['0', 'false'] = libip.rf_make_feature_array_with_keylist(ipl[kl]['0', 'false'], keylist)
             ipl.logging("Computed feature array for ['0', 'false'] with shape {}", ipl[kl]['0', 'false'].shape)
-            ipl[kl]['1', 'true'] = libip.rf_make_feature_array(ipl[kl]['1', 'true'])
+            ipl[kl]['1', 'true'] = libip.rf_make_feature_array_with_keylist(ipl[kl]['1', 'true'], keylist)
             ipl.logging("Computed feature array for ['1', 'true'] with shape {}", ipl[kl]['1', 'true'].shape)
-            ipl[kl]['1', 'false'] = libip.rf_make_feature_array(ipl[kl]['1', 'false'])
+            ipl[kl]['1', 'false'] = libip.rf_make_feature_array_with_keylist(ipl[kl]['1', 'false'], keylist)
             ipl.logging("Computed feature array for ['1', 'false'] with shape {}", ipl[kl]['1', 'false'].shape)
 
             # print '...'

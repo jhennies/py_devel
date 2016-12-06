@@ -687,9 +687,31 @@ def paths_of_labelpairs(
     return paths
 
 
-def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=None):
+def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=None, anisotropy=[1, 1, 1]):
 
     newfeats = IPL()
+
+    # The path length only have to be computed once without using the vigra region features
+    def compute_path_lengths(paths, anisotropy):
+
+        path_lengths = []
+        # for d, k, v, kl in paths.data_iterator():
+        #     if type(v) is not type(paths):
+        for path in paths:
+            path_lengths.append(lib.compute_path_length(np.array(path), anisotropy))
+
+        return np.array(path_lengths)
+    # And only do it when desired
+    pathlength = False
+    try:
+        featurelist.remove('Pathlength')
+    except ValueError:
+        # Means that 'Pathlength' was not in the list
+        pass
+    else:
+        # 'Pathlength' was in the list and is now successfully removed
+        pathlength = True
+        # newfeats['Pathlength'] = compute_path_lengths(paths, anisotropy)
 
     keylist = range(0, max_paths_per_label)
     keylist = [str(x) for x in keylist]
@@ -698,10 +720,21 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
     for i, keys, vals in paths.simultaneous_iterator(
             max_count_per_item=max_paths_per_label,
             keylist=keylist):
+        # i is the iteration number
+        # keys are respective labels and ids of the paths
+        # vals are the coordinates of the path positions
+
 
         if ipl is not None:
             ipl.logging('Working in iteration = {}', i)
             ipl.logging('Keys: {}', keys)
+
+        # if pathlength:
+        #     if newfeats.inkeys(['Pathlength']):
+        #         newfeats['Pathlength'] = np.concatenate((
+        #             newfeats['Pathlength'], compute_path_lengths(vals, anisotropy)))
+        #     else:
+        #         newfeats['Pathlength'] = compute_path_lengths(vals, anisotropy)
 
         if not keys:
             continue
@@ -712,6 +745,12 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
         c = 1
         for curk, curv in (dict(zip(keys, vals))).iteritems():
             curv = np.array(curv)
+            if pathlength:
+                if not newfeats.inkeys(['Pathlength']):
+                    newfeats['Pathlength'] = np.array([lib.compute_path_length(curv, anisotropy)])
+                else:
+                    newfeats['Pathlength'] = np.concatenate((
+                        newfeats['Pathlength'], [lib.compute_path_length(curv, anisotropy)]))
             curv = lib.swapaxes(curv, 0, 1)
             lib.positions2value(image, curv, c)
             c += 1
@@ -722,7 +761,6 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
             if type(v) is not IPL:
 
                 # Extract the region features of the working image
-                # TODO: Extract feature 'Count' manually due to anisotropy
                 newnewfeats = IPL(
                     data=vigra.analysis.extractRegionFeatures(
                         np.array(v).astype(np.float32),
@@ -732,6 +770,8 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
                 )
                 # Pick out the features that we asked for
                 newnewfeats = newnewfeats.subset(*featurelist)
+
+                # TODO: Extract feature 'Count' manually due to anisotropy
                 # Append to the recently computed list of features
                 for nk, nv in newnewfeats.iteritems():
                     nv = nv[1:]
@@ -747,30 +787,14 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
 
 
 def features_of_paths(ipl, paths_true, paths_false, featureims_true, featureims_false, kl):
-    # def features_of_paths(ipl, disttransf_images, feature_images, thisparams):
     """
-    The following datastructure is necessary for the dicts 'disttransf_images' and 'feature_images':
-    true
-    .   [locmax_name]
-    .   .   [feature_name]
-    false
-    .   [locmax_name]
-    .   .   [feature_name]
-
-    ipl has this datastructure:
-    true
-    .   [locmax_name]
-    .   .   [labels]
-    .   .   .   [paths]
-    false
-    .   [locmax_name]
-    .   .   [labels]
-    .   .   .   [paths]
 
     :param ipl:
-    :param disttransf_images:
-    :param feature_images:
-    :param thisparams:
+    :param paths_true:
+    :param paths_false:
+    :param featureims_true:
+    :param featureims_false:
+    :param kl:
     :return:
     """
 
@@ -781,14 +805,16 @@ def features_of_paths(ipl, paths_true, paths_false, featureims_true, featureims_
 
     features['true'] = get_features(
         paths_true, featureims_true,
-        thisparams['features'],
-        thisparams['max_paths_per_label'], ipl=ipl
+        list(thisparams['features']),
+        thisparams['max_paths_per_label'], ipl=ipl,
+        anisotropy=thisparams['anisotropy']
     )
 
     features['false'] = get_features(
         paths_false, featureims_false,
-        thisparams['features'],
-        thisparams['max_paths_per_label'], ipl=ipl
+        list(thisparams['features']),
+        thisparams['max_paths_per_label'], ipl=ipl,
+        anisotropy=thisparams['anisotropy']
     )
 
     return features
@@ -874,6 +900,18 @@ def rf_make_feature_array(features):
 
     return features
 
+
+def rf_make_feature_array_with_keylist(features, keylist):
+
+    featsarray = None
+    for k in keylist:
+        if featsarray is None:
+            featsarray = np.array([features[k]])
+        else:
+            featsarray = np.concatenate((featsarray, [features[k]]), 0)
+    featsarray = featsarray.swapaxes(0, 1)
+
+    return featsarray
 
 def rf_eliminate_invalid_entries(data):
 
@@ -1089,4 +1127,6 @@ def compute_paths_with_class(
         )
 
     return paths
+
+
 
