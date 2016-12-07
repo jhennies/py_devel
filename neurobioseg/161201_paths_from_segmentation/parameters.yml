@@ -1,7 +1,7 @@
 datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
-resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161202_neurobioseg_x_feats_all/
-intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161202_neurobioseg_x_feats_all/intermed/
-scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161202_neurobioseg_x_feats_all/scripts/
+resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161206_neurobioseg_x_seg_beta_0.5/
+intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161206_neurobioseg_x_seg_beta_0.5/intermed/
+scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161206_neurobioseg_x_seg_beta_0.5/scripts/
 
 debug: True
 
@@ -14,11 +14,11 @@ labelsfile:     'cremi.splA.train.raw_neurons.crop.split_x.h5'
 labelsname:     'neuron_ids'
 probsfile:      'cremi.splA.train.probs.crop.split_x.h5'
 probsname:      'data'
-largeobjfile:   'cremi.splA.train.largeobj.split_x.h5'
-largeobjname:   'largeobj'
-largeobjmfile:  'cremi.splA.train.largeobjm.split_x.h5'
+largeobjfile:   'cremi.splA.train.raw_neurons.crop.split_x.h5'
+largeobjname:   'neuron_ids'
+largeobjmfile:  'cremi.splA.train.seg_beta_0.5.crop.split_x.h5'
 largeobjmnames:
-    - 'largeobjm'
+    - 'labels'
     - 'mergeids_small'
     - 'mergeids_random'
     - 'mergeids_all'
@@ -33,10 +33,10 @@ resultsnames:
     - 'random_forest'
     - 'mil'
 
-run_remove_small_objects: True
-run_merge_adjacent_objects: True
-run_compute_feature_images: True
-run_find_border_contacts: True
+run_remove_small_objects: False
+run_merge_adjacent_objects: False
+run_compute_feature_images: False
+run_find_border_contacts: False
 run_compute_paths: True
 run_features_of_paths: True
 run_random_forest: True
@@ -118,6 +118,7 @@ features_of_paths:
         - Minimum
         - Kurtosis
         - Skewness
+        - Pathlength
     max_paths_per_label: 5
 
 random_forest: ~

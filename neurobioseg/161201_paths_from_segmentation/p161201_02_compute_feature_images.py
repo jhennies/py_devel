@@ -13,12 +13,13 @@ import processing_lib as lib
 
 __author__ = 'jhennies'
 
+
 def load_images(ipl, ids):
 
     params = ipl.get_params()
 
     if 'rawdata' in ids:
-        ipl.logging('Loading raw data ...')
+        ipl.logging('Loading raw data from:\n{} ...', params['datafolder'] + params['rawdatafile'])
         ipl.data_from_file(
             params['datafolder'] + params['rawdatafile'],
             skeys=params['rawdataname'],
@@ -26,7 +27,7 @@ def load_images(ipl, ids):
         )
 
     if 'probs' in ids:
-        ipl.logging('Loading probabilities ...')
+        ipl.logging('Loading probabilities from:\n{} ...', params['datafolder'] + params['probsfile'])
         ipl.data_from_file(
             params['datafolder'] + params['probsfile'],
             skeys=params['probsname'],
@@ -34,7 +35,7 @@ def load_images(ipl, ids):
         )
 
     if 'largeobj' in ids:
-        ipl.logging('Loading large object labels ...')
+        ipl.logging('Loading large objects from:\n{} ...', params['intermedfolder'] + params['largeobjfile'])
         ipl.data_from_file(
             params['intermedfolder'] + params['largeobjfile'],
             skeys=params['largeobjname'],
@@ -42,7 +43,7 @@ def load_images(ipl, ids):
         )
 
     if 'largeobjm' in ids:
-        ipl.logging('Loading merged large object labels ...')
+        ipl.logging('Loading merged objects from:\n{} ...', params['intermedfolder'] + params['largeobjmfile'])
         ipl.data_from_file(
             params['intermedfolder'] + params['largeobjmfile'],
             skeys=params['largeobjmnames'][0],

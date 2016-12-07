@@ -21,10 +21,8 @@ __author__ = 'jhennies'
 def load_images(ipl):
     """
     We need to load these images:
-    largeobj (the labels)
     largeobjm (merged labels)
-    disttransf (distance transform of labels)
-    disttransfm (distance transform of merged labels)
+    disttransf (distance transform of merged labels)
     """
 
     params = ipl.get_params()
