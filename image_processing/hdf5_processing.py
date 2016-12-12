@@ -176,7 +176,10 @@ class RecursiveDict(dict, SimpleLogger):
                                       function=function)
         )
 
-    def data_iterator(self, maxdepth=None, data=None, depth=0, keylist=[], yield_short_kl=False):
+    def data_iterator(
+            self, maxdepth=None, data=None, depth=0, keylist=[], yield_short_kl=False,
+            leaves_only=False, branches_only=False
+    ):
 
         depth += 1
         if maxdepth is not None:
@@ -189,22 +192,32 @@ class RecursiveDict(dict, SimpleLogger):
         try:
 
             for key, val in data.iteritems():
-                # print key, val
-                if yield_short_kl:
-                    yield [depth-1, key, val, keylist]
+
+                if not yield_short_kl:
                     kl = keylist + [key,]
                 else:
-                    kl = keylist + [key,]
-                    # yield {'depth': depth-1, 'key': key, 'val': val, 'keylist': kl}
+                    kl = keylist
+
+                if not leaves_only and not branches_only:
                     yield [depth-1, key, val, kl]
-                # self.data_iterator(level=level, maxlevel=maxlevel, data=val)
+                if leaves_only:
+                    if type(val) is not type(self):
+                        yield [depth-1, key, val, kl]
+                if branches_only:
+                    if type(val) is type(self):
+                        yield [depth-1, key, val, kl]
+
+                if yield_short_kl:
+                    kl = keylist + [key,]
 
                 for d in self.data_iterator(
-                        maxdepth=maxdepth, data=val, depth=depth, keylist=kl,
-                        yield_short_kl=yield_short_kl):
+                    maxdepth=maxdepth, data=val, depth=depth, keylist=kl,
+                    yield_short_kl=yield_short_kl, leaves_only=leaves_only,
+                    branches_only=branches_only
+                ):
                     yield d
 
-        except:
+        except AttributeError:
             pass
 
     def simultaneous_iterator(self, data=None, keylist=None, max_count_per_item=None):

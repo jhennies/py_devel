@@ -12,7 +12,7 @@ from hdf5_processing import RecursiveDict as rdict
 __author__ = 'jhennies'
 
 
-def filter_small_objects(ipl, key, threshold, tkey=None, relabel=False):
+def filter_small_objects(ipl, key, threshold, tkey=None, relabel=False, logger=None):
     """
     Filters small objects
     :param ipl:
@@ -22,12 +22,18 @@ def filter_small_objects(ipl, key, threshold, tkey=None, relabel=False):
     :return:
     """
 
-    ipl.logging('Filtering objects smaller than {} voxels...', threshold)
+    if logger is not None:
+        logger.logging('Filtering objects smaller than {} voxels...', threshold)
+    else:
+        ipl.logging('Filtering objects smaller than {} voxels...', threshold)
 
     unique, counts = np.unique(ipl[key], return_counts=True)
-    ipl.logging('Found objects: {}\nCorresponding sizes: {}', unique, counts)
-
-    ipl.logging('Removing theses objects: {}', unique[counts <= threshold])
+    if logger is not None:
+        logger.logging('Found objects: {}\nCorresponding sizes: {}', unique, counts)
+        logger.logging('Removing theses objects: {}', unique[counts <= threshold])
+    else:
+        ipl.logging('Found objects: {}\nCorresponding sizes: {}', unique, counts)
+        ipl.logging('Removing theses objects: {}', unique[counts <= threshold])
 
 
     # With accumulate set to True, this iterator does everything we need:
@@ -35,14 +41,20 @@ def filter_small_objects(ipl, key, threshold, tkey=None, relabel=False):
     for lbl, lblim in ipl.label_image_iterator(key=key,
                                                labellist=unique[counts > threshold],
                                                accumulate=True, relabel=relabel):
-        ipl.logging('---\nIncluding label {}', lbl)
+        if logger is not None:
+            logger.logging('---\nIncluding label {}', lbl)
+        else:
+            ipl.logging('---\nIncluding label {}', lbl)
 
     if tkey is None:
         ipl[key] = lblim
     else:
         ipl[tkey] = lblim
 
-    ipl.logging('... Done filtering small objects!')
+    if logger is not None:
+        logger.logging('... Done filtering small objects!')
+    else:
+        ipl.logging('... Done filtering small objects!')
 
     return ipl
 
