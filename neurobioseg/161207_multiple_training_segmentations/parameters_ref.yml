@@ -1,0 +1,110 @@
+datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
+resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161207_neurobioseg_x_cropped_develop/
+intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161207_neurobioseg_x_cropped_develop/intermed/
+scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161207_neurobioseg_x_cropped_develop/scripts/
+
+debug: True
+
+createfolders: True
+overwriteresults: True
+
+rawdatafile:    'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+rawdataname:    'raw'
+probsfile:      'cremi.splA.train.probs.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+probsname:      'data'
+segmfile:       'cremi.splA.train.mcseg_betas.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+largeobjfile:   'cremi.splA.train.largeobj.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+rawfeatsfile:   'cremi.splA.train.rawfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+probsfeatsfile: 'cremi.splA.train.probsfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+segfeatsfile:   'cremi.splA.train.segfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+
+run_remove_small_objects: True
+run_compute_feature_images: False
+run_find_border_contacts: False
+run_compute_paths: False
+run_features_of_paths: False
+run_random_forest: False
+
+remove_small_objects:
+    sources:
+        - [datafolder, segmfile]
+    targets:
+        - [intermedfolder, largeobjfile]
+    kwargs:
+        skeys: [~]
+        recursive_search: [False]
+    bysize: 10000
+    relabel: True
+
+compute_feature_images:
+    general_params:
+        anisotropy: [10, 1, 1]
+    sources:
+        rawdata: [datafolder, rawdatafile, raw]
+        probs: [datafolder, probsfile, data]
+        segmentation: [intermedfolder, largeobjfile]
+    skwargs:
+        default:
+            recursive_search: True
+        segmentation:
+            recursive_search: False
+    targets:
+        rawdata: [intermedfolder, rawfeatsfile]
+        probs: [intermedfolder, probsfeatsfile]
+        segmentation: [intermedfolder, segfeatsfile]
+    features:
+        rawdata:
+            raw: ~
+            gauss_1:
+                params: [1]
+                func: gaussian
+            gauss_3:
+                params: [3]
+                func: gaussian
+
+        probs:
+            raw: ~
+            gauss_1:
+                params: [1]
+                func: gaussian
+            gauss_3:
+                params: [3]
+                func: gaussian
+
+        segmentation:
+            disttransf:
+                params: ~
+                func: disttransf
+                raw: ~
+                gauss_1:
+                    params: [1]
+                    func: gaussian
+                gauss_3:
+                    params: [3]
+                    func: gaussian
+
+find_border_contacts: ~
+
+compute_paths:
+    penaltypower: 10
+    ignorelabels: []
+    max_end_count: 5
+    max_end_count_seed: ~
+
+features_of_paths:
+    anisotropy: [10, 1, 1]
+    features:
+        - Sum
+        - Mean
+        - Variance
+        - Maximum
+        - Minimum
+        - Kurtosis
+        - Skewness
+        - Pathlength
+        - Count
+    max_paths_per_label: 5
+
+random_forest_train: ~
+
+random_forest_prediction: ~
