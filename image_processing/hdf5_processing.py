@@ -355,7 +355,7 @@ class RecursiveDict(dict, SimpleLogger):
                         self[layernewname] = self.pop(layername)
                         # print self.datastructure2string(maxdepth=2)
 
-    def reduce_from_leafs(self):
+    def reduce_from_leafs(self, iterate=False):
         """
         If the branches at the leafs have only one entry, i.e.
         a:
@@ -382,11 +382,24 @@ class RecursiveDict(dict, SimpleLogger):
         :return:
         """
 
-        for d, k, v, kl in self.data_iterator(yield_short_kl=True):
+        if not iterate:
+            for d, k, v, kl in self.data_iterator(yield_short_kl=True):
 
-            if type(v) is not type(self):
-                if len(self[kl].keys()) == 1:
-                    self[kl] = v
+                if type(v) is not type(self):
+                    if len(self[kl].keys()) == 1:
+                        self[kl] = v
+
+        else:
+
+            busy = True
+            while busy:
+
+                busy = False
+                for d, k, v, kl in self.data_iterator(yield_short_kl=True, leaves_only=True):
+
+                    if len(self[kl].keys()) == 1:
+                        self[kl] = v
+                        busy = True
 
     def dcp(self):
         """
@@ -624,14 +637,26 @@ class Hdf5Processing(RecursiveDict, YamlParams):
 
         if recursive_search:
 
-            for d, k, v, kl in newentries.data_iterator(yield_short_kl=True):
+            if len(skeys) == 1:
 
-                if k in skeys:
+                for d, k, v, kl in newentries.data_iterator(yield_short_kl=True):
 
-                    keyid = skeys.index(k)
-                    tkey = tkeys[keyid]
+                    if k in skeys:
 
-                    self[kl + [tkey]] = v
+                        keyid = skeys.index(k)
+                        tkey = tkeys[keyid]
+
+                        self[kl + [tkey]] = v
+
+            else:
+
+                for d, k, v, kl in newentries.data_iterator():
+
+                    if len(kl) >= len(skeys):
+
+                        if np.array_equal(np.array(kl)[-len(skeys):], np.array(skeys)):
+
+                            self[kl] = v
 
         else:
 

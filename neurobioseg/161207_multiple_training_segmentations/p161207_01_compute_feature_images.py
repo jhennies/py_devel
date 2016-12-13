@@ -162,6 +162,7 @@ def compute_feature_images(yparams):
         # Load the necessary images
         #   1. Determine the settings for fetching the data
         try:
+            recursive_search = False
             recursive_search = thisparams['skwargs', 'default', 'recursive_search']
             recursive_search = thisparams['skwargs', sourcekey, 'recursive_search']
         except KeyError:

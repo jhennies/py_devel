@@ -238,6 +238,17 @@ def find_border_contacts(ipl, keys, tkey, debug=False):
             ])
 
 
+def find_border_contacts_arr(segmentation, disttransf, tkey='bc', debug=False):
+
+    data = IPL()
+    data[tkey] = segmentation
+    data['disttransf'][tkey] = disttransf
+
+    find_border_contacts(data, (tkey,), 'rtrn', debug=debug)
+
+    return data['rtrn']
+
+
 def merge_adjacent_objects(
         ipl, key, numberbysize=0, numberbyrandom=0, seed=None,
         targetnames=('largeobjm', 'mergeids_small', 'mergeids_random', 'change_hash'),

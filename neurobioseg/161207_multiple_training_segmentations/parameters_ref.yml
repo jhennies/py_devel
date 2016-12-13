@@ -17,6 +17,8 @@ largeobjfile:   'cremi.splA.train.largeobj.crop.crop_x10_110_y200_712_z200_712.s
 rawfeatsfile:   'cremi.splA.train.rawfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 probsfeatsfile: 'cremi.splA.train.probsfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 segfeatsfile:   'cremi.splA.train.segfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+borderctname:   'contacts'
 
 run_remove_small_objects: True
 run_compute_feature_images: False
@@ -83,7 +85,16 @@ compute_feature_images:
                     params: [3]
                     func: gaussian
 
-find_border_contacts: ~
+find_border_contacts:
+    sources:
+        disttransf: [intermedfolder, segfeatsfile, [disttransf, raw]]
+        segmentation: [datafolder, segmfile]
+    skwargs:
+        default:
+            recursive_search: False
+        disttransf:
+            recursive_search: True
+    target: [intermedfolder, borderctfile]
 
 compute_paths:
     penaltypower: 10
