@@ -58,6 +58,45 @@ class RecursiveDict(dict, SimpleLogger):
         else:
             dict.__setitem__(self, key, val)
 
+    # def r_init(self, keylist, values=None):
+    #     """
+    #     :param keylist: list of lists in the form
+    #         [[i_0, ..., i_n1], ..., [j_0, ..., j_nm]]
+    #
+    #         EXAMPLE
+    #         keylist = [
+    #             ['a'],
+    #             ['b', 'c', 'd'],
+    #             ['b', 'c', 'e'],
+    #             ['b', 'f'],
+    #         ]
+    #         yields a recursive dict of the form:
+    #         - a
+    #         - b
+    #             - c
+    #                 - d
+    #                 - e
+    #             - f
+    #
+    #         NOTE
+    #         keylist=[['a']], keylist=['a'], and keylist='a' are interpreted equally
+    #     :param values: list of values with len(values) = len(keylist) or len(values) = 1
+    #     Can also be a scalar
+    #     """
+    #
+    #     self[keylist] = values
+    #
+    #     # if type(keylist) is list or type(keylist) is tuple:
+    #     #     for i in xrange(0, len(keylist)):
+    #     #         try:
+    #     #             self[keylist[i]] = values[i]
+    #     #         except TypeError:
+    #     #             self[keylist[i]] = values
+    #     #         return self
+    #     # else:
+    #     #     self[keylist] = values
+    #     #     return self
+
     def setdata(self, data):
 
         for k in data.keys():

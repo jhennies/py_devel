@@ -10,31 +10,38 @@ overwriteresults: True
 
 rawdatafile:    'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 rawdataname:    'raw'
+gtruthfile:     'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+gtruthname:     'neuron_ids'
+gtlargefile:    'cremi.splA.train.gtlarge.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+gtlargename:    'neuron_ids'
 probsfile:      'cremi.splA.train.probs.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 probsname:      'data'
 segmfile:       'cremi.splA.train.mcseg_betas.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-largeobjfile:   'cremi.splA.train.largeobj.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+segmlargefile:  'cremi.splA.train.largeobj.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 rawfeatsfile:   'cremi.splA.train.rawfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 probsfeatsfile: 'cremi.splA.train.probsfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 segfeatsfile:   'cremi.splA.train.segfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 borderctname:   'contacts'
+pathsfile:      'cremi.splA.train.paths.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 
 run_remove_small_objects: True
-run_compute_feature_images: False
-run_find_border_contacts: False
-run_compute_paths: False
+run_compute_feature_images: True
+run_find_border_contacts: True
+run_compute_paths: True
 run_features_of_paths: False
 run_random_forest: False
 
 remove_small_objects:
     sources:
         - [datafolder, segmfile]
+        - [datafolder, gtruthfile]
     targets:
-        - [intermedfolder, largeobjfile]
+        - [intermedfolder, segmlargefile]
+        - [intermedfolder, gtlargefile]
     kwargs:
-        skeys: [~]
-        recursive_search: [False]
+        skeys: [~, neuron_ids]
+        recursive_search: [False, True]
     bysize: 10000
     relabel: True
 
@@ -44,7 +51,7 @@ compute_feature_images:
     sources:
         rawdata: [datafolder, rawdatafile, raw]
         probs: [datafolder, probsfile, data]
-        segmentation: [intermedfolder, largeobjfile]
+        segmentation: [intermedfolder, segmlargefile]
     skwargs:
         default:
             recursive_search: True
@@ -88,7 +95,7 @@ compute_feature_images:
 find_border_contacts:
     sources:
         disttransf: [intermedfolder, segfeatsfile, [disttransf, raw]]
-        segmentation: [datafolder, segmfile]
+        segmentation: [intermedfolder, segmlargefile]
     skwargs:
         default:
             recursive_search: False
@@ -97,6 +104,17 @@ find_border_contacts:
     target: [intermedfolder, borderctfile]
 
 compute_paths:
+    sources:
+        segmentation: [intermedfolder, segmlargefile]
+        groundtruth: [intermedfolder, gtlargefile, neuron_ids]
+        contacts: [intermedfolder, borderctfile, contacts]
+        disttransf: [intermedfolder, segfeatsfile, [disttransf, raw]]
+    skwargs:
+        default:
+            recursive_search: True
+        segmentation:
+            recursive_search: False
+    target: [intermedfolder, pathsfile]
     penaltypower: 10
     ignorelabels: []
     max_end_count: 5
