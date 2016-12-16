@@ -710,7 +710,23 @@ def paths_of_labelpairs(
     return paths
 
 
-def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=None, anisotropy=[1, 1, 1]):
+def get_features(
+        paths, featureimages, featurelist, max_paths_per_label,
+        ipl=None, anisotropy=[1, 1, 1], return_pathlist=False
+):
+    """
+    :param paths:
+    :param featureimages:
+    :param featurelist:
+    :param max_paths_per_label:
+    :param ipl:
+    :param anisotropy:
+    :param return_pathlist: When True a list of the path keys is returned in the same order as
+        their features are stored -> Can be used for back-translation of the path classification
+        to the respective object the path is in.
+        It is basically a concatenation of the key list as yielded by the simultaneous iterator.
+    :return:
+    """
 
     newfeats = IPL()
 
@@ -739,6 +755,9 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
     keylist = range(0, max_paths_per_label)
     keylist = [str(x) for x in keylist]
 
+    if return_pathlist:
+        pathlist = []
+
     # Iterate over all paths, yielding a list of one path per label object until no paths are left
     for i, keys, vals in paths.simultaneous_iterator(
             max_count_per_item=max_paths_per_label,
@@ -747,17 +766,12 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
         # keys are respective labels and ids of the paths
         # vals are the coordinates of the path positions
 
+        if return_pathlist:
+            pathlist += keys
 
         if ipl is not None:
             ipl.logging('Working in iteration = {}', i)
             ipl.logging('Keys: {}', keys)
-
-        # if pathlength:
-        #     if newfeats.inkeys(['Pathlength']):
-        #         newfeats['Pathlength'] = np.concatenate((
-        #             newfeats['Pathlength'], compute_path_lengths(vals, anisotropy)))
-        #     else:
-        #         newfeats['Pathlength'] = compute_path_lengths(vals, anisotropy)
 
         if not keys:
             continue
@@ -806,10 +820,16 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
                     else:
                         newfeats[kl + [nk]] = nv
 
-    return newfeats
+    if return_pathlist:
+        return newfeats, np.array(pathlist)
+    else:
+        return newfeats
 
 
-def features_of_paths(ipl, paths_true, paths_false, featureims_true, featureims_false, kl):
+def features_of_paths(
+        ipl, paths_true, paths_false, featureims_true, featureims_false, kl,
+        return_pathlist=False
+):
     """
 
     :param ipl:
@@ -826,21 +846,39 @@ def features_of_paths(ipl, paths_true, paths_false, featureims_true, featureims_
 
     features = IPL()
 
-    features['true'] = get_features(
-        paths_true, featureims_true,
-        list(thisparams['features']),
-        thisparams['max_paths_per_label'], ipl=ipl,
-        anisotropy=thisparams['anisotropy']
-    )
+    if return_pathlist:
+        pathlist = IPL()
+        features['true'], pathlist['true'] = get_features(
+            paths_true, featureims_true,
+            list(thisparams['features']),
+            thisparams['max_paths_per_label'], ipl=ipl,
+            anisotropy=thisparams['anisotropy'],
+            return_pathlist=True
+        )
 
-    features['false'] = get_features(
-        paths_false, featureims_false,
-        list(thisparams['features']),
-        thisparams['max_paths_per_label'], ipl=ipl,
-        anisotropy=thisparams['anisotropy']
-    )
+        features['false'], pathlist['false'] = get_features(
+            paths_false, featureims_false,
+            list(thisparams['features']),
+            thisparams['max_paths_per_label'], ipl=ipl,
+            anisotropy=thisparams['anisotropy'],
+            return_pathlist=True
+        )
+        return features, pathlist
+    else:
+        features['true'] = get_features(
+            paths_true, featureims_true,
+            list(thisparams['features']),
+            thisparams['max_paths_per_label'], ipl=ipl,
+            anisotropy=thisparams['anisotropy']
+        )
 
-    return features
+        features['false'] = get_features(
+            paths_false, featureims_false,
+            list(thisparams['features']),
+            thisparams['max_paths_per_label'], ipl=ipl,
+            anisotropy=thisparams['anisotropy']
+        )
+        return features
 
 
 def rf_concatenate_feature_arrays(features):

@@ -24,6 +24,8 @@ segfeatsfile:   'cremi.splA.train.segfeats.crop.crop_x10_110_y200_712_z200_712.s
 borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 borderctname:   'contacts'
 pathsfile:      'cremi.splA.train.paths.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+pathlistfile:   'cremi.splA.train.pathlist.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 
 run_remove_small_objects: True
 run_compute_feature_images: True
@@ -121,6 +123,27 @@ compute_paths:
     max_end_count_seed: ~
 
 features_of_paths:
+    sources:
+        paths:
+            truepaths: [intermedfolder, pathsfile, truepaths]
+            falsepaths: [intermedfolder, pathsfile, falsepaths]
+        featureims:
+            rawdata: [intermedfolder, rawfeatsfile]
+            probs: [intermedfolder, probsfeatsfile]
+            segmentation: [intermedfolder, segfeatsfile]
+        segmentation:
+            [intermedfolder, segmlargefile]
+    skwargs:
+        paths:
+            default:
+                recursive_search: True
+        featureims:
+            default:
+                recursive_search: False
+        segmentation:
+            recursive_search: False
+    target: [intermedfolder, featuresfile]
+    pathlist: [intermedfolder, pathlistfile]
     anisotropy: [10, 1, 1]
     features:
         - Sum

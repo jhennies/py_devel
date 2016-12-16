@@ -184,14 +184,19 @@ class RecursiveDict(dict, SimpleLogger):
         else:
             self[new] = self.pop(old)
 
-    def datastructure2string(self, maxdepth=None, data=None, indentstr='.  ', function=None):
+    def datastructure2string(
+            self, maxdepth=None, data=None, indentstr='.  ', function=None,
+            leaves_only=True
+    ):
         if data is None:
             data = self
 
         dstr = ''
 
         for d, k, v, kl in data.data_iterator(maxdepth=maxdepth):
-            if function is None or type(v) is type(self):
+            if (function is None or type(v) is type(self)) and leaves_only:
+                dstr += '{}{}\n'.format(indentstr * d, k)
+            elif function is None and not leaves_only:
                 dstr += '{}{}\n'.format(indentstr * d, k)
             else:
                 try:
