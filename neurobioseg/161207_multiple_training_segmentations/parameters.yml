@@ -1,7 +1,7 @@
 datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
-resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161206_neurobioseg_x_seg_beta_0.5/
-intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161206_neurobioseg_x_seg_beta_0.5/intermed/
-scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161206_neurobioseg_x_seg_beta_0.5/scripts/
+resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161219_neurobioseg_x_feats_all_first_full_test/
+intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161219_neurobioseg_x_feats_all_first_full_test/intermed/
+scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161219_neurobioseg_x_feats_all_first_full_test/scripts/
 
 debug: True
 
@@ -10,49 +10,59 @@ overwriteresults: True
 
 rawdatafile:    'cremi.splA.train.raw_neurons.crop.split_x.h5'
 rawdataname:    'raw'
-labelsfile:     'cremi.splA.train.raw_neurons.crop.split_x.h5'
-labelsname:     'neuron_ids'
+gtruthfile:     'cremi.splA.train.raw_neurons.crop.split_x.h5'
+gtruthname:     'neuron_ids'
+gtlargefile:    'cremi.splA.train.gtlarge.crop.split_x.h5'
+gtlargename:    'neuron_ids'
 probsfile:      'cremi.splA.train.probs.crop.split_x.h5'
 probsname:      'data'
-largeobjfile:   'cremi.splA.train.raw_neurons.crop.split_x.h5'
-largeobjname:   'neuron_ids'
-largeobjmfile:  'cremi.splA.train.seg_beta_0.5.crop.split_x.h5'
-largeobjmnames:
-    - 'labels'
-    - 'mergeids_small'
-    - 'mergeids_random'
-    - 'mergeids_all'
-    - 'change_hash'
-featureimsfile: 'cremi.splA.train.featureims.crop.split_x.h5'
+segmfile:       'cremi.splA.train.mcseg_betas.crop.split_x.h5'
+segmlargefile:  'cremi.splA.train.segmlarge.crop.split_x.h5'
+rawfeatsfile:   'cremi.splA.train.rawfeats.crop.split_x.h5'
+probsfeatsfile: 'cremi.splA.train.probsfeats.crop.split_x.h5'
+segfeatsfile:   'cremi.splA.train.segfeats.crop.split_x.h5'
 borderctfile:   'cremi.splA.train.borderct.crop.split_x.h5'
-borderctname:   'centroids'
+borderctname:   'contacts'
 pathsfile:      'cremi.splA.train.paths.crop.split_x.h5'
 featuresfile:   'cremi.splA.train.features.crop.split_x.h5'
-resultsfile:    'cremi.splA.train.results.crop.split_x.h5'
-resultsnames:
-    - 'random_forest'
-    - 'mil'
+pathlistfile:   'cremi.splA.train.pathlist.crop.split_x.h5'
 
-run_remove_small_objects: False
-run_merge_adjacent_objects: False
-run_compute_feature_images: False
-run_find_border_contacts: False
+run_remove_small_objects: True
+run_compute_feature_images: True
+run_find_border_contacts: True
 run_compute_paths: True
 run_features_of_paths: True
-run_random_forest: True
+run_random_forest: False
 
 remove_small_objects:
+    sources:
+        - [datafolder, segmfile]
+        - [datafolder, gtruthfile]
+    targets:
+        - [intermedfolder, segmlargefile]
+        - [intermedfolder, gtlargefile]
+    kwargs:
+        skeys: [~, neuron_ids]
+        recursive_search: [False, True]
     bysize: 10000
     relabel: True
 
-merge_adjacent_objects:
-    seed: ~
-    numberbysize: 0
-    numberbyrandom: 100
-    algorithm: pairs
-
 compute_feature_images:
-    anisotropy: [10, 1, 1]
+    general_params:
+        anisotropy: [10, 1, 1]
+    sources:
+        rawdata: [datafolder, rawdatafile, raw]
+        probs: [datafolder, probsfile, data]
+        segmentation: [intermedfolder, segmlargefile]
+    skwargs:
+        default:
+            recursive_search: True
+        segmentation:
+            recursive_search: False
+    targets:
+        rawdata: [intermedfolder, rawfeatsfile]
+        probs: [intermedfolder, probsfeatsfile]
+        segmentation: [intermedfolder, segfeatsfile]
     features:
         rawdata:
             raw: ~
@@ -68,6 +78,7 @@ compute_feature_images:
             gauss_10:
                 params: [10]
                 func: gaussian
+
         probs:
             raw: ~
             gauss_1:
@@ -82,7 +93,8 @@ compute_feature_images:
             gauss_10:
                 params: [10]
                 func: gaussian
-        largeobjm:
+
+        segmentation:
             disttransf:
                 params: ~
                 func: disttransf
@@ -100,15 +112,56 @@ compute_feature_images:
                     params: [10]
                     func: gaussian
 
-find_border_contacts: ~
+find_border_contacts:
+    sources:
+        disttransf: [intermedfolder, segfeatsfile, [disttransf, raw]]
+        segmentation: [intermedfolder, segmlargefile]
+    skwargs:
+        default:
+            recursive_search: False
+        disttransf:
+            recursive_search: True
+    target: [intermedfolder, borderctfile]
 
 compute_paths:
+    sources:
+        segmentation: [intermedfolder, segmlargefile]
+        groundtruth: [intermedfolder, gtlargefile, neuron_ids]
+        contacts: [intermedfolder, borderctfile, contacts]
+        disttransf: [intermedfolder, segfeatsfile, [disttransf, raw]]
+    skwargs:
+        default:
+            recursive_search: True
+        segmentation:
+            recursive_search: False
+    target: [intermedfolder, pathsfile]
     penaltypower: 10
     ignorelabels: []
     max_end_count: 5
     max_end_count_seed: ~
 
 features_of_paths:
+    sources:
+        paths:
+            truepaths: [intermedfolder, pathsfile, truepaths]
+            falsepaths: [intermedfolder, pathsfile, falsepaths]
+        featureims:
+            rawdata: [intermedfolder, rawfeatsfile]
+            probs: [intermedfolder, probsfeatsfile]
+            segmentation: [intermedfolder, segfeatsfile]
+        segmentation:
+            [intermedfolder, segmlargefile]
+    skwargs:
+        paths:
+            default:
+                recursive_search: True
+        featureims:
+            default:
+                recursive_search: False
+        segmentation:
+            recursive_search: False
+    target: [intermedfolder, featuresfile]
+    pathlist: [intermedfolder, pathlistfile]
     anisotropy: [10, 1, 1]
     features:
         - Sum
@@ -119,6 +172,9 @@ features_of_paths:
         - Kurtosis
         - Skewness
         - Pathlength
-    max_paths_per_label: 5
+        - Count
+    max_paths_per_label: 8
 
-random_forest: ~
+random_forest_train: ~
+
+random_forest_prediction: ~

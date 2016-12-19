@@ -31,7 +31,7 @@ run_remove_small_objects: True
 run_compute_feature_images: True
 run_find_border_contacts: True
 run_compute_paths: True
-run_features_of_paths: False
+run_features_of_paths: True
 run_random_forest: False
 
 remove_small_objects:

@@ -6,7 +6,7 @@ from p161207_00_remove_small_objects import run_remove_small_objects
 from p161207_01_compute_feature_images import run_compute_feature_images
 from p161207_02_find_border_contacts import run_find_border_contacts
 from p161207_03_compute_paths import run_compute_paths
-# from p161201_04_features_of_paths import run_features_of_paths
+from p161207_04_features_of_paths import run_features_of_paths
 # from p161201_06a_random_forest import run_random_forest
 from yaml_parameters import YamlParams
 import os
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     paramfile_cfi = params['scriptsfolder'] + 'compute_feature_images.parameters.yml'
     paramfile_fbc = params['scriptsfolder'] + 'find_border_contacts.parameters.yml'
     paramfile_pth = params['scriptsfolder'] + 'compute_paths.parameters.yml'
-    # paramfile_fop = params['scriptsfolder'] + 'features_of_paths.parameters.yml'
+    paramfile_fop = params['scriptsfolder'] + 'features_of_paths.parameters.yml'
     # paramfile_rdf = params['scriptsfolder'] + 'random_forest.parameters.yml'
 
     # Copy the script files and parameter files of the pipeline components
@@ -123,9 +123,9 @@ if __name__ == '__main__':
     if params['run_compute_paths']:
         copy('p161207_03_compute_paths.py', params['scriptsfolder'])
         copy(yamlfile, paramfile_pth)
-    # if params['run_features_of_paths']:
-    #     copy('p161201_05_features_of_paths.py', params['scriptsfolder'])
-    #     copy(yamlfile, paramfile_fop)
+    if params['run_features_of_paths']:
+        copy('p161207_04_features_of_paths.py', params['scriptsfolder'])
+        copy(yamlfile, paramfile_fop)
     # if params['run_random_forest']:
     #     copy('p161201_06a_random_forest.py', params['scriptsfolder'])
     #     copy(yamlfile, paramfile_rdf)
@@ -148,10 +148,10 @@ if __name__ == '__main__':
         yaml.logging('Calculating paths ...')
         run_compute_paths(paramfile_pth)
 
-    # if params['run_features_of_paths']:
-    #     yaml.logging('Extracting features along paths ...')
-    #     run_features_of_paths(paramfile_fop)
-    #
+    if params['run_features_of_paths']:
+        yaml.logging('Extracting features along paths ...')
+        run_features_of_paths(paramfile_fop)
+
     # if params['run_random_forest']:
     #     yaml.logging('Running random forst on paths ...')
     #     run_random_forest(paramfile_rdf)
