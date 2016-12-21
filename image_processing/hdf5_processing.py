@@ -2,6 +2,7 @@ import h5py
 import numpy as np
 from simple_logger import SimpleLogger
 from yaml_parameters import YamlParams
+import multiprocessing
 import re
 import vigra
 import scipy
@@ -58,44 +59,17 @@ class RecursiveDict(dict, SimpleLogger):
         else:
             dict.__setitem__(self, key, val)
 
-    # def r_init(self, keylist, values=None):
-    #     """
-    #     :param keylist: list of lists in the form
-    #         [[i_0, ..., i_n1], ..., [j_0, ..., j_nm]]
-    #
-    #         EXAMPLE
-    #         keylist = [
-    #             ['a'],
-    #             ['b', 'c', 'd'],
-    #             ['b', 'c', 'e'],
-    #             ['b', 'f'],
-    #         ]
-    #         yields a recursive dict of the form:
-    #         - a
-    #         - b
-    #             - c
-    #                 - d
-    #                 - e
-    #             - f
-    #
-    #         NOTE
-    #         keylist=[['a']], keylist=['a'], and keylist='a' are interpreted equally
-    #     :param values: list of values with len(values) = len(keylist) or len(values) = 1
-    #     Can also be a scalar
-    #     """
-    #
-    #     self[keylist] = values
-    #
-    #     # if type(keylist) is list or type(keylist) is tuple:
-    #     #     for i in xrange(0, len(keylist)):
-    #     #         try:
-    #     #             self[keylist[i]] = values[i]
-    #     #         except TypeError:
-    #     #             self[keylist[i]] = values
-    #     #         return self
-    #     # else:
-    #     #     self[keylist] = values
-    #     #     return self
+    def __add__(self, other):
+
+        dictsum = other.dcp()
+
+        for d, k, v, kl in self.data_iterator(leaves_only=True):
+            if dictsum.inkeys(kl):
+                dictsum[kl] += v
+            else:
+                dictsum[kl] = v
+
+        return dictsum
 
     def setdata(self, data):
 
@@ -167,6 +141,11 @@ class RecursiveDict(dict, SimpleLogger):
                     rtrndict[kl] = self[kl]
 
         return rtrndict
+
+    def merge(self, rdict):
+
+        for d, k, v, kl in rdict.data_iterator(leaves_only=True):
+            self[kl] = v
 
     def rename_entry(self, old, new, search=False):
         """
@@ -301,6 +280,84 @@ class RecursiveDict(dict, SimpleLogger):
                     except:
                         pass
                 yield [key, keys, vals]
+
+    def multiprocessing(
+            self, myfunction, n=4, maxdepth=None, yield_short_kl=False, leaves_only=False,
+            branches_only=False, add=None
+    ):
+        """
+        :param myfunction: The function to be executed
+        :param n: number of threads to use
+
+        For more kwargs refer to data_iterator
+
+        EXAMPLE
+
+        # Initialize and load data
+        data = Hdf5Processing()
+        data.data_from_file(filename='/path/to/data.h5')
+
+        # Define the function which will be multithreaded
+        def data_processing(p):
+            # Use only one input parameter which contains the following data (see data_iterator)
+            d = p[0]
+            k = p[1]
+            kl = p[2]
+
+            # Some computation with a dataitem obtained by use of kl
+            # data has to be available here from scope, i.e. no passing as argument possible
+            do_something_with_data_item(data[kl])
+
+        # This is the multiprocessing call
+        data.multiprocessing(data_processing, n=4, leaves_only=True)
+
+        """
+
+        # Prepare input array for multiprocessing using data_iterator and storing depth (d),
+        #   the current key (k) and keylist (kl) into an array. Note that the data (v) is not
+        #   stored and can only be available in myfunction if it is found in its respective
+        #   scope. (See code example above)
+        p_array = []
+        for d, k, v, kl in self.data_iterator(
+                maxdepth=maxdepth, yield_short_kl=yield_short_kl, leaves_only=leaves_only,
+                branches_only=branches_only
+        ):
+            if add is None:
+                p_array.append([d, k, kl])
+            else:
+                p_array.append([d, k, kl, add])
+
+        # Create processing pool and run
+        pool = multiprocessing.Pool(n)
+        pool.map(myfunction, p_array)
+
+    def multiprocessing_split(
+            self, myfunction, n=4, maxdepth=None, yield_short_kl=False, leaves_only=False,
+            branches_only=False, add=None
+    ):
+
+        # Prepare input array for multiprocessing using data_iterator and storing depth (d),
+        #   the current key (k) and keylist (kl) into an array. Note that the data (v) is not
+        #   stored and can only be available in myfunction if it is found in its respective
+        #   scope. (See code example above)
+        p_array = []
+        c = 0
+        for d, k, v, kl in self.data_iterator(
+                maxdepth=maxdepth, yield_short_kl=yield_short_kl, leaves_only=leaves_only,
+                branches_only=branches_only
+        ):
+            if add is None:
+                p_array.append([d, k, np.array(v), kl])
+            else:
+                p_array.append([d, k, np.array(v), kl, add])
+
+            if c/float(n) == c/n:
+                # Create processing pool and run
+                pool = multiprocessing.Pool(n)
+                pool.map(myfunction, p_array)
+                p_array = []
+
+            c += 1
 
     def lengths(self, depth=0):
 
@@ -596,6 +653,10 @@ class Hdf5Processing(RecursiveDict, YamlParams):
 
     def get_sources(self):
         return self._sources
+
+    def clear_sources(self):
+        for d, k, v, kl in self.data_iterator(yield_short_kl=True, leaves_only=True):
+            self[kl].set_source(None, k)
 
     def populate(self, key=None):
 

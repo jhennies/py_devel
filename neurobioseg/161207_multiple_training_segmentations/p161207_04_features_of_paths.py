@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import processing_libip as libip
 import sys
 from yaml_parameters import YamlParams
+import pickle
 
 
 __author__ = 'jhennies'
@@ -125,6 +126,7 @@ def features_of_paths(yparams):
     pathlistfile = params[thisparams['pathlist'][0]] \
                  + params[thisparams['pathlist'][1]]
 
+    pathlist = ipl()
 
     for d, k, v, kl in segmentation.data_iterator(yield_short_kl=True, leaves_only=True):
         yparams.logging('===============================\nWorking on image: {}', kl + [k])
@@ -154,7 +156,6 @@ def features_of_paths(yparams):
 
 
         features = ipl()
-        pathlist = ipl()
         features[kl + [k]], pathlist[kl + [k]] = libip.features_of_paths(
             yparams,
             intruepaths, infalsepaths,
@@ -166,8 +167,11 @@ def features_of_paths(yparams):
 
         # Write the result to file
         features.write(filepath=featuresfile)
-        pathlist.astype(np.uint8)
-        pathlist.write(filepath=pathlistfile)
+        # pathlist.astype(np.uint8)
+        # pathlist.write(filepath=pathlistfile)
+
+    with open(pathlistfile, 'wb') as f:
+        pickle.dump(pathlist, f)
 
 
 def run_features_of_paths(yamlfile, logging=True):

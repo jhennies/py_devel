@@ -808,7 +808,7 @@ def get_features(
                 # Pick out the features that we asked for
                 newnewfeats = newnewfeats.subset(*featurelist)
 
-                # TODO: Extract feature 'Count' manually due to anisotropy
+                # Done: Extract feature 'Count' manually due to anisotropy
                 # Append to the recently computed list of features
                 for nk, nv in newnewfeats.iteritems():
                     nv = nv[1:]
@@ -821,7 +821,7 @@ def get_features(
                         newfeats[kl + [nk]] = nv
 
     if return_pathlist:
-        return newfeats, np.array(pathlist)
+        return newfeats, pathlist
     else:
         return newfeats
 
@@ -965,11 +965,13 @@ def rf_make_feature_array(features):
 def rf_make_feature_array_with_keylist(features, keylist):
 
     featsarray = None
+
     for k in keylist:
         if featsarray is None:
             featsarray = np.array([features[k]])
         else:
             featsarray = np.concatenate((featsarray, [features[k]]), 0)
+
     featsarray = featsarray.swapaxes(0, 1)
 
     return featsarray
@@ -998,6 +1000,82 @@ def rf_make_forest_input(features):
     return [data, classes]
 
 
+def rf_combine_sources(features, search_for='true', pathlist=None):
+    """
+    Concatenate all the features of the different input images, i.e. all the betas
+
+    :type features: hdf5_image_processing.Hdf5ImageProcessingLib
+    :param features:
+        [somesource_0]:
+            [search_for]:
+                [features]: [f_00, f_10, ..., f_n0]    # with n being the number of paths
+        ...
+        [somesource_N]:
+            [search_for]:
+                [features]: [f_0N, f_1N, ..., f_nN]
+
+    where somesource_i can be a keylist of different length and features represents the feature
+    structure which is identical for all sources.
+
+    :type search_for: anything hashable
+    :param search_for: The item im keylist that serves as parent node for the feature structure
+
+    :type pathlist: hdf5_image_processing.Hdf5ImageProcessingLib
+    :param pathlist:
+        [somesource_0]:
+            [search_for]: [kl_00, ..., kl_n0]
+        ...
+        [somesource_N]:
+            [search_for]: [kl_0N, ..., kl_nN]
+
+    :return
+    hdf5_image_processing.Hdf5ImageProcessingLib()
+    concatenated features
+        [search_for]:
+            [features]: [f_00, ..., f_n0, f_01, ..., f_n1, ..., f_0N, ..., fnN]
+
+    hdf5_image_processing.Hdf5ImageProcessingLib()
+    newpathlist
+        [search_for]: [somesource_1 + kl_00, ..., somesource_N + kl_nN]
+
+    """
+    # TODO: Implement the description
+
+    outfeatures = IPL()
+    if pathlist is not None:
+        newpathlist = IPL()
+        newpathlist[search_for] = []
+
+    for d, k, v, kl in features.data_iterator():
+
+        # print 'kl = {}'.format(kl)
+
+        if k == search_for:
+
+            if pathlist is not None:
+
+                newpathlist[search_for] += [kl + x for x in pathlist[kl]]
+
+            for d2, k2, v2, kl2 in v.data_iterator(leaves_only=True):
+
+                # print '    kl2 = {}'.format(kl2)
+
+                if outfeatures.inkeys([search_for] + kl2):
+                    # print 'Concatenating...'
+                    # print 'Appending shape {} to {}'.format(v2.shape, outfeatures[[search_for] + kl2].shape)
+                    outfeatures[[search_for] + kl2] \
+                        = np.concatenate((outfeatures[[search_for] + kl2], v2), axis=0)
+                else:
+                    outfeatures[[search_for] + kl2] = v2
+
+                # print outfeatures[[search_for] + kl2]
+                # print 'shape = {}'.format(outfeatures[[search_for] + kl2].shape)
+
+    if pathlist is not None:
+        return outfeatures, newpathlist
+    else:
+        return outfeatures
+
 def random_forest(trainfeatures, testfeatures, debug=False):
 
     # print '\n---\n'
@@ -1007,9 +1085,6 @@ def random_forest(trainfeatures, testfeatures, debug=False):
     # print 'testfeatures'
     # print testfeatures
     # print '\n---\n'
-
-    # Done: For a first test, use half for training and half for testing
-    # Done: Compute the class true features
 
     traindata, trainlabels = rf_make_forest_input(trainfeatures)
     testdata, testlabels = rf_make_forest_input(testfeatures)
@@ -1038,6 +1113,7 @@ def random_forest(trainfeatures, testfeatures, debug=False):
 
 
 from sklearn.metrics import f1_score, accuracy_score, recall_score, precision_score
+
 
 def new_eval(result, truth):
 

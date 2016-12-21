@@ -63,39 +63,36 @@ class SimpleLogger():
 
     def logging(self, text, *args, **kwargs):
 
+        name = False
+        listed = False
         if 'name' in kwargs:
             name = kwargs.pop('name')
-        else:
-            name = False
+        if 'listed' in kwargs:
+            listed = kwargs.pop('listed')
 
         if type(text) is str:
 
-            # Build the output
-            text = text.format(*args)
-            if self._name != '' and name:
-                text = '{}: {}'.format(self._name, text)
+            if not listed:
+                # Build the output
+                text = text.format(*args)
+                if self._name != '' and name:
+                    text = '{}: {}'.format(self._name, text)
 
-            # Insert indentation at beginning of text and after every occurance of a newline
-            text = self._insert_indents(text)
+                # Insert indentation at beginning of text and after every occurance of a newline
+                text = self._insert_indents(text)
 
-            # Ouput on console
-            print text
+                # Ouput on console
+                print text
 
-            # Output to file
-            if self._logger is not None:
-                text += '\n'
-                self._logger.write(text)
+                # Output to file
+                if self._logger is not None:
+                    text += '\n'
+                    self._logger.write(text)
 
-            # if self._name != '' and name:
-            #     print '{}: {}'.format(self._name, text.format(*args))
-            # else:
-            #     print text.format(*args)
-            # text += "\n"
-            # if self._logger is not None:
-            #     if self._name != '' and name:
-            #         self._logger.write('{}: {}'.format(self._name, text.format(*args)))
-            #     else:
-            #         self._logger.write(text.format(*args))
+            else:
+                for i in xrange(0, len(args[0])):
+                    self.logging(text, *[x[i] for x in args], name=name)
+
         else:
             print text
             if self._logger is not None:
