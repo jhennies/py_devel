@@ -178,18 +178,20 @@ def random_forest(yparams, debug=False):
 
             intrain = ipl()
             intrain['true'] = libip.rf_make_feature_array_with_keylist(truetrainfeats['true'], feature_space_list)
-            yparams.logging("Computed feature array for ['true'] with shape {}", intrain['true'].shape)
+            yparams.logging("Computed feature array for train['true'] with shape {}", intrain['true'].shape)
             intrain['false'] = libip.rf_make_feature_array_with_keylist(falsetrainfeats['false'], feature_space_list)
-            yparams.logging("Computed feature array for ['false'] with shape {}", intrain['false'].shape)
+            yparams.logging("Computed feature array for train['false'] with shape {}", intrain['false'].shape)
 
             inpredictfeats['true'] = libip.rf_make_feature_array_with_keylist(inpredictfeats['true'], feature_space_list)
-            yparams.logging("Computed feature array for ['true'] with shape {}", inpredictfeats['true'].shape)
+            yparams.logging("Computed feature array for predict['true'] with shape {}", inpredictfeats['true'].shape)
             inpredictfeats['false'] = libip.rf_make_feature_array_with_keylist(inpredictfeats['false'], feature_space_list)
-            yparams.logging("Computed feature array for ['false'] with shape {}", inpredictfeats['false'].shape)
+            yparams.logging("Computed feature array for predict['false'] with shape {}", inpredictfeats['false'].shape)
 
             # Classify
             result = ipl()
-            result[kl] = libip.random_forest(intrain, inpredictfeats, debug=debug)
+            result[kl] = libip.random_forest(
+                intrain, inpredictfeats, debug=debug, balance=balance_classes, logger=yparams
+            )
 
             # Evaluate
             new_eval = ipl()
@@ -197,8 +199,8 @@ def random_forest(yparams, debug=False):
 
             yparams.logging('+++ RESULTS +++')
             yparams.logging("[kl]")
-            for i in result[kl]:
-                yparams.logging('{}', i)
+            # for i in result[kl]:
+            #     yparams.logging('{}', i)
             for key, value in new_eval[kl].iteritems():
                 yparams.logging('{} = {}', key, value)
 
@@ -207,154 +209,9 @@ def random_forest(yparams, debug=False):
             # # Free memory
             # data[kl] = None
 
-    def val(x):
-        return x
-    pathlistout.dss(function=val)
-
-    # params = ipl.get_params()
-    # thisparams = rdict(params['random_forest'])
-    # targetfile = params['resultfolder'] + params['resultsfile']
-    #
-    # # Load the necessary images
-    # load_images(data)
-    # ipl.logging('\nInitial datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
-    #
-    # result = ipl()
-    # new_eval = rdict()
-    # evaluation = rdict()
-    #
-    # for d, k, v, kl in data.data_iterator(yield_short_kl=True):
-    #
-    #     if k == '0':
-    #
-    #         data.logging('===============================\nWorking on group: {}', kl)
-    #
-    #         # TODO: Implement copy full logger
-    #         data[kl].set_logger(data.get_logger())
-    #
-    #         # Note:
-    #         #   Due to the feature input being a dictionary organized by the feature images where
-    #         #   the feature values come from
-    #         #
-    #         #   [kl]
-    #         #       '0'|'1'
-    #         #           'true'|'false'
-    #         #               [featureims]
-    #         #                   'Sum':      [s1, ..., sN]
-    #         #                   'Variance': [v1, ..., vN]
-    #         #                   ...
-    #         #               [Pathlength]:   [l1, ..., lN]
-    #         #
-    #         #   the exact order in which items are iterated over by data_iterator() is not known.
-    #         #
-    #         # Solution:
-    #         #   Iterate over it once and store the keylist in an array (which conserves the order)
-    #         #   When accumulating the featrues for each of the four corresponding subsets, namely
-    #         #   training and testing set with true and false paths each, i.e.
-    #         #   ['0'|'1']['true'|'false'],
-    #         #   the the keylist is used, thus maintaining the correct order in every subset.
-    #         #
-    #         # And that is what is happening here:
-    #         keylist = []
-    #         for d2, k2, v2, kl2 in data[kl]['0', 'true'].data_iterator():
-    #             if type(v2) is not type(data[kl]['0', 'true']):
-    #                 keylist.append(kl2)
-    #
-    #         # Load the image data into memory
-    #         data[kl].populate()
-    #
-    #         # ipl[kl]['0', 'true'] = libip.rf_make_feature_array(ipl[kl]['0', 'true'])
-    #         # ipl.logging("Computed feature array for ['0', 'true'] with shape {}", ipl[kl]['0', 'true'].shape)
-    #         # ipl[kl]['0', 'false'] = libip.rf_make_feature_array(ipl[kl]['0', 'false'])
-    #         # ipl.logging("Computed feature array for ['0', 'false'] with shape {}", ipl[kl]['0', 'false'].shape)
-    #         # ipl[kl]['1', 'true'] = libip.rf_make_feature_array(ipl[kl]['1', 'true'])
-    #         # ipl.logging("Computed feature array for ['1', 'true'] with shape {}", ipl[kl]['1', 'true'].shape)
-    #         # ipl[kl]['1', 'false'] = libip.rf_make_feature_array(ipl[kl]['1', 'false'])
-    #         # ipl.logging("Computed feature array for ['1', 'false'] with shape {}", ipl[kl]['1', 'false'].shape)
-    #
-    #         data[kl]['0', 'true'] = libip.rf_make_feature_array_with_keylist(data[kl]['0', 'true'], keylist)
-    #         data.logging("Computed feature array for ['0', 'true'] with shape {}", data[kl]['0', 'true'].shape)
-    #         data[kl]['0', 'false'] = libip.rf_make_feature_array_with_keylist(data[kl]['0', 'false'], keylist)
-    #         data.logging("Computed feature array for ['0', 'false'] with shape {}", data[kl]['0', 'false'].shape)
-    #         data[kl]['1', 'true'] = libip.rf_make_feature_array_with_keylist(data[kl]['1', 'true'], keylist)
-    #         data.logging("Computed feature array for ['1', 'true'] with shape {}", data[kl]['1', 'true'].shape)
-    #         data[kl]['1', 'false'] = libip.rf_make_feature_array_with_keylist(data[kl]['1', 'false'], keylist)
-    #         data.logging("Computed feature array for ['1', 'false'] with shape {}", data[kl]['1', 'false'].shape)
-    #
-    #         # print '...'
-    #         # print ipl[kl]['0']
-    #
-    #         result[kl + ['0']] = libip.random_forest(data[kl]['0'], ipl[kl]['1'], debug=debug)
-    #         result[kl + ['1']] = libip.random_forest(data[kl]['1'], ipl[kl]['0'], debug=debug)
-    #
-    #         new_eval[kl + ['0']] = libip.new_eval([x[0] for x in result[kl]['0']], [x[1] for x in result[kl]['0']])
-    #         new_eval[kl + ['1']] = libip.new_eval([x[0] for x in result[kl]['1']], [x[1] for x in result[kl]['1']])
-    #
-    #         evaluation[kl + ['0']] = libip.evaluation(result[kl]['0'])
-    #         evaluation[kl + ['1']] = libip.evaluation(result[kl]['1'])
-    #
-    #         data.logging('+++ RESULTS +++')
-    #         data.logging("[kl]['0']")
-    #         for i in result[kl]['0']:
-    #             data.logging('{}', i)
-    #         # for key, value in evaluation[kl]['0'].iteritems():
-    #         #     ipl.logging('{} = {}', key, value)
-    #         for key, value in new_eval[kl]['0'].iteritems():
-    #             data.logging('{} = {}', key, value)
-    #
-    #         data.logging('+++')
-    #         data.logging("[kl]['1']")
-    #         for i in result[kl]['1']:
-    #             data.logging('{}', i)
-    #         # for key, value in evaluation[kl]['1'].iteritems():
-    #         #     ipl.logging('{} = {}', key, value)
-    #         for key, value in new_eval[kl]['1'].iteritems():
-    #             data.logging('{} = {}', key, value)
-    #
-    #         # # Write the result to file
-    #         # ipl.write(filepath=targetfile, keys=[kl])
-    #         # Free memory
-    #             data[kl] = None
-    #
-    # return ipl(data=result), ipl(data=evaluation)
-
-
-# def run_random_forest(yamlfile, logging=True, make_only_feature_array=False, debug=False, write=True):
-#
-#     data = ipl(yaml=yamlfile)
-#
-#     data.set_indent(1)
-#
-#     params = rdict(data=ipl.get_params())
-#     if logging:
-#         data.startlogger(filename=params['resultfolder'] + 'random_forest.log', type='w', name='RandomForest')
-#     else:
-#         data.startlogger()
-#
-#     try:
-#
-#         # # Copy the script file and the parameters to the scriptsfolder
-#         # copy(inspect.stack()[0][1], params['scriptsfolder'])
-#         # copy(yamlfile, params['scriptsfolder'] + 'random_forest.parameters.yml')
-#
-#         # ipl.logging('\nInitial datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
-#
-#         if make_only_feature_array:
-#             make_feature_arrays(ipl)
-#         else:
-#             result = ipl()
-#             result['result'], result['evaluation'] = random_forest(data, debug=debug)
-#
-#             # ipl.logging('\nFinal datastructure: \n\n{}', ipl.datastructure2string(maxdepth=3))
-#
-#             if write:
-#                 result.write(filepath=params['resultfolder'] + params['resultsfile'])
-#
-#         data.logging('')
-#         data.stoplogger()
-#
-#     except:
-#         data.errout('Unexpected error')
+    # def val(x):
+    #     return x
+    # pathlistout.dss(function=val)
 
 
 def run_random_forest(
@@ -385,6 +242,6 @@ def run_random_forest(
 
 if __name__ == '__main__':
 
-    yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters_ref.yml'
+    yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters.yml'
 
     run_random_forest(yamlfile, logging=False, make_only_feature_array=False, debug=True, write=False)

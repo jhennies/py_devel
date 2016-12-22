@@ -25,14 +25,14 @@ borderctfile:   'cremi.splA.train.borderct.crop.split_x.h5'
 borderctname:   'contacts'
 pathsfile:      'cremi.splA.train.paths.crop.split_x.h5'
 featuresfile:   'cremi.splA.train.features.crop.split_x.h5'
-pathlistfile:   'cremi.splA.train.pathlist.crop.split_x.h5'
+pathlistfile:   'cremi.splA.train.pathlist.crop.split_x.pkl'
 
-run_remove_small_objects: True
-run_compute_feature_images: True
-run_find_border_contacts: True
-run_compute_paths: True
-run_features_of_paths: True
-run_random_forest: False
+run_remove_small_objects: False
+run_compute_feature_images: False
+run_find_border_contacts: False
+run_compute_paths: False
+run_features_of_paths: False
+run_random_forest: True
 
 remove_small_objects:
     sources:
@@ -172,9 +172,44 @@ features_of_paths:
         - Kurtosis
         - Skewness
         - Pathlength
-        - Count
     max_paths_per_label: 8
 
-random_forest_train: ~
-
-random_forest_prediction: ~
+random_forest:
+    sources:
+        0a:
+            train: [intermedfolder, featuresfile, {skeys: [x, 0, beta_0.5], recursive_search: True}]
+            predict: [intermedfolder, featuresfile, {skeys: [x, 1, beta_0.5], recursive_search: True}]
+            balance_classes: False
+        0b:
+            train: [intermedfolder, featuresfile, {skeys: [x, 1, beta_0.5], recursive_search: True}]
+            predict: [intermedfolder, featuresfile, {skeys: [x, 0, beta_0.5], recursive_search: True}]
+            balance_classes: False
+        1a:
+            train: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
+            predict: [intermedfolder, featuresfile, {skeys: [x, 1, beta_0.5], recursive_search: True}]
+            balance_classes: False
+        1b:
+            train: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
+            predict: [intermedfolder, featuresfile, {skeys: [x, 0, beta_0.5], recursive_search: True}]
+            balance_classes: False
+        2a:
+            train: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
+            predict: [intermedfolder, featuresfile, {skeys: [x, 1, beta_0.5], recursive_search: True}]
+            balance_classes: True
+        2b:
+            train: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
+            predict: [intermedfolder, featuresfile, {skeys: [x, 0, beta_0.5], recursive_search: True}]
+            balance_classes: True
+        3a:
+            traintrue: [intermedfolder, featuresfile, {skeys: [x, 0, beta_0.5], recursive_search: True}]
+            trainfalse: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
+            predict: [intermedfolder, featuresfile, {skeys: [x, 1, beta_0.5], recursive_search: True}]
+            balance_classes: False
+        3b:
+            traintrue: [intermedfolder, featuresfile, {skeys: [x, 1, beta_0.5], recursive_search: True}]
+            trainfalse: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
+            predict: [intermedfolder, featuresfile, {skeys: [x, 0, beta_0.5], recursive_search: True}]
+            balance_classes: False
+    targets: [resultfolder, resultfile]
+    pathlistin: [intermedfolder, pathlistfile]
+    pathlistout: [intermedfolder, pathlistforestfile]

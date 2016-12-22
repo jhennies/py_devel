@@ -1076,7 +1076,7 @@ def rf_combine_sources(features, search_for='true', pathlist=None):
     else:
         return outfeatures
 
-def random_forest(trainfeatures, testfeatures, debug=False):
+def random_forest(trainfeatures, testfeatures, debug=False, balance=False, logger=None):
 
     # print '\n---\n'
     # print 'trainfeatures: '
@@ -1086,12 +1086,25 @@ def random_forest(trainfeatures, testfeatures, debug=False):
     # print testfeatures
     # print '\n---\n'
 
+    if balance:
+        lentrue = len(trainfeatures['true'])
+        lenfalse = len(trainfeatures['false'])
+        if lentrue > lenfalse:
+            trainfeatures['true'] = np.array(random.sample(trainfeatures['true'].tolist(), lenfalse))
+        else:
+            trainfeatures['false'] = np.array(random.sample(trainfeatures['false'].tolist(), lentrue))
+
     traindata, trainlabels = rf_make_forest_input(trainfeatures)
     testdata, testlabels = rf_make_forest_input(testfeatures)
-
-    print traindata.shape
-    print testdata.shape
-    print trainlabels.shape
+    if logger is None:
+        print traindata.shape
+        print testdata.shape
+        print trainlabels.shape
+    else:
+        logger.logging('Data sizes using balance = {}:', balance)
+        logger.logging('    traindata.shape = {}', traindata.shape)
+        logger.logging('    testdata.shape = {}', testdata.shape)
+        logger.logging('    trainlabels.shape = {}', trainlabels.shape)
 
     if debug:
         # Check if any item from traindata also occurs in testdata
