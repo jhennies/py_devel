@@ -1,7 +1,7 @@
 datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
-resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161207_neurobioseg_x_cropped_develop/
-intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161207_neurobioseg_x_cropped_develop/intermed/
-scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161207_neurobioseg_x_cropped_develop/scripts/
+resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170109_neurobioseg_x_cropped_add_featureims_develop/
+intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170109_neurobioseg_x_cropped_add_featureims_develop/intermed/
+scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170109_neurobioseg_x_cropped_add_featureims_develop/scripts/
 
 debug: True
 
@@ -27,12 +27,12 @@ pathsfile:      'cremi.splA.train.paths.crop.crop_x10_110_y200_712_z200_712.spli
 featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 pathlistfile:   'cremi.splA.train.pathlist.crop.crop_x10_110_y200_712_z200_712.split_x.pkl'
 
-run_remove_small_objects: True
-run_compute_feature_images: True
-run_find_border_contacts: True
-run_compute_paths: True
-run_features_of_paths: True
-run_random_forest: False
+run_remove_small_objects: False
+run_compute_feature_images: False
+run_find_border_contacts: False
+run_compute_paths: False
+run_features_of_paths: False
+run_random_forest: True
 
 remove_small_objects:
     sources:
@@ -66,33 +66,16 @@ compute_feature_images:
     features:
         rawdata:
             raw: ~
-            gauss_1:
+            hess_1:
                 params: [1]
-                func: gaussian
-            gauss_3:
-                params: [3]
-                func: gaussian
-
+                func: hessian_eigenvalues
         probs:
             raw: ~
-            gauss_1:
-                params: [1]
-                func: gaussian
-            gauss_3:
-                params: [3]
-                func: gaussian
-
         segmentation:
             disttransf:
                 params: ~
                 func: disttransf
                 raw: ~
-                gauss_1:
-                    params: [1]
-                    func: gaussian
-                gauss_3:
-                    params: [3]
-                    func: gaussian
 
 find_border_contacts:
     sources:
@@ -154,7 +137,6 @@ features_of_paths:
         - Kurtosis
         - Skewness
         - Pathlength
-        - Count
     max_paths_per_label: 5
 
 random_forest:

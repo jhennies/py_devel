@@ -970,7 +970,10 @@ def rf_make_feature_array_with_keylist(features, keylist):
         if featsarray is None:
             featsarray = np.array([features[k]])
         else:
-            featsarray = np.concatenate((featsarray, [features[k]]), 0)
+            if features[k].ndim == 1:
+                featsarray = np.concatenate((featsarray, [features[k]]), 0)
+            elif features[k].ndim == 2:
+                featsarray = np.concatenate((featsarray, features[k].swapaxes(0, 1)))
 
     featsarray = featsarray.swapaxes(0, 1)
 
@@ -1054,7 +1057,7 @@ def rf_combine_sources(features, search_for='true', pathlist=None):
 
             if pathlist is not None:
 
-                newpathlist[search_for] += [kl + x for x in pathlist[kl]]
+                newpathlist[search_for] += [kl + list(x) for x in pathlist[kl]]
 
             for d2, k2, v2, kl2 in v.data_iterator(leaves_only=True):
 

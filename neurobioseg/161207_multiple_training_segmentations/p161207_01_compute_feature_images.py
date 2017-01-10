@@ -96,6 +96,28 @@ class FeatureFunctions:
 
         return image
 
+    @staticmethod
+    def hessian_eigenvalues(image, general_params, specific_params):
+        return lib.hessian_of_gaussian_eigenvalues(
+            image, specific_params[0], anisotropy=general_params['anisotropy']
+        )
+
+    @staticmethod
+    def structure_tensor(image, general_params, specfic_params):
+        return image
+
+    @staticmethod
+    def gaussian_divergence(image, general_params, specfic_params):
+        return image
+
+    @staticmethod
+    def gaussian_gradient_magnitude(image, general_params, specfic_params):
+        return image
+
+    @staticmethod
+    def laplacian_of_gaussian(image, general_params, specfic_params):
+        return image
+
 
 def compute_features(image, general_params, subfeature_params):
 

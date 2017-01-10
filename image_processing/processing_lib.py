@@ -229,6 +229,18 @@ def gaussian_smoothing(image, sigma, anisotropy=None):
     return vigra.filters.gaussianSmoothing(image, sigma)
 
 
+def hessian_of_gaussian_eigenvalues(image, scale, anisotropy=None):
+    # if anisotropy:
+    #     if type(scale) is not list and type(scale) is not tuple and type(scale) is not np.array:
+    #         scale = np.array([scale]*3).astype(np.float32) / anisotropy
+    #     else:
+    #         scale = np.array(scale) / anisotropy
+
+    image = image.astype(np.float32)
+    result = vigra.filters.hessianOfGaussianEigenvalues(image, scale)
+    return result
+
+
 def extended_local_maxima(image, neighborhood=26):
     image = image.astype(np.float32)
     return vigra.analysis.extendedLocalMaxima3D(image, neighborhood=neighborhood)
