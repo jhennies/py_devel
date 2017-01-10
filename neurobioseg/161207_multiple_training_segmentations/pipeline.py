@@ -60,9 +60,9 @@ if __name__ == '__main__':
         resultfolder = args.ResultFolder[0]
 
     if resultfolder is not None:
-        replace('./parameters.yml', '^resultfolder: .*$', "resultfolder: {}".format(resultfolder))
-        replace('./parameters.yml', '^intermedfolder: .*$', 'intermedfolder: {}{}'.format(resultfolder, 'intermed/'))
-        replace('./parameters.yml', '^scriptsfolder: .*$', 'scriptsfolder: {}{}'.format(resultfolder, 'scripts/'))
+        replace(yamlfile, '^resultfolder: .*$', "resultfolder: {}".format(resultfolder))
+        replace(yamlfile, '^intermedfolder: .*$', 'intermedfolder: {}{}'.format(resultfolder, 'intermed/'))
+        replace(yamlfile, '^scriptsfolder: .*$', 'scriptsfolder: {}{}'.format(resultfolder, 'scripts/'))
         if not os.path.exists(resultfolder):
             os.makedirs(resultfolder)
 
