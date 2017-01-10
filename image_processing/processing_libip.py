@@ -979,6 +979,7 @@ def rf_make_feature_array_with_keylist(features, keylist):
 
     return featsarray
 
+
 def rf_eliminate_invalid_entries(data):
 
     data[np.isnan(data)] = 0
@@ -1042,7 +1043,6 @@ def rf_combine_sources(features, search_for='true', pathlist=None):
         [search_for]: [somesource_1 + kl_00, ..., somesource_N + kl_nN]
 
     """
-    # TODO: Implement the description
 
     outfeatures = IPL()
     if pathlist is not None:
@@ -1078,6 +1078,7 @@ def rf_combine_sources(features, search_for='true', pathlist=None):
         return outfeatures, newpathlist
     else:
         return outfeatures
+
 
 def random_forest(trainfeatures, testfeatures, debug=False, balance=False, logger=None):
 
