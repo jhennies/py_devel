@@ -195,6 +195,8 @@ def random_forest(yparams, debug=False):
 
             # Evaluate
             new_eval = ipl()
+            # print [x[0] for x in result[kl]]
+            # print [x[1] for x in result[kl]]
             new_eval[kl] = libip.new_eval([x[0] for x in result[kl]], [x[1] for x in result[kl]])
 
             yparams.logging('+++ RESULTS +++')

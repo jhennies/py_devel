@@ -1,7 +1,7 @@
 datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
-resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170109_neurobioseg_x_cropped_add_featureims_develop/
-intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170109_neurobioseg_x_cropped_add_featureims_develop/intermed/
-scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170109_neurobioseg_x_cropped_add_featureims_develop/scripts/
+resultfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/161219_neurobioseg_x_feats_all_first_full_test/
+intermedfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/161219_neurobioseg_x_feats_all_first_full_test/intermed/
+scriptsfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/161219_neurobioseg_x_feats_all_first_full_test/scripts/
 
 debug: True
 
