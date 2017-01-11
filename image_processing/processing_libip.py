@@ -1197,6 +1197,8 @@ def compute_paths_with_class(
 
     more_keys = (pathendkey, disttransfkey, gtkey)
 
+    excluded_paths_count = 0
+
     paths = IPL()
     # for k in locmaxkeys:
     if debug:
@@ -1237,14 +1239,27 @@ def compute_paths_with_class(
             # TODO: Alternatively do this by checking if a label change occurs along the
             # TODO:     path. Two label changes would result in equal end point labels but
             # TODO:     the path should be classified as false
+            # new TODO: Only look for the above-mentioned cases and exclude these paths from further
+            #     TODO:     computations. Write the amount of occurrences into the log file.
             ps_true = []
             ps_false = []
             for i in xrange(0, len(ps)):
                 # Compare the start and end point
                 if more_ims[gtkey][tuple(ps_in_bounds[i][0])] == more_ims[gtkey][tuple(ps_in_bounds[i][-1])]:
-                    ps_true.append(ps[i])
-                    ipl.logging('Path label = True')
+                    # Start and end point are within the same gt labels
+                    # Now make sure the paths did not switch the object twice along the way
+                    if len(np.unique(more_ims[gtkey][ps_in_bounds[i][:, 0], ps_in_bounds[i][:, 1], ps_in_bounds[i][:, 2]])) == 1:
+                        ps_true.append(ps[i])
+                        ipl.logging('Path label = True')
+                    else:
+                        # The path switched objects multiple times on the way and is not added to the list
+                        ipl.logging(
+                            'Path starting and ending in label = {} had multiple labels and was excluded',
+                            more_ims[gtkey][tuple(ps_in_bounds[i][0])]
+                        )
+                        excluded_paths_count += 1
                 else:
+                    # Start and end point are within different gt labels
                     ps_false.append(ps[i])
                     ipl.logging('Path label = False')
 
@@ -1279,6 +1294,8 @@ def compute_paths_with_class(
             ipl[gtkey].astype(np.float32) / np.amax(ipl[gtkey]),
             vigra.filters.multiBinaryDilation(ipl[pathendkey].astype(np.uint8), 5)]
         )
+
+    ipl.logging('Number of excluded paths = {}', excluded_paths_count)
 
     return paths
 
