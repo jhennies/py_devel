@@ -12,7 +12,7 @@ from hdf5_processing import RecursiveDict as rdict
 __author__ = 'jhennies'
 
 
-def filter_small_objects(ipl, key, threshold, tkey=None, relabel=False):
+def filter_small_objects(ipl, key, threshold, tkey=None, relabel=False, logger=None):
     """
     Filters small objects
     :param ipl:
@@ -22,12 +22,18 @@ def filter_small_objects(ipl, key, threshold, tkey=None, relabel=False):
     :return:
     """
 
-    ipl.logging('Filtering objects smaller than {} voxels...', threshold)
+    if logger is not None:
+        logger.logging('Filtering objects smaller than {} voxels...', threshold)
+    else:
+        ipl.logging('Filtering objects smaller than {} voxels...', threshold)
 
     unique, counts = np.unique(ipl[key], return_counts=True)
-    ipl.logging('Found objects: {}\nCorresponding sizes: {}', unique, counts)
-
-    ipl.logging('Removing theses objects: {}', unique[counts <= threshold])
+    if logger is not None:
+        logger.logging('Found objects: {}\nCorresponding sizes: {}', unique, counts)
+        logger.logging('Removing theses objects: {}', unique[counts <= threshold])
+    else:
+        ipl.logging('Found objects: {}\nCorresponding sizes: {}', unique, counts)
+        ipl.logging('Removing theses objects: {}', unique[counts <= threshold])
 
 
     # With accumulate set to True, this iterator does everything we need:
@@ -35,14 +41,20 @@ def filter_small_objects(ipl, key, threshold, tkey=None, relabel=False):
     for lbl, lblim in ipl.label_image_iterator(key=key,
                                                labellist=unique[counts > threshold],
                                                accumulate=True, relabel=relabel):
-        ipl.logging('---\nIncluding label {}', lbl)
+        if logger is not None:
+            logger.logging('---\nIncluding label {}', lbl)
+        else:
+            ipl.logging('---\nIncluding label {}', lbl)
 
     if tkey is None:
         ipl[key] = lblim
     else:
         ipl[tkey] = lblim
 
-    ipl.logging('... Done filtering small objects!')
+    if logger is not None:
+        logger.logging('... Done filtering small objects!')
+    else:
+        ipl.logging('... Done filtering small objects!')
 
     return ipl
 
@@ -224,6 +236,17 @@ def find_border_contacts(ipl, keys, tkey, debug=False):
                 (ipl[key].astype(np.float32)/np.amax(ipl[key])).astype(np.float32),
                 (ipl['disttransf', key]/np.amax(ipl['disttransf', key])).astype(np.float32)
             ])
+
+
+def find_border_contacts_arr(segmentation, disttransf, tkey='bc', debug=False):
+
+    data = IPL()
+    data[tkey] = segmentation
+    data['disttransf'][tkey] = disttransf
+
+    find_border_contacts(data, (tkey,), 'rtrn', debug=debug)
+
+    return data['rtrn']
 
 
 def merge_adjacent_objects(
@@ -436,7 +459,8 @@ def merge_adjacent_objects(
 
 
 def find_shortest_path(ipl, penaltypower, bounds, disttransf, locmax,
-                       max_end_count=[], max_end_count_seed=[]):
+                       max_end_count=[], max_end_count_seed=[], yield_in_bounds=False,
+                       return_pathim=True):
 
     # Modify distancetransform
     #
@@ -473,11 +497,18 @@ def find_shortest_path(ipl, penaltypower, bounds, disttransf, locmax,
         for j in xrange(i+1, len(coords)):
             pairs.append((coords[i], coords[j]))
 
-    paths, pathim = lib.shortest_paths(disttransf, pairs, bounds=bounds, hfp=ipl)
+    return lib.shortest_paths(disttransf, pairs, bounds=bounds, hfp=ipl,
+                              yield_in_bounds=yield_in_bounds, return_pathim=return_pathim)
+    # if yield_in_bounds:
+    #     paths, pathim, paths_in_bounds = lib.shortest_paths(disttransf, pairs, bounds=bounds, hfp=ipl, yield_in_bounds=True)
+    #     return paths, pathim, paths_in_bounds
+    # else:
+    #     paths, pathim = lib.shortest_paths(disttransf, pairs, bounds=bounds, hfp=ipl, return_pathim=return_pathim)
+    #     return paths, pathim
 
-    # # Make sure no empty paths lists are returned
-    # paths = [x for x in paths if x.any()]
-    return paths, pathim
+    # # # Make sure no empty paths lists are returned
+    # # paths = [x for x in paths if x.any()]
+    # return paths, pathim
 
 
 def paths_of_labels(
@@ -679,17 +710,64 @@ def paths_of_labelpairs(
     return paths
 
 
-def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=None):
+def get_features(
+        paths, featureimages, featurelist, max_paths_per_label,
+        ipl=None, anisotropy=[1, 1, 1], return_pathlist=False
+):
+    """
+    :param paths:
+    :param featureimages:
+    :param featurelist:
+    :param max_paths_per_label:
+    :param ipl:
+    :param anisotropy:
+    :param return_pathlist: When True a list of the path keys is returned in the same order as
+        their features are stored -> Can be used for back-translation of the path classification
+        to the respective object the path is in.
+        It is basically a concatenation of the key list as yielded by the simultaneous iterator.
+    :return:
+    """
 
     newfeats = IPL()
 
+    # The path length only have to be computed once without using the vigra region features
+    def compute_path_lengths(paths, anisotropy):
+
+        path_lengths = []
+        # for d, k, v, kl in paths.data_iterator():
+        #     if type(v) is not type(paths):
+        for path in paths:
+            path_lengths.append(lib.compute_path_length(np.array(path), anisotropy))
+
+        return np.array(path_lengths)
+    # And only do it when desired
+    pathlength = False
+    try:
+        featurelist.remove('Pathlength')
+    except ValueError:
+        # Means that 'Pathlength' was not in the list
+        pass
+    else:
+        # 'Pathlength' was in the list and is now successfully removed
+        pathlength = True
+        # newfeats['Pathlength'] = compute_path_lengths(paths, anisotropy)
+
     keylist = range(0, max_paths_per_label)
     keylist = [str(x) for x in keylist]
+
+    if return_pathlist:
+        pathlist = []
 
     # Iterate over all paths, yielding a list of one path per label object until no paths are left
     for i, keys, vals in paths.simultaneous_iterator(
             max_count_per_item=max_paths_per_label,
             keylist=keylist):
+        # i is the iteration number
+        # keys are respective labels and ids of the paths
+        # vals are the coordinates of the path positions
+
+        if return_pathlist:
+            pathlist += keys
 
         if ipl is not None:
             ipl.logging('Working in iteration = {}', i)
@@ -704,6 +782,12 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
         c = 1
         for curk, curv in (dict(zip(keys, vals))).iteritems():
             curv = np.array(curv)
+            if pathlength:
+                if not newfeats.inkeys(['Pathlength']):
+                    newfeats['Pathlength'] = np.array([lib.compute_path_length(curv, anisotropy)])
+                else:
+                    newfeats['Pathlength'] = np.concatenate((
+                        newfeats['Pathlength'], [lib.compute_path_length(curv, anisotropy)]))
             curv = lib.swapaxes(curv, 0, 1)
             lib.positions2value(image, curv, c)
             c += 1
@@ -714,7 +798,6 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
             if type(v) is not IPL:
 
                 # Extract the region features of the working image
-                # TODO: Extract feature 'Count' manually due to anisotropy
                 newnewfeats = IPL(
                     data=vigra.analysis.extractRegionFeatures(
                         np.array(v).astype(np.float32),
@@ -722,6 +805,10 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
                         features=featurelist
                     )
                 )
+                # Pick out the features that we asked for
+                newnewfeats = newnewfeats.subset(*featurelist)
+
+                # Done: Extract feature 'Count' manually due to anisotropy
                 # Append to the recently computed list of features
                 for nk, nv in newnewfeats.iteritems():
                     nv = nv[1:]
@@ -733,34 +820,24 @@ def get_features(paths, featureimages, featurelist, max_paths_per_label, ipl=Non
                     else:
                         newfeats[kl + [nk]] = nv
 
-    return newfeats
+    if return_pathlist:
+        return newfeats, pathlist
+    else:
+        return newfeats
 
 
-def features_of_paths(ipl, paths_true, paths_false, featureims_true, featureims_false, kl):
-    # def features_of_paths(ipl, disttransf_images, feature_images, thisparams):
+def features_of_paths(
+        ipl, paths_true, paths_false, featureims_true, featureims_false, kl,
+        return_pathlist=False
+):
     """
-    The following datastructure is necessary for the dicts 'disttransf_images' and 'feature_images':
-    true
-    .   [locmax_name]
-    .   .   [feature_name]
-    false
-    .   [locmax_name]
-    .   .   [feature_name]
-
-    ipl has this datastructure:
-    true
-    .   [locmax_name]
-    .   .   [labels]
-    .   .   .   [paths]
-    false
-    .   [locmax_name]
-    .   .   [labels]
-    .   .   .   [paths]
 
     :param ipl:
-    :param disttransf_images:
-    :param feature_images:
-    :param thisparams:
+    :param paths_true:
+    :param paths_false:
+    :param featureims_true:
+    :param featureims_false:
+    :param kl:
     :return:
     """
 
@@ -769,30 +846,39 @@ def features_of_paths(ipl, paths_true, paths_false, featureims_true, featureims_
 
     features = IPL()
 
-    features['true'] = get_features(
-        paths_true, featureims_true,
-        thisparams['features'],
-        thisparams['max_paths_per_label'], ipl=ipl
-    )
+    if return_pathlist:
+        pathlist = IPL()
+        features['true'], pathlist['true'] = get_features(
+            paths_true, featureims_true,
+            list(thisparams['features']),
+            thisparams['max_paths_per_label'], ipl=ipl,
+            anisotropy=thisparams['anisotropy'],
+            return_pathlist=True
+        )
 
-    # features.write(
-    #     filepath=params['intermedfolder'] + params['featuresfile'],
-    #     keys=kl + ['true'], search=True
-    # )
-    # features[kl + ['true']] = None
+        features['false'], pathlist['false'] = get_features(
+            paths_false, featureims_false,
+            list(thisparams['features']),
+            thisparams['max_paths_per_label'], ipl=ipl,
+            anisotropy=thisparams['anisotropy'],
+            return_pathlist=True
+        )
+        return features, pathlist
+    else:
+        features['true'] = get_features(
+            paths_true, featureims_true,
+            list(thisparams['features']),
+            thisparams['max_paths_per_label'], ipl=ipl,
+            anisotropy=thisparams['anisotropy']
+        )
 
-    features['false'] = get_features(
-        paths_false, featureims_false,
-        thisparams['features'],
-        thisparams['max_paths_per_label'], ipl=ipl
-    )
-
-    # features.write(
-    #     filepath=params['intermedfolder'] + params['featuresfile'],
-    #     keys=kl + ['false'], search=True
-    # )
-
-    return features
+        features['false'] = get_features(
+            paths_false, featureims_false,
+            list(thisparams['features']),
+            thisparams['max_paths_per_label'], ipl=ipl,
+            anisotropy=thisparams['anisotropy']
+        )
+        return features
 
 
 def rf_concatenate_feature_arrays(features):
@@ -876,6 +962,24 @@ def rf_make_feature_array(features):
     return features
 
 
+def rf_make_feature_array_with_keylist(features, keylist):
+
+    featsarray = None
+
+    for k in keylist:
+        if featsarray is None:
+            featsarray = np.array([features[k]])
+        else:
+            if features[k].ndim == 1:
+                featsarray = np.concatenate((featsarray, [features[k]]), 0)
+            elif features[k].ndim == 2:
+                featsarray = np.concatenate((featsarray, features[k].swapaxes(0, 1)))
+
+    featsarray = featsarray.swapaxes(0, 1)
+
+    return featsarray
+
+
 def rf_eliminate_invalid_entries(data):
 
     data[np.isnan(data)] = 0
@@ -900,7 +1004,83 @@ def rf_make_forest_input(features):
     return [data, classes]
 
 
-def random_forest(trainfeatures, testfeatures, debug=False):
+def rf_combine_sources(features, search_for='true', pathlist=None):
+    """
+    Concatenate all the features of the different input images, i.e. all the betas
+
+    :type features: hdf5_image_processing.Hdf5ImageProcessingLib
+    :param features:
+        [somesource_0]:
+            [search_for]:
+                [features]: [f_00, f_10, ..., f_n0]    # with n being the number of paths
+        ...
+        [somesource_N]:
+            [search_for]:
+                [features]: [f_0N, f_1N, ..., f_nN]
+
+    where somesource_i can be a keylist of different length and features represents the feature
+    structure which is identical for all sources.
+
+    :type search_for: anything hashable
+    :param search_for: The item im keylist that serves as parent node for the feature structure
+
+    :type pathlist: hdf5_image_processing.Hdf5ImageProcessingLib
+    :param pathlist:
+        [somesource_0]:
+            [search_for]: [kl_00, ..., kl_n0]
+        ...
+        [somesource_N]:
+            [search_for]: [kl_0N, ..., kl_nN]
+
+    :return
+    hdf5_image_processing.Hdf5ImageProcessingLib()
+    concatenated features
+        [search_for]:
+            [features]: [f_00, ..., f_n0, f_01, ..., f_n1, ..., f_0N, ..., fnN]
+
+    hdf5_image_processing.Hdf5ImageProcessingLib()
+    newpathlist
+        [search_for]: [somesource_1 + kl_00, ..., somesource_N + kl_nN]
+
+    """
+
+    outfeatures = IPL()
+    if pathlist is not None:
+        newpathlist = IPL()
+        newpathlist[search_for] = []
+
+    for d, k, v, kl in features.data_iterator():
+
+        # print 'kl = {}'.format(kl)
+
+        if k == search_for:
+
+            if pathlist is not None:
+
+                newpathlist[search_for] += [kl + list(x) for x in pathlist[kl]]
+
+            for d2, k2, v2, kl2 in v.data_iterator(leaves_only=True):
+
+                # print '    kl2 = {}'.format(kl2)
+
+                if outfeatures.inkeys([search_for] + kl2):
+                    # print 'Concatenating...'
+                    # print 'Appending shape {} to {}'.format(v2.shape, outfeatures[[search_for] + kl2].shape)
+                    outfeatures[[search_for] + kl2] \
+                        = np.concatenate((outfeatures[[search_for] + kl2], v2), axis=0)
+                else:
+                    outfeatures[[search_for] + kl2] = v2
+
+                # print outfeatures[[search_for] + kl2]
+                # print 'shape = {}'.format(outfeatures[[search_for] + kl2].shape)
+
+    if pathlist is not None:
+        return outfeatures, newpathlist
+    else:
+        return outfeatures
+
+
+def random_forest(trainfeatures, testfeatures, debug=False, balance=False, logger=None):
 
     # print '\n---\n'
     # print 'trainfeatures: '
@@ -910,15 +1090,25 @@ def random_forest(trainfeatures, testfeatures, debug=False):
     # print testfeatures
     # print '\n---\n'
 
-    # Done: For a first test, use half for training and half for testing
-    # Done: Compute the class true features
+    if balance:
+        lentrue = len(trainfeatures['true'])
+        lenfalse = len(trainfeatures['false'])
+        if lentrue > lenfalse:
+            trainfeatures['true'] = np.array(random.sample(trainfeatures['true'].tolist(), lenfalse))
+        else:
+            trainfeatures['false'] = np.array(random.sample(trainfeatures['false'].tolist(), lentrue))
 
     traindata, trainlabels = rf_make_forest_input(trainfeatures)
     testdata, testlabels = rf_make_forest_input(testfeatures)
-
-    print traindata.shape
-    print testdata.shape
-    print trainlabels.shape
+    if logger is None:
+        print traindata.shape
+        print testdata.shape
+        print trainlabels.shape
+    else:
+        logger.logging('Data sizes using balance = {}:', balance)
+        logger.logging('    traindata.shape = {}', traindata.shape)
+        logger.logging('    testdata.shape = {}', testdata.shape)
+        logger.logging('    trainlabels.shape = {}', trainlabels.shape)
 
     if debug:
         # Check if any item from traindata also occurs in testdata
@@ -940,6 +1130,7 @@ def random_forest(trainfeatures, testfeatures, debug=False):
 
 
 from sklearn.metrics import f1_score, accuracy_score, recall_score, precision_score
+
 
 def new_eval(result, truth):
 
@@ -986,5 +1177,110 @@ def evaluation(x):
     return rdict(data={
         'precision': precision(x), 'recall': recall(x), 'f1': f1(x), 'accuracy': accuracy(x)
     })
+
+
+def create_paths_image(paths, shp):
+    pathsim = np.zeros(shp)
+
+    for d, k, v, kl in paths.data_iterator():
+        if type(v) is not type(paths):
+
+            pathsim = lib.positions2value(pathsim, np.swapaxes(v, 0, 1), 1)
+
+    return pathsim
+
+
+def compute_paths_with_class(
+        ipl, labelkey, pathendkey, disttransfkey, gtkey, thisparams, ignore=[],
+        max_end_count=[], max_end_count_seed=[], debug=False
+):
+
+    more_keys = (pathendkey, disttransfkey, gtkey)
+
+    paths = IPL()
+    # for k in locmaxkeys:
+    if debug:
+        ipl.logging('Running compute_paths_with_class in debug mode ...')
+        # paths['truepathsim'] = np.zeros(ipl[labelkey].shape)
+        # paths['falsepathsim'] = np.zeros(ipl[labelkey].shape)
+
+    for lbl, lblim, more_ims, bounds in ipl.label_image_bounds_iterator(
+        key=labelkey, background=0, more_keys=more_keys,
+        maskvalue=0, value=0
+    ):
+        if lbl in ignore:
+            continue
+        # The format of more_ims is:
+        # more_ims = {locmaxkeys[0]: locmax_1,
+        #                ...
+        #             locmaxkeys[n]: locmax_n,
+        #             disttransfkey: disttransf}
+
+        ipl.logging('======================\nWorking on label = {}', lbl)
+        # ipl.logging('more_ims structure:\n---\n{}', more_ims.datastructure2string())
+        ipl.logging('bounds = {}', bounds)
+
+        if np.amax(more_ims[pathendkey]) > 0:
+
+            # Compute the shortest paths (Note that this actually computes all paths within
+            # an object
+            ps, ps_in_bounds = find_shortest_path(
+                ipl, thisparams['penaltypower'], bounds,
+                more_ims[disttransfkey], more_ims[pathendkey],
+                max_end_count=max_end_count,
+                max_end_count_seed=max_end_count_seed,
+                yield_in_bounds=True, return_pathim=False
+            )
+
+            # Determine if the shortest path is starting and ending in two different ground
+            #   truth objects and sort the paths accordingly
+            # TODO: Alternatively do this by checking if a label change occurs along the
+            # TODO:     path. Two label changes would result in equal end point labels but
+            # TODO:     the path should be classified as false
+            ps_true = []
+            ps_false = []
+            for i in xrange(0, len(ps)):
+                # Compare the start and end point
+                if more_ims[gtkey][tuple(ps_in_bounds[i][0])] == more_ims[gtkey][tuple(ps_in_bounds[i][-1])]:
+                    ps_true.append(ps[i])
+                    ipl.logging('Path label = True')
+                else:
+                    ps_false.append(ps[i])
+                    ipl.logging('Path label = False')
+
+            # Only store the path if the path-calculation successfully determined a path
+            # Otherwise an empty list would be stored
+            if ps_true:
+                ipl.logging('Number of true paths found: {}', len(ps_true))
+
+                pskeys = range(0, len(ps_true))
+                ps_true = IPL(data=dict(zip(pskeys, ps_true)))
+
+                paths['truepaths', lbl] = ps_true
+
+            if ps_false:
+                ipl.logging('Number of false paths found: {}', len(ps_false))
+
+                pskeys = range(0, len(ps_false))
+                ps_false = IPL(data=dict(zip(pskeys, ps_false)))
+
+                paths['falsepaths', lbl] = ps_false
+
+    if debug:
+        pathsim = create_paths_image(paths['truepaths'], ipl[labelkey].shape)
+        paths['overlay_true'] = np.array(
+            [pathsim,
+            ipl[gtkey].astype(np.float32) / np.amax(ipl[gtkey]),
+            vigra.filters.multiBinaryDilation(ipl[pathendkey].astype(np.uint8), 5)]
+        )
+        pathsim = create_paths_image(paths['falsepaths'], ipl[labelkey].shape)
+        paths['overlay_false'] = np.array(
+            [pathsim,
+            ipl[gtkey].astype(np.float32) / np.amax(ipl[gtkey]),
+            vigra.filters.multiBinaryDilation(ipl[pathendkey].astype(np.uint8), 5)]
+        )
+
+    return paths
+
 
 

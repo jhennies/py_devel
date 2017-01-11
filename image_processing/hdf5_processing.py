@@ -2,6 +2,7 @@ import h5py
 import numpy as np
 from simple_logger import SimpleLogger
 from yaml_parameters import YamlParams
+import multiprocessing
 import re
 import vigra
 import scipy
@@ -57,6 +58,18 @@ class RecursiveDict(dict, SimpleLogger):
                 dict.__setitem__(self, key[0], val)
         else:
             dict.__setitem__(self, key, val)
+
+    def __add__(self, other):
+
+        dictsum = other.dcp()
+
+        for d, k, v, kl in self.data_iterator(leaves_only=True):
+            if dictsum.inkeys(kl):
+                dictsum[kl] += v
+            else:
+                dictsum[kl] = v
+
+        return dictsum
 
     def setdata(self, data):
 
@@ -129,6 +142,11 @@ class RecursiveDict(dict, SimpleLogger):
 
         return rtrndict
 
+    def merge(self, rdict):
+
+        for d, k, v, kl in rdict.data_iterator(leaves_only=True):
+            self[kl] = v
+
     def rename_entry(self, old, new, search=False):
         """
         Renames an entry, regardless of being node or leaf
@@ -145,14 +163,19 @@ class RecursiveDict(dict, SimpleLogger):
         else:
             self[new] = self.pop(old)
 
-    def datastructure2string(self, maxdepth=None, data=None, indentstr='.  ', function=None):
+    def datastructure2string(
+            self, maxdepth=None, data=None, indentstr='.  ', function=None,
+            leaves_only=True
+    ):
         if data is None:
             data = self
 
         dstr = ''
 
         for d, k, v, kl in data.data_iterator(maxdepth=maxdepth):
-            if function is None or type(v) is type(self):
+            if (function is None or type(v) is type(self)) and leaves_only:
+                dstr += '{}{}\n'.format(indentstr * d, k)
+            elif function is None and not leaves_only:
                 dstr += '{}{}\n'.format(indentstr * d, k)
             else:
                 try:
@@ -176,7 +199,10 @@ class RecursiveDict(dict, SimpleLogger):
                                       function=function)
         )
 
-    def data_iterator(self, maxdepth=None, data=None, depth=0, keylist=[], yield_short_kl=False):
+    def data_iterator(
+            self, maxdepth=None, data=None, depth=0, keylist=[], yield_short_kl=False,
+            leaves_only=False, branches_only=False
+    ):
 
         depth += 1
         if maxdepth is not None:
@@ -189,22 +215,32 @@ class RecursiveDict(dict, SimpleLogger):
         try:
 
             for key, val in data.iteritems():
-                # print key, val
-                if yield_short_kl:
-                    yield [depth-1, key, val, keylist]
+
+                if not yield_short_kl:
                     kl = keylist + [key,]
                 else:
-                    kl = keylist + [key,]
-                    # yield {'depth': depth-1, 'key': key, 'val': val, 'keylist': kl}
+                    kl = keylist
+
+                if not leaves_only and not branches_only:
                     yield [depth-1, key, val, kl]
-                # self.data_iterator(level=level, maxlevel=maxlevel, data=val)
+                if leaves_only:
+                    if type(val) is not type(self):
+                        yield [depth-1, key, val, kl]
+                if branches_only:
+                    if type(val) is type(self):
+                        yield [depth-1, key, val, kl]
+
+                if yield_short_kl:
+                    kl = keylist + [key,]
 
                 for d in self.data_iterator(
-                        maxdepth=maxdepth, data=val, depth=depth, keylist=kl,
-                        yield_short_kl=yield_short_kl):
+                    maxdepth=maxdepth, data=val, depth=depth, keylist=kl,
+                    yield_short_kl=yield_short_kl, leaves_only=leaves_only,
+                    branches_only=branches_only
+                ):
                     yield d
 
-        except:
+        except AttributeError:
             pass
 
     def simultaneous_iterator(self, data=None, keylist=None, max_count_per_item=None):
@@ -244,6 +280,84 @@ class RecursiveDict(dict, SimpleLogger):
                     except:
                         pass
                 yield [key, keys, vals]
+
+    def multiprocessing(
+            self, myfunction, n=4, maxdepth=None, yield_short_kl=False, leaves_only=False,
+            branches_only=False, add=None
+    ):
+        """
+        :param myfunction: The function to be executed
+        :param n: number of threads to use
+
+        For more kwargs refer to data_iterator
+
+        EXAMPLE
+
+        # Initialize and load data
+        data = Hdf5Processing()
+        data.data_from_file(filename='/path/to/data.h5')
+
+        # Define the function which will be multithreaded
+        def data_processing(p):
+            # Use only one input parameter which contains the following data (see data_iterator)
+            d = p[0]
+            k = p[1]
+            kl = p[2]
+
+            # Some computation with a dataitem obtained by use of kl
+            # data has to be available here from scope, i.e. no passing as argument possible
+            do_something_with_data_item(data[kl])
+
+        # This is the multiprocessing call
+        data.multiprocessing(data_processing, n=4, leaves_only=True)
+
+        """
+
+        # Prepare input array for multiprocessing using data_iterator and storing depth (d),
+        #   the current key (k) and keylist (kl) into an array. Note that the data (v) is not
+        #   stored and can only be available in myfunction if it is found in its respective
+        #   scope. (See code example above)
+        p_array = []
+        for d, k, v, kl in self.data_iterator(
+                maxdepth=maxdepth, yield_short_kl=yield_short_kl, leaves_only=leaves_only,
+                branches_only=branches_only
+        ):
+            if add is None:
+                p_array.append([d, k, kl])
+            else:
+                p_array.append([d, k, kl, add])
+
+        # Create processing pool and run
+        pool = multiprocessing.Pool(n)
+        pool.map(myfunction, p_array)
+
+    def multiprocessing_split(
+            self, myfunction, n=4, maxdepth=None, yield_short_kl=False, leaves_only=False,
+            branches_only=False, add=None
+    ):
+
+        # Prepare input array for multiprocessing using data_iterator and storing depth (d),
+        #   the current key (k) and keylist (kl) into an array. Note that the data (v) is not
+        #   stored and can only be available in myfunction if it is found in its respective
+        #   scope. (See code example above)
+        p_array = []
+        c = 0
+        for d, k, v, kl in self.data_iterator(
+                maxdepth=maxdepth, yield_short_kl=yield_short_kl, leaves_only=leaves_only,
+                branches_only=branches_only
+        ):
+            if add is None:
+                p_array.append([d, k, np.array(v), kl])
+            else:
+                p_array.append([d, k, np.array(v), kl, add])
+
+            if c/float(n) == c/n:
+                # Create processing pool and run
+                pool = multiprocessing.Pool(n)
+                pool.map(myfunction, p_array)
+                p_array = []
+
+            c += 1
 
     def lengths(self, depth=0):
 
@@ -342,7 +456,7 @@ class RecursiveDict(dict, SimpleLogger):
                         self[layernewname] = self.pop(layername)
                         # print self.datastructure2string(maxdepth=2)
 
-    def reduce_from_leafs(self):
+    def reduce_from_leafs(self, iterate=False):
         """
         If the branches at the leafs have only one entry, i.e.
         a:
@@ -369,11 +483,24 @@ class RecursiveDict(dict, SimpleLogger):
         :return:
         """
 
-        for d, k, v, kl in self.data_iterator(yield_short_kl=True):
+        if not iterate:
+            for d, k, v, kl in self.data_iterator(yield_short_kl=True):
 
-            if type(v) is not type(self):
-                if len(self[kl].keys()) == 1:
-                    self[kl] = v
+                if type(v) is not type(self):
+                    if len(self[kl].keys()) == 1:
+                        self[kl] = v
+
+        else:
+
+            busy = True
+            while busy:
+
+                busy = False
+                for d, k, v, kl in self.data_iterator(yield_short_kl=True, leaves_only=True):
+
+                    if len(self[kl].keys()) == 1:
+                        self[kl] = v
+                        busy = True
 
     def dcp(self):
         """
@@ -527,6 +654,10 @@ class Hdf5Processing(RecursiveDict, YamlParams):
     def get_sources(self):
         return self._sources
 
+    def clear_sources(self):
+        for d, k, v, kl in self.data_iterator(yield_short_kl=True, leaves_only=True):
+            self[kl].set_source(None, k)
+
     def populate(self, key=None):
 
         if key is None:
@@ -611,14 +742,26 @@ class Hdf5Processing(RecursiveDict, YamlParams):
 
         if recursive_search:
 
-            for d, k, v, kl in newentries.data_iterator(yield_short_kl=True):
+            if len(skeys) == 1:
 
-                if k in skeys:
+                for d, k, v, kl in newentries.data_iterator(yield_short_kl=True):
 
-                    keyid = skeys.index(k)
-                    tkey = tkeys[keyid]
+                    if k in skeys:
 
-                    self[kl + [tkey]] = v
+                        keyid = skeys.index(k)
+                        tkey = tkeys[keyid]
+
+                        self[kl + [tkey]] = v
+
+            else:
+
+                for d, k, v, kl in newentries.data_iterator():
+
+                    if len(kl) >= len(skeys):
+
+                        if np.array_equal(np.array(kl)[-len(skeys):], np.array(skeys)):
+
+                            self[kl] = v
 
         else:
 

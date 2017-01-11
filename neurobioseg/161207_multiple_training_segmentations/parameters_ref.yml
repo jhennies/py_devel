@@ -1,0 +1,174 @@
+datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
+resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170109_neurobioseg_x_cropped_add_featureims_develop/
+intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170109_neurobioseg_x_cropped_add_featureims_develop/intermed/
+scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170109_neurobioseg_x_cropped_add_featureims_develop/scripts/
+
+debug: True
+
+createfolders: True
+overwriteresults: True
+
+rawdatafile:    'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+rawdataname:    'raw'
+gtruthfile:     'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+gtruthname:     'neuron_ids'
+gtlargefile:    'cremi.splA.train.gtlarge.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+gtlargename:    'neuron_ids'
+probsfile:      'cremi.splA.train.probs.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+probsname:      'data'
+segmfile:       'cremi.splA.train.mcseg_betas.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+segmlargefile:  'cremi.splA.train.segmlarge.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+rawfeatsfile:   'cremi.splA.train.rawfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+probsfeatsfile: 'cremi.splA.train.probsfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+segfeatsfile:   'cremi.splA.train.segfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+borderctname:   'contacts'
+pathsfile:      'cremi.splA.train.paths.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+pathlistfile:   'cremi.splA.train.pathlist.crop.crop_x10_110_y200_712_z200_712.split_x.pkl'
+
+run_remove_small_objects: False
+run_compute_feature_images: False
+run_find_border_contacts: False
+run_compute_paths: True
+run_features_of_paths: False
+run_random_forest: False
+
+remove_small_objects:
+    sources:
+        - [datafolder, segmfile]
+        - [datafolder, gtruthfile]
+    targets:
+        - [intermedfolder, segmlargefile]
+        - [intermedfolder, gtlargefile]
+    kwargs:
+        skeys: [~, neuron_ids]
+        recursive_search: [False, True]
+    bysize: 10000
+    relabel: True
+
+compute_feature_images:
+    general_params:
+        anisotropy: [10, 1, 1]
+    sources:
+        rawdata: [datafolder, rawdatafile, raw]
+        probs: [datafolder, probsfile, data]
+        segmentation: [intermedfolder, segmlargefile]
+    skwargs:
+        default:
+            recursive_search: True
+        segmentation:
+            recursive_search: False
+    targets:
+        rawdata: [intermedfolder, rawfeatsfile]
+        probs: [intermedfolder, probsfeatsfile]
+        segmentation: [intermedfolder, segfeatsfile]
+    features:
+        rawdata:
+            raw: ~
+            hess_1:
+                params: [1]
+                func: hessian_eigenvalues
+        probs:
+            raw: ~
+        segmentation:
+            disttransf:
+                params: ~
+                func: disttransf
+                raw: ~
+
+find_border_contacts:
+    sources:
+        disttransf: [intermedfolder, segfeatsfile, [disttransf, raw]]
+        segmentation: [intermedfolder, segmlargefile]
+    skwargs:
+        default:
+            recursive_search: False
+        disttransf:
+            recursive_search: True
+    target: [intermedfolder, borderctfile]
+
+compute_paths:
+    sources:
+        segmentation: [intermedfolder, segmlargefile]
+        groundtruth: [intermedfolder, gtlargefile, neuron_ids]
+        contacts: [intermedfolder, borderctfile, contacts]
+        disttransf: [intermedfolder, segfeatsfile, [disttransf, raw]]
+    skwargs:
+        default:
+            recursive_search: True
+        segmentation:
+            recursive_search: False
+    target: [intermedfolder, pathsfile]
+    penaltypower: 10
+    ignorelabels: []
+    max_end_count: 5
+    max_end_count_seed: ~
+
+features_of_paths:
+    sources:
+        paths:
+            truepaths: [intermedfolder, pathsfile, truepaths]
+            falsepaths: [intermedfolder, pathsfile, falsepaths]
+        featureims:
+            rawdata: [intermedfolder, rawfeatsfile]
+            probs: [intermedfolder, probsfeatsfile]
+            segmentation: [intermedfolder, segfeatsfile]
+        segmentation:
+            [intermedfolder, segmlargefile]
+    skwargs:
+        paths:
+            default:
+                recursive_search: True
+        featureims:
+            default:
+                recursive_search: False
+        segmentation:
+            recursive_search: False
+    target: [intermedfolder, featuresfile]
+    pathlist: [intermedfolder, pathlistfile]
+    anisotropy: [10, 1, 1]
+    features:
+        - Sum
+        - Mean
+        - Variance
+        - Maximum
+        - Minimum
+        - Kurtosis
+        - Skewness
+        - Pathlength
+    max_paths_per_label: 5
+
+random_forest:
+    sources:
+        0a:
+            train: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
+            predict: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
+            balance_classes: False
+        0b:
+            train: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
+            predict: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
+            balance_classes: False
+        1a:
+            train: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
+            predict: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
+            balance_classes: True
+        1b:
+            train: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
+            predict: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
+            balance_classes: True
+        2a:
+            traintrue: [intermedfolder, featuresfile, {skeys: [x, 0, beta_0.5], recursive_search: True}]
+            trainfalse: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
+            predict: [intermedfolder, featuresfile, {skeys: [x, 1, beta_0.5], recursive_search: True}]
+            balance_classes: False
+        2b:
+            traintrue: [intermedfolder, featuresfile, {skeys: [x, 1, beta_0.5], recursive_search: True}]
+            trainfalse: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
+            predict: [intermedfolder, featuresfile, {skeys: [x, 0, beta_0.5], recursive_search: True}]
+            balance_classes: False
+    targets: [resultfolder, resultfile]
+    pathlistin: [intermedfolder, pathlistfile]
+    pathlistout: [intermedfolder, pathlistforestfile]
+
+

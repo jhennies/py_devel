@@ -1,35 +1,34 @@
 datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
-resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161201_neurobioseg_x_feats_all_paths-on-correct-dt/
-intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161201_neurobioseg_x_feats_all_paths-on-correct-dt/intermed/
-scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161201_neurobioseg_x_feats_all_paths-on-correct-dt/scripts/
+resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161201_neurobioseg_x_cropped_develop/
+intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161201_neurobioseg_x_cropped_develop/intermed/
+scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161201_neurobioseg_x_cropped_develop/scripts/
+
+debug: True
 
 createfolders: True
 overwriteresults: True
 
-debug: True
-
-rawdatafile:    'cremi.splA.train.raw_neurons.crop.split_x.h5'
+rawdatafile:    'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 rawdataname:    'raw'
-labelsfile:     'cremi.splA.train.raw_neurons.crop.split_x.h5'
+labelsfile:     'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 labelsname:     'neuron_ids'
-probsfile:      'cremi.splA.train.probs.crop.split_x.h5'
+probsfile:      'cremi.splA.train.probs.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 probsname:      'data'
-largeobjfile:   'cremi.splA.train.largeobj.crop.split_x.h5'
+largeobjfile:   'cremi.splA.train.largeobj.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 largeobjname:   'largeobj'
-largeobjmfile:  'cremi.splA.train.largeobjm.crop.split_x.h5'
+largeobjmfile:  'cremi.splA.train.largeobjm.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 largeobjmnames:
     - 'largeobjm'
     - 'mergeids_small'
     - 'mergeids_random'
     - 'mergeids_all'
     - 'change_hash'
-featureimsfile: 'cremi.splA.train.featureims.crop.split_x.h5'
-borderctfile:   'cremi.splA.train.borderct.crop.split_x.h5'
+featureimsfile: 'cremi.splA.train.featureims.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 borderctname:   'centroids'
-pathstruefile:  'cremi.splA.train.pathstrue.crop.split_x.h5'
-pathsfalsefile: 'cremi.splA.train.pathsfalse.crop.split_x.h5'
-featuresfile:   'cremi.splA.train.features.crop.split_x.h5'
-resultsfile:     'cremi.splA.train.results.crop.split_x.h5'
+pathsfile:      'cremi.splA.train.paths.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+resultsfile:    'cremi.splA.train.results.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 resultsnames:
     - 'random_forest'
     - 'mil'
@@ -38,10 +37,9 @@ run_remove_small_objects: True
 run_merge_adjacent_objects: True
 run_compute_feature_images: True
 run_find_border_contacts: True
-run_paths_of_labels: True
-run_paths_of_merges: True
-run_features_of_paths: True
-run_random_forest: True
+run_compute_paths: True
+run_features_of_paths: False
+run_random_forest: False
 
 remove_small_objects:
     bysize: 10000
@@ -50,7 +48,7 @@ remove_small_objects:
 merge_adjacent_objects:
     seed: ~
     numberbysize: 0
-    numberbyrandom: 100
+    numberbyrandom: 10
     algorithm: pairs
 
 compute_feature_images:
@@ -84,23 +82,6 @@ compute_feature_images:
             gauss_10:
                 params: [10]
                 func: gaussian
-        largeobj:
-            disttransf:
-                params: ~
-                func: disttransf
-                raw: ~
-                gauss_1:
-                    params: [1]
-                    func: gaussian
-                gauss_3:
-                    params: [3]
-                    func: gaussian
-                gauss_5:
-                    params: [5]
-                    func: gaussian
-                gauss_10:
-                    params: [10]
-                    func: gaussian
         largeobjm:
             disttransf:
                 params: ~
@@ -118,22 +99,17 @@ compute_feature_images:
                 gauss_10:
                     params: [10]
                     func: gaussian
-                    
+
 find_border_contacts: ~
 
-paths_of_labels:
-    penaltypower: 10
-    ignorelabels: []
-    max_end_count: 5
-    max_end_count_seed: ~
-
-paths_of_merges:
+compute_paths:
     penaltypower: 10
     ignorelabels: []
     max_end_count: 5
     max_end_count_seed: ~
 
 features_of_paths:
+    anisotropy: [10, 1, 1]
     features:
         - Sum
         - Mean
@@ -142,6 +118,8 @@ features_of_paths:
         - Minimum
         - Kurtosis
         - Skewness
+        - Pathlength
+        - Count
     max_paths_per_label: 5
 
 random_forest: ~

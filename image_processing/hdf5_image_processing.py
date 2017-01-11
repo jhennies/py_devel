@@ -249,6 +249,9 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
     def shape(self, **kwargs):
         return self.anytask(lib.shape, **kwargs)
 
+    def swapaxes(self, axis1, axis2, **kwargs):
+        return self.anytask(lib.swapaxes, axis1, axis2, **kwargs)
+
     # _________________________________________________________________________________________
     # Iterators
 
