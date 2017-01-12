@@ -765,16 +765,41 @@ class Hdf5Processing(RecursiveDict, YamlParams):
 
         else:
 
+            # When not using recursive_search wild cards are now allowed
+
+            def find(a, b):
+
+                def items_equal(item0, item1):
+                    if len(item0) != len(item1):
+                        return False
+                    else:
+                        for i in xrange(0, len(item0)):
+                            if item0[i] != item1[i] and item0[i] != '*' and item1[i] != '*':
+                                return False
+                        return True
+
+                # Find a in b and return True or False
+                for bi in b:
+                    if items_equal(a, bi):
+                        return True
+
+                return False
+
             for d, k, v, kl in newentries.data_iterator(yield_short_kl=True):
 
-                if kl + [k] in skeys:
+                # if kl + [k] in skeys:
+                if find(kl + [k], skeys):
 
-                    keyid = skeys.index(kl + [k])
-                    tkey = tkeys[keyid]
-                    if type(tkey) is str:
-                        tkey = [tkey]
+                    try:
+                        keyid = skeys.index(kl + [k])
+                        tkey = tkeys[keyid]
+                        if type(tkey) is str:
+                            tkey = [tkey]
 
-                    self[tkey] = v
+                        self[tkey] = v
+
+                    except ValueError:
+                        self[kl + [k]] = v
 
     def data_from_file(self, filepath, skeys=None, tkeys=None, castkey=None,
                        recursive_search=False, nodata=False):
@@ -788,9 +813,17 @@ class Hdf5Processing(RecursiveDict, YamlParams):
 
 if __name__ == '__main__':
 
-    a = RecursiveDict(data={'a': {'b': {'c': 1, 'd': 2}, 'e': {'f': 3}}, 'g': {'h': {'i': 4}}})
-    a.dss()
-    b = a.subset('c', 'h', search=True)
+    a = Hdf5Processing()
+    a.data_from_file(
+        filepath='/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170109_neurobioseg_x_cropped_add_featureims_develop/intermed/cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_x.h5',
+        nodata=True,
+        skeys=[['x', '0', '*', 'contacts']]
+    )
+    a.dss(maxdepth=4)
+
+    # a = RecursiveDict(data={'a': {'b': {'c': 1, 'd': 2}, 'e': {'f': 3}}, 'g': {'h': {'i': 4}}})
+    # a.dss()
+    # b = a.subset('c', 'h', search=True)
 
     # resultfolder = '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/'
     #
