@@ -88,22 +88,70 @@ find_border_contacts:
             recursive_search: True
     target: [intermedfolder, borderctfile]
 
+
 compute_paths:
+
     sources:
-        segmentation: [intermedfolder, segmlargefile]
-        groundtruth: [intermedfolder, gtlargefile, neuron_ids]
-        contacts: [intermedfolder, borderctfile, contacts]
-        disttransf: [intermedfolder, segfeatsfile, [disttransf, raw]]
-    skwargs:
-        default:
-            recursive_search: True
-        segmentation:
-            recursive_search: False
+
+        # Use 'general_sources' to specify sources needed in every experiment. Can be used as defaults,
+        # contents may be overwritten in specific experiments
+        # E.g.:
+        #
+        # general_sources:
+        #     segm_true: [some, source, {skeys: [[...]]]
+        # an_experiment:
+        #     segm_true: [some, other_source, {skeys: [[...]]]
+        #     segm_false: ...
+        #     ...
+        # another_experiment:
+        #     segm_false: ...
+        #     ...
+        #
+        # As long as 'another_experiment' does not contain the key 'segm_true' the data specified in
+        # 'general_sources' is used
+        # 'an_experiment' uses its own specific source for 'segm_true'
+
+        'experiment_0a':
+
+            segm_true: [intermedfolder, segmlargefile, {skeys: [[x, '0', beta_0.5]]}]
+            gt_true: [intermedfolder, gtlargefile, {skeys: [[x, '0', neuron_ids]]}]
+            conts_true: [intermedfolder, borderctfile, {skeys: [[x, '0', beta_0.5, contacts]]}]
+            dt_true: [intermedfolder, segfeatsfile, {skeys: [[x, '0', beta_0.5, disttransf, raw]]}]
+
+            segm_false: [intermedfolder, segmlargefile, {skeys: [[x, '0']]}]
+            gt_false: [intermedfolder, gtlargefile, {skeys: [[x, '0', neuron_ids]]}]
+            conts_false: [intermedfolder, borderctfile, {skeys: [[x, '0', '*', contacts]]}]
+            dt_false: [intermedfolder, segfeatsfile, {skeys: [[x, '0', '*', disttransf, raw]]}]
+
+            params:
+                avoid_duplicates: True
+
+        'experiment_1a':
+
+            segm_true: [intermedfolder, segmlargefile, {skeys: [[x, '0', beta_0.5]]}]
+            gt_true: [intermedfolder, gtlargefile, {skeys: [[x, '0', neuron_ids]]}]
+            conts_true: [intermedfolder, borderctfile, {skeys: [[x, '0', beta_0.5, contacts]]}]
+            dt_true: [intermedfolder, segfeatsfile, {skeys: [[x, '0', beta_0.5, disttransf, raw]]}]
+
+            segm_false: [intermedfolder, segmlargefile, {skeys: [[x, '0']]}]
+            gt_false: [intermedfolder, gtlargefile, {skeys: [[x, '0', neuron_ids]]}]
+            conts_false: [intermedfolder, borderctfile, {skeys: [[x, '0', '*', contacts]]}]
+            dt_false: [intermedfolder, segfeatsfile, {skeys: [[x, '0', '*', disttransf, raw]]}]
+
+            params:
+                avoid_duplicates: False
+
     target: [intermedfolder, pathsfile]
-    penaltypower: 10
-    ignorelabels: []
-    max_end_count: 5
-    max_end_count_seed: ~
+
+    general_params:
+        penaltypower: 10
+        ignorelabels: []
+        max_end_count: 5
+        max_end_count_seed: ~
+        false_merge_erosion_ellipsoid:
+            args: [[1, 10, 10]]
+            kwargs: {mode: manual, r_in: [0.5, 0, 0]}
+
 
 features_of_paths:
     sources:

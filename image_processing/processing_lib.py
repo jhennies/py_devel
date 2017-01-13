@@ -181,7 +181,8 @@ def find_bounding_rect(image, s_=False):
             return [[rows.min(), rows.max()+1], [cols.min(), cols.max()+1]]
 
     else:
-        raise TypeError('find_bounding_rect: This number of dimensions is currently not supported!')
+        raise TypeError('find_bounding_rect: This number of dimensions ({}) is currently not supported!'.format(image.ndim))
+
 
 def crop_bounding_rect(image, bounds=None):
 
@@ -277,11 +278,13 @@ def positions2value(image, coordinates, value):
     image[coordinates[0], coordinates[1], coordinates[2]] = value
     return image
 
+
 def getvaluesfromcoords(image, coordinates):
 
     values = [image[x[0], x[1], x[2]] for x in coordinates]
 
     return values
+
 
 def get_faces_with_neighbors(image, rtrntype=dict):
 

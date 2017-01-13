@@ -3,6 +3,7 @@ import numpy as np
 from skimage import morphology
 import vigra
 import processing_lib as lib
+import gen_lib as glib
 from hdf5_image_processing import Hdf5ImageProcessingLib as IPL
 import random
 from vigra import graphs
@@ -1300,4 +1301,117 @@ def compute_paths_with_class(
     return paths
 
 
+def compute_paths_for_class_false(
+        indata, labelskey, pathendkey, disttransfkey, gtkey,
+        params, ignore=[], debug=False
+):
 
+    def find_false_merges():
+        return []
+
+    def compute_paths(label, segmentation, disttransf, borderconts, params,
+                      bounds=None, correspondance=None):
+        return []
+
+    correspondance_table = []
+    # correspondance_table (type=dict) should have the form:
+    # {tuple(labels_in_gt_i): [kl_labelsimage_i, label_i]
+
+    paths = IPL()
+
+    # # TODO: Decide: Possibility 1
+    # # Iterate over segmentations (i.e. labelimages)
+    # for d, k, v, kl in indata[labelskey].data_iterator(leaves_only=True):
+    #
+    #     # Find undersegmented objects
+    #     false_merges = find_false_merges(v)
+    #     # false_merges should have the form:
+    #     # [[label_0, tuple(labels_in_gt_0), bounds_0], ..., [label_n, tuple(labels_in_gt_n), bounds_n]]
+    #
+    #     # For each undersegmented object
+    #     for false_merge in false_merges:
+    #
+    #         # # Check for duplicates
+    #         # if not in correspondance table
+    #         if false_merge[1] not in correspondance_table.keys():
+    #
+    #             # Fill into correspondance table
+    #             correspondance_table[false_merge[1]] = [kl, false_merge[0]]
+    #
+    #             # Compute all paths within this object
+    #             paths[kl] = compute_paths(
+    #                 false_merge[0], v,
+    #                 indata[disttransfkey][kl].yield_an_item(),
+    #                 indata[pathendkey][kl].yield_an_item(),
+    #                 params
+    #                 bounds=false_merge[2]
+    #             )
+
+    # TODO: Decide: Possibility 2
+
+    def check_for_false_merge(segmentation, gt, erosion_ellipsoid):
+
+        # Reduce the segmentation object in size (erode)
+        # This should ensure that slight inaccuracies in the object boundary doesn't get picked up
+        se = glib.ellipsoid_se(*erosion_ellipsoid['args'], **erosion_ellipsoid['kwargs'])
+        print se
+        eroded_segmentation = morphology.binary_erosion(segmentation, se)
+
+        # TODO: Determine the unique values in the gt at the area of the eroded segmentation object
+        unique_vals, counts = np.unique(gt[eroded_segmentation > 0], return_counts=True)
+        print 'unique_vals = {}'.format(unique_vals)
+        print 'counts = {}'.format(counts)
+
+        return []
+
+    # Iterate over segmentations
+    for d, k, v, kl in indata[labelskey].data_iterator(leaves_only=True, yield_short_kl=True):
+
+        # Load the current segmentation image
+        indata[labelskey][kl].populate(k)
+
+        # Iterate over all labels of that image (including cropping for speed-up)
+        for lbl, lblim, bounds in indata[labelskey].label_image_bounds_iterator(
+                key=[kl + [k]], background=0, maskvalue=0, value=0
+        ):
+            print lbl
+            print lblim.shape
+            print bounds
+            print '____________________'
+
+            # Crop the gt as well
+            cropped_gt = lib.crop_bounding_rect(indata[gtkey].yield_an_item(), bounds=bounds)
+
+            # # TODO: Check for undersegmentation (or probably not... Needs decision, compare below)
+            # false_merge = check_for_false_merge(lblim, cropped_gt, params['false_merge_erosion_ellipsoid'])
+            # # false_merge should be [] if no merge is detected
+            # # If a merge is detected false_merge should have the form: tuple(labels_in_gt_0)
+
+            # If a false merge is detected
+            # TODO: Decide whether false merge detection should be performed by detecting the paths not the objects themselves
+            # TODO: I.e., probably always do the following
+            # if false_merge:
+            if True:
+                # If not in correspondance table
+                # if false_merge in correspondance_table:
+                if True:
+                    # Crop distance transform
+                    cropped_dt = lib.crop_bounding_rect(indata[disttransfkey][kl][k].yield_an_item(), bounds=bounds)
+                    # Crop border contacts
+                    cropped_bc = lib.crop_bounding_rect(indata[pathendkey][kl][k].yield_an_item(), bounds=bounds)
+                    # TODO: Check for correctness of all cropped images!
+                    # TODO: Compute all paths within this object which start and end in different
+                    # TODO:      gt-objects
+                    # TODO: Supply the correspondance table to this function and only compute a path
+                    # TODO:     if the respective correspondance is not found
+                    newpaths = compute_paths(lbl, lblim, cropped_dt, cropped_bc, params,
+                                             correspondance=correspondance_table)
+                    # TODO: If new paths were detected
+                    if newpaths:
+                        # Store them
+                        paths.merge(newpaths)
+                        # # TODO: Probably not here (see above)
+                        # # Fill into correspondance table
+                        # correspondance_table[false_merge] = [kl + [k], lbl]
+
+    return 0

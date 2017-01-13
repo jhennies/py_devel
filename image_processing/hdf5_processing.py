@@ -456,9 +456,9 @@ class RecursiveDict(dict, SimpleLogger):
                         self[layernewname] = self.pop(layername)
                         # print self.datastructure2string(maxdepth=2)
 
-    def reduce_from_leafs(self, iterate=False):
+    def reduce_from_leaves(self, iterate=False):
         """
-        If the branches at the leafs have only one entry, i.e.
+        If the branches at the leaves have only one entry, i.e.
         a:
             b:
                 c: leaf1
@@ -487,8 +487,9 @@ class RecursiveDict(dict, SimpleLogger):
             for d, k, v, kl in self.data_iterator(yield_short_kl=True):
 
                 if type(v) is not type(self):
-                    if len(self[kl].keys()) == 1:
-                        self[kl] = v
+                    if kl:
+                        if len(self[kl].keys()) == 1:
+                            self[kl] = v
 
         else:
 
@@ -498,9 +499,10 @@ class RecursiveDict(dict, SimpleLogger):
                 busy = False
                 for d, k, v, kl in self.data_iterator(yield_short_kl=True, leaves_only=True):
 
-                    if len(self[kl].keys()) == 1:
-                        self[kl] = v
-                        busy = True
+                    if kl:
+                        if len(self[kl].keys()) == 1:
+                            self[kl] = v
+                            busy = True
 
     def dcp(self):
         """
