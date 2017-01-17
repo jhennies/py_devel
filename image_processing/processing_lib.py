@@ -372,7 +372,7 @@ def get_faces_with_neighbors(image, rtrntype=dict):
     return faces
 
 
-def shortest_paths(indicator, pairs, bounds=None, hfp=None,
+def shortest_paths(indicator, pairs, bounds=None, logger=None,
                    return_pathim=True, yield_in_bounds=False):
 
     # Crate the grid graph and shortest path objects
@@ -394,8 +394,8 @@ def shortest_paths(indicator, pairs, bounds=None, hfp=None,
         source = pair[0]
         target = pair[1]
 
-        if hfp is not None:
-            hfp.logging('Calculating path from {} to {}', source, target)
+        if logger is not None:
+            logger.logging('Calculating path from {} to {}', source, target)
 
         targetNode = gridgr.coordinateToNode(target)
         sourceNode = gridgr.coordinateToNode(source)

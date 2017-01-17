@@ -101,7 +101,7 @@ def compute_paths(yparams):
             paths = ipl()
             paths[experiment] = libip.compute_paths_for_class_false(
                 data, 'segm_false', 'conts_false', 'dt_false', 'gt_false',
-                experiment_params, ignore=[], debug=params['debug']
+                experiment_params, ignore=[], debug=params['debug'], logger=yparams
             )
 
             yparams.logging('\nPaths datastructure: \n\n{}', paths.datastructure2string(maxdepth=3))

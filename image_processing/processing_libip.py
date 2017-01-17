@@ -1303,18 +1303,127 @@ def compute_paths_with_class(
 
 def compute_paths_for_class_false(
         indata, labelskey, pathendkey, disttransfkey, gtkey,
-        params, ignore=[], debug=False
+        params, ignore=[], logger=None, debug=False
 ):
 
-    def find_false_merges():
+    # def find_false_merges():
+    #     return []
+
+    def check_for_false_merge(segmentation, gt, erosion_ellipsoid):
+
+        # Reduce the segmentation object in size (erode)
+        # This should ensure that slight inaccuracies in the object boundary doesn't get picked up
+        se = glib.ellipsoid_se(*erosion_ellipsoid['args'], **erosion_ellipsoid['kwargs'])
+        print se
+        eroded_segmentation = morphology.binary_erosion(segmentation, se)
+
+        # TODO: Determine the unique values in the gt at the area of the eroded segmentation object
+        unique_vals, counts = np.unique(gt[eroded_segmentation > 0], return_counts=True)
+        print 'unique_vals = {}'.format(unique_vals)
+        print 'counts = {}'.format(counts)
+
         return []
 
-    def compute_paths(label, segmentation, disttransf, borderconts, params,
-                      bounds=None, correspondance=None):
-        return []
+    def shortest_paths(
+            penaltypower, bounds,
+            lbl, lblim, keylist_lblim,
+            gt, disttransf, pathends,
+            for_class=True, correspondence={},
+            max_end_count=[], max_end_count_seed=[], yield_in_bounds=False,
+            return_pathim=True, logger=None
+    ):
+        """
+        :param penaltypower:
+        :param bounds:
+        :param lbl:
+        :param lblim:
+        :param disttransf:
+        :param pathends:
+        :param for_class:
+            True: paths are computed for when endpoints are in the same ground truth oject
+            False: paths are computed for when endpoints are in different ground truth objects
+        :param correspondence:
+        :param max_end_count:
+        :param max_end_count_seed:
+        :param yield_in_bounds:
+        :param return_pathim:
+        :param logger:
+        :return:
+        """
 
-    correspondance_table = []
-    # correspondance_table (type=dict) should have the form:
+        # Determine the endpoints of the current object
+        indices = np.where(pathends)
+        coords = zip(indices[0], indices[1], indices[2])
+        # if logger is not None:
+        #     logger.logging('Local maxima coordinates: {}', coords)
+        # else:
+        #     print 'Local maxima coordinates: {}'.format(coords)
+
+        # Make pairwise list of coordinates serving as source and target
+        # First determine all pairings
+        all_pairs = []
+        for i in xrange(0, len(coords) - 1):
+            for j in xrange(i + 1, len(coords)):
+                all_pairs.append((coords[i], coords[j]))
+        # And only use those that satisfy certain criteria:
+        # a) Are in either the same gt object (for_class=True)
+        #    or in different gt objects (for_class=False)
+        # b) Are not in the correspondence list
+        pairs = []
+        label_pairs = []
+        new_correspondence = {}
+        for pair in all_pairs:
+            # Determine whether the endpoints are in different gt objects
+            if (gt[pair[0]] == gt[pair[1]]) == for_class:
+                # Check correspondence list if pairings were already computed in different image
+                labelpair = tuple(sorted([gt[pair[0]], gt[pair[1]]]))
+                if labelpair not in correspondence.keys():
+                    pairs.append(pair)
+                    label_pairs.append(labelpair)
+                    new_correspondence[labelpair] = [keylist_lblim, lbl]
+                    if logger is not None:
+                        logger.logging('Found pairing: {}', labelpair)
+                else:
+                    if logger is not None:
+                        logger.logging('Pairing already in correspondence table: {}', labelpair)
+        correspondence.update(new_correspondence)
+
+        # TODO: Select a certain number of pairs if number is too high
+
+        # If pairs are found that satisfy all conditions
+        if pairs:
+
+            if logger is not None:
+                logger.logging('Found {} pairings which satisfy all criteria', len(pairs))
+            else:
+                print 'Found {} pairings which satisfy all criteria'.format(len(pairs))
+
+            # Pre-processing of the distance transform
+            # a) Invert: the lowest values (i.e. the lowest penalty for the shortest path
+            #    detection) should be at the center of the current process
+            disttransf = lib.invert_image(disttransf)
+            #
+            # b) Set all values outside the process to infinity
+            disttransf = lib.filter_values(disttransf, np.amax(disttransf), type='eq', setto=np.inf)
+            #
+            # c) Increase the value difference between pixels near the boundaries and pixels
+            #    central within the processes. This increases the likelihood of the paths to
+            #    follow the center of processes, thus avoiding short-cuts
+            disttransf = lib.power(disttransf, penaltypower)
+
+            # Compute the shortest paths according to the pairs list
+            ps = lib.shortest_paths(
+                disttransf, pairs, bounds=bounds, logger=None, return_pathim=False,
+                yield_in_bounds=False
+            )
+
+            return ps, correspondence
+
+        else:
+            return [], correspondence
+
+    correspondence_table = {}
+    # correspondence_table (type=dict) should have the form:
     # {tuple(labels_in_gt_i): [kl_labelsimage_i, label_i]
 
     paths = IPL()
@@ -1332,15 +1441,15 @@ def compute_paths_for_class_false(
     #     for false_merge in false_merges:
     #
     #         # # Check for duplicates
-    #         # if not in correspondance table
-    #         if false_merge[1] not in correspondance_table.keys():
+    #         # if not in correspondence table
+    #         if false_merge[1] not in correspondence_table.keys():
     #
-    #             # Fill into correspondance table
-    #             correspondance_table[false_merge[1]] = [kl, false_merge[0]]
+    #             # Fill into correspondence table
+    #             correspondence_table[false_merge[1]] = [kl, false_merge[0]]
     #
     #             # Compute all paths within this object
     #             paths[kl] = compute_paths(
-    #                 false_merge[0], v,
+    #                 label=false_merge[0], v,
     #                 indata[disttransfkey][kl].yield_an_item(),
     #                 indata[pathendkey][kl].yield_an_item(),
     #                 params
@@ -1349,23 +1458,17 @@ def compute_paths_for_class_false(
 
     # TODO: Decide: Possibility 2
 
-    def check_for_false_merge(segmentation, gt, erosion_ellipsoid):
-
-        # Reduce the segmentation object in size (erode)
-        # This should ensure that slight inaccuracies in the object boundary doesn't get picked up
-        se = glib.ellipsoid_se(*erosion_ellipsoid['args'], **erosion_ellipsoid['kwargs'])
-        print se
-        eroded_segmentation = morphology.binary_erosion(segmentation, se)
-
-        # TODO: Determine the unique values in the gt at the area of the eroded segmentation object
-        unique_vals, counts = np.unique(gt[eroded_segmentation > 0], return_counts=True)
-        print 'unique_vals = {}'.format(unique_vals)
-        print 'counts = {}'.format(counts)
-
-        return []
-
     # Iterate over segmentations
     for d, k, v, kl in indata[labelskey].data_iterator(leaves_only=True, yield_short_kl=True):
+
+        if logger is not None:
+            logger.logging('====================')
+            logger.logging('Working on image {}', k)
+            logger.logging('correspondence_table = {}', correspondence_table)
+        else:
+            print '===================='
+            print 'Working on image {}'.format(k)
+            print 'correspondence_table = {}'.format(correspondence_table)
 
         # Load the current segmentation image
         indata[labelskey][kl].populate(k)
@@ -1374,10 +1477,6 @@ def compute_paths_for_class_false(
         for lbl, lblim, bounds in indata[labelskey].label_image_bounds_iterator(
                 key=[kl + [k]], background=0, maskvalue=0, value=0
         ):
-            print lbl
-            print lblim.shape
-            print bounds
-            print '____________________'
 
             # Crop the gt as well
             cropped_gt = lib.crop_bounding_rect(indata[gtkey].yield_an_item(), bounds=bounds)
@@ -1388,30 +1487,51 @@ def compute_paths_for_class_false(
             # # If a merge is detected false_merge should have the form: tuple(labels_in_gt_0)
 
             # If a false merge is detected
-            # TODO: Decide whether false merge detection should be performed by detecting the paths not the objects themselves
+            # TODO: Decide whether false merge detection should be performed by detecting the paths
+            # TODO:     not the objects themselves
             # TODO: I.e., probably always do the following
             # if false_merge:
             if True:
-                # If not in correspondance table
-                # if false_merge in correspondance_table:
+                # If not in correspondence table
+                # if false_merge in correspondence_table:
                 if True:
                     # Crop distance transform
                     cropped_dt = lib.crop_bounding_rect(indata[disttransfkey][kl][k].yield_an_item(), bounds=bounds)
-                    # Crop border contacts
+                    # Crop and mask border contacts
                     cropped_bc = lib.crop_bounding_rect(indata[pathendkey][kl][k].yield_an_item(), bounds=bounds)
-                    # TODO: Check for correctness of all cropped images!
-                    # TODO: Compute all paths within this object which start and end in different
-                    # TODO:      gt-objects
-                    # TODO: Supply the correspondance table to this function and only compute a path
-                    # TODO:     if the respective correspondance is not found
-                    newpaths = compute_paths(lbl, lblim, cropped_dt, cropped_bc, params,
-                                             correspondance=correspondance_table)
-                    # TODO: If new paths were detected
+                    cropped_bc[lblim == 0] = 0
+                    # Done: Check for correctness of all cropped images! -> all appeared correct
+
+                    # Compute all paths within this object which start and end in different
+                    #      gt-objects
+                    # Supply the correspondence table to this function and only compute a path
+                    #     if the respective correspondence is not found
+                    newpaths, correspondence_table = shortest_paths(
+                        params['penaltypower'], bounds,
+                        lbl, lblim, kl + [k],
+                        cropped_gt, cropped_dt, cropped_bc,
+                        for_class=False, correspondence=correspondence_table,
+                        max_end_count=[], max_end_count_seed=[], yield_in_bounds=True,
+                        return_pathim=False, logger=logger
+                    )
+
+                    # If new paths were detected
                     if newpaths:
                         # Store them
-                        paths.merge(newpaths)
+                        # paths.merge(newpaths)
+                        paths['falsepaths'][kl + [k] + [lbl]] = newpaths
+
+                        if logger is not None:
+                            logger.logging(
+                                'Found {} paths in image {} at label {}', len(newpaths), k, lbl
+                            )
+                            logger.logging('-------------------')
+                        else:
+                            print 'Found {} paths in image {} at label {}'.format(len(newpaths), k, lbl)
+                            print '-------------------'
+
                         # # TODO: Probably not here (see above)
-                        # # Fill into correspondance table
-                        # correspondance_table[false_merge] = [kl + [k], lbl]
+                        # # Fill into correspondence table
+                        # correspondence_table[false_merge] = [kl + [k], lbl]
 
     return 0
