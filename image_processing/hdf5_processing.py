@@ -142,10 +142,14 @@ class RecursiveDict(dict, SimpleLogger):
 
         return rtrndict
 
-    def merge(self, rdict):
+    def merge(self, rdict, overwrite=True):
 
         for d, k, v, kl in rdict.data_iterator(leaves_only=True):
-            self[kl] = v
+            if overwrite:
+                self[kl] = v
+            else:
+                if not self.inkeys(kl):
+                    self[kl] = v
 
     def rename_entry(self, old, new, search=False):
         """

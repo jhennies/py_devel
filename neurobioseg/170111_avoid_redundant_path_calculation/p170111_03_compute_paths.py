@@ -36,75 +36,149 @@ def load_images(filepath, skeys=None, recursive_search=False, logger=None):
 
 def compute_paths(yparams):
 
-    # Load and initialize general stuff (valid for all experiments)
-    # -------------------------------------------------------------
+    all_params = yparams.get_params()
 
-    params = yparams.get_params()
-    thisparams = rdict(params['compute_paths'])
-
-    if 'general_params' in thisparams:
-        general_params = rdict(thisparams['general_params'])
+    # Zero'th layer:
+    # --------------
+    zeroth = rdict(all_params['compute_paths'])
+    if 'default' in zeroth:
+        zeroth_defaults = zeroth.pop('default')
     else:
-        general_params = rdict()
+        zeroth_defaults = ipl()
 
-    general_sources = ipl()
-    if 'general_sources' in thisparams['sources']:
-        for datakey, content in thisparams['sources', 'general_sources'].iteritems():
-            general_sources[datakey] = load_images(
-                params[content[0]] + params[content[1]],
-                skeys=content[2]['skeys'],
-                recursive_search=False,
-                logger=yparams
-            )
+    for exp_lbl, experiment in zeroth.iteritems():
 
-    # Set targetfile
-    targetfile = params[thisparams['target'][0]] + params[thisparams['target'][1]]
+        # First layer
+        # -----------
+        # An experiment is now selected and performed
+        yparams.logging('Performing experiment {}\n==============================\n', exp_lbl)
 
-    # Starting the experiments
-    # ------------------------
+        first = zeroth_defaults.dcp()
+        first.merge(experiment)
+        if 'default' in first:
+            first_defaults = first.pop('default')
+        else:
+            first_defaults = ipl()
 
-    for experiment, datakeys in thisparams['sources'].iteritems():
+        for exp_class_lbl in ['truepaths', 'falsepaths']:
 
-        if experiment != 'general_sources':
+            # Final layer
+            # -----------
+            # The true or false paths for the current experiment are here computed, respectively
+            yparams.logging('Computing {}...\n------------------------------\n', exp_class_lbl)
+            final = first_defaults.dcp()
+            final.merge(first[exp_class_lbl])
 
-            yparams.logging('Performing experiment {}\n==============================\n', experiment)
+            exp_sources = final['sources']
+            exp_params = final['params']
 
-            # Load and initialize specific stuff for this experiment (may overwrite the
-            # general stuff)
-            # -------------------------------------------------------------------------
-
-            data = general_sources.dcp()
-            experiment_params = general_params.dcp()
-            for datakey, content in datakeys.iteritems():
-
-                if datakey != 'params':
-
-                    # Load the necessary images
-                    data[datakey] = load_images(
-                        params[content[0]] + params[content[1]],
-                        skeys=content[2]['skeys'],
-                        recursive_search=False,
-                        logger=yparams
-                    )
-
-                else:
-
-                    # Load parameters
-                    experiment_params.merge(content)
+            # Load the necessary images
+            data=ipl()
+            for datakey, content in exp_sources.iteritems():
+                data[datakey] = load_images(
+                    all_params[content[0]] + all_params[content[1]],
+                    skeys=content[2]['skeys'],
+                    recursive_search=False,
+                    logger=yparams
+                )
 
             yparams.logging('\nInitial datastructure: \n\n{}', data.datastructure2string(maxdepth=4))
-            yparams.logging('experiment_params: \n{}', experiment_params)
+            yparams.logging('experiment_params: \n{}', exp_params)
 
             # Compute the paths
             # -----------------
-
             paths = ipl()
-            paths[experiment] = libip.compute_paths_for_class_false(
-                data, 'segm_false', 'conts_false', 'dt_false', 'gt_false',
-                experiment_params, ignore=[], debug=params['debug'], logger=yparams
+            paths[experiment][exp_class_lbl] = libip.compute_paths_for_class(
+                data, 'segm', 'conts', 'dt', 'gt',
+                exp_params, for_class=True, ignore=[], debug=all_params['debug'],
+                logger=yparams
             )
 
-            yparams.logging('\nPaths datastructure: \n\n{}', paths.datastructure2string(maxdepth=3))
+            yparams.logging(
+                '\nPaths datastructure after running {}: \n\n{}',
+                exp_class_lbl,
+                paths.datastructure2string(maxdepth=3)
+            )
+
+
+    #
+    # # Load and initialize general stuff (valid for all experiments)
+    # # -------------------------------------------------------------
+    #
+    # params = yparams.get_params()
+    # thisparams = rdict(params['compute_paths'])
+    #
+    # if 'general_params' in thisparams:
+    #     general_params = rdict(thisparams['general_params'])
+    # else:
+    #     general_params = rdict()
+    #
+    # general_sources = ipl()
+    # if 'general_sources' in thisparams['sources']:
+    #     for datakey, content in thisparams['sources', 'general_sources'].iteritems():
+    #         general_sources[datakey] = load_images(
+    #             params[content[0]] + params[content[1]],
+    #             skeys=content[2]['skeys'],
+    #             recursive_search=False,
+    #             logger=yparams
+    #         )
+    #
+    # # Set targetfile
+    # targetfile = params[thisparams['target'][0]] + params[thisparams['target'][1]]
+    #
+    # # Starting the experiments
+    # # ------------------------
+    #
+    # for experiment, datakeys in thisparams['sources'].iteritems():
+    #
+    #     if experiment != 'general_sources':
+    #
+    #         yparams.logging('Performing experiment {}\n==============================\n', experiment)
+    #
+    #         # Load and initialize specific stuff for this experiment (may overwrite the
+    #         # general stuff)
+    #         # -------------------------------------------------------------------------
+    #
+    #         data = general_sources.dcp()
+    #         experiment_params = general_params.dcp()
+    #         for datakey, content in datakeys.iteritems():
+    #
+    #             if datakey != 'params':
+    #
+    #                 # Load the necessary images
+    #                 data[datakey] = load_images(
+    #                     params[content[0]] + params[content[1]],
+    #                     skeys=content[2]['skeys'],
+    #                     recursive_search=False,
+    #                     logger=yparams
+    #                 )
+    #
+    #             else:
+    #
+    #                 # Load parameters
+    #                 experiment_params.merge(content)
+    #
+    #         yparams.logging('\nInitial datastructure: \n\n{}', data.datastructure2string(maxdepth=4))
+    #         yparams.logging('experiment_params: \n{}', experiment_params)
+    #
+    #         # Compute the paths
+    #         # -----------------
+    #
+    #         paths = ipl()
+    #         paths[experiment]['truepaths'] = libip.compute_paths_for_class(
+    #             data, 'segm_true', 'conts_true', 'dt_true', 'gt_true',
+    #             experiment_params, for_class=True, ignore=[], debug=params['debug'],
+    #             logger=yparams
+    #         )
+    #         paths.dss()
+    #         paths[experiment]['falsepaths'] = libip.compute_paths_for_class(
+    #             data, 'segm_false', 'conts_false', 'dt_false', 'gt_false',
+    #             experiment_params, for_class=False, ignore=[], debug=params['debug'],
+    #             logger=yparams
+    #         )
+    #         paths.dss()
+    #
+    #         yparams.logging('\nPaths datastructure: \n\n{}', paths.datastructure2string(maxdepth=3))
 
     # data = ipl()
     # for sourcekey, source in thisparams['sources'].iteritems():

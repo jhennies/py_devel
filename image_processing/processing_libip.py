@@ -1301,9 +1301,9 @@ def compute_paths_with_class(
     return paths
 
 
-def compute_paths_for_class_false(
+def compute_paths_for_class(
         indata, labelskey, pathendkey, disttransfkey, gtkey,
-        params, ignore=[], logger=None, debug=False
+        params, for_class=True, ignore=[], logger=None, debug=False
 ):
 
     # def find_false_merges():
@@ -1329,6 +1329,7 @@ def compute_paths_for_class_false(
             lbl, lblim, keylist_lblim,
             gt, disttransf, pathends,
             for_class=True, correspondence={},
+            avoid_duplicates=True,
             max_end_count=[], max_end_count_seed=[], yield_in_bounds=False,
             return_pathim=True, logger=None
     ):
@@ -1366,29 +1367,37 @@ def compute_paths_for_class_false(
             for j in xrange(i + 1, len(coords)):
                 all_pairs.append((coords[i], coords[j]))
         # And only use those that satisfy certain criteria:
-        # a) Are in either the same gt object (for_class=True)
+        # a) TODO: Are in either the same gt object and do not switch class on the way (for_class=True)
         #    or in different gt objects (for_class=False)
         # b) Are not in the correspondence list
         pairs = []
         label_pairs = []
-        new_correspondence = {}
+        if avoid_duplicates:
+            new_correspondence = {}
         for pair in all_pairs:
             # Determine whether the endpoints are in different gt objects
             if (gt[pair[0]] == gt[pair[1]]) == for_class:
                 # Check correspondence list if pairings were already computed in different image
                 labelpair = tuple(sorted([gt[pair[0]], gt[pair[1]]]))
-                if labelpair not in correspondence.keys():
+                if avoid_duplicates:
+                    if labelpair not in correspondence.keys():
+                        pairs.append(pair)
+                        label_pairs.append(labelpair)
+                        new_correspondence[labelpair] = [keylist_lblim, lbl]
+                        if logger is not None:
+                            logger.logging('Found pairing: {}', labelpair)
+                    else:
+                        if logger is not None:
+                            logger.logging('Pairing already in correspondence table: {}', labelpair)
+                else:
                     pairs.append(pair)
-                    label_pairs.append(labelpair)
-                    new_correspondence[labelpair] = [keylist_lblim, lbl]
                     if logger is not None:
                         logger.logging('Found pairing: {}', labelpair)
-                else:
-                    if logger is not None:
-                        logger.logging('Pairing already in correspondence table: {}', labelpair)
-        correspondence.update(new_correspondence)
+        if avoid_duplicates:
+            correspondence.update(new_correspondence)
 
         # TODO: Select a certain number of pairs if number is too high
+        # TODO: Do the above expecially for debugging!
 
         # If pairs are found that satisfy all conditions
         if pairs:
@@ -1510,7 +1519,8 @@ def compute_paths_for_class_false(
                         params['penaltypower'], bounds,
                         lbl, lblim, kl + [k],
                         cropped_gt, cropped_dt, cropped_bc,
-                        for_class=False, correspondence=correspondence_table,
+                        for_class=for_class, correspondence=correspondence_table,
+                        avoid_duplicates=params['avoid_duplicates'],
                         max_end_count=[], max_end_count_seed=[], yield_in_bounds=True,
                         return_pathim=False, logger=logger
                     )
@@ -1519,7 +1529,7 @@ def compute_paths_for_class_false(
                     if newpaths:
                         # Store them
                         # paths.merge(newpaths)
-                        paths['falsepaths'][kl + [k] + [lbl]] = newpaths
+                        paths[kl + [k] + [lbl]] = newpaths
 
                         if logger is not None:
                             logger.logging(
@@ -1534,4 +1544,7 @@ def compute_paths_for_class_false(
                         # # Fill into correspondence table
                         # correspondence_table[false_merge] = [kl + [k], lbl]
 
-    return 0
+        # Unload the current segmentation image
+        indata[labelskey][kl].unpopulate()
+
+    return paths
