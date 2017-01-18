@@ -34,6 +34,20 @@ def load_images(filepath, skeys=None, recursive_search=False, logger=None):
     return data
 
 
+def simplify_statistics(statistics, iterations=3):
+
+    newstats = statistics.dcp()
+
+    for i in xrange(0, iterations):
+        for d, k, v, kl in statistics.data_iterator(yield_short_kl=True):
+            if v == 0 or not v:
+                newstats[kl].pop(k)
+
+        statistics = newstats.dcp()
+
+    return newstats
+
+
 def compute_paths(yparams):
 
     all_params = yparams.get_params()
@@ -107,6 +121,14 @@ def compute_paths(yparams):
                 paths.datastructure2string()
             )
 
+            def val(x):
+                return x
+
+            yparams.logging(
+                '\nStatistics after {}: \n\n{}', exp_class_lbl,
+                simplify_statistics(statistics[exp_lbl]).datastructure2string(function=val)
+            )
+
             # Save the result to disk
             # -----------------------
             targetfile = all_params[exp_target[0]] + all_params[exp_target[1]]
@@ -114,7 +136,10 @@ def compute_paths(yparams):
 
         def val(x):
             return x
-        yparams.logging(statistics[exp_lbl].datastructure2string(function=val))
+        yparams.logging(
+            '\nStatistics after full experiment: \n\n{}',
+            simplify_statistics(statistics[exp_lbl]).datastructure2string(function=val)
+        )
 
 
     #

@@ -1462,10 +1462,12 @@ def compute_paths_for_class(
                 ps = ps_computed
 
             statistics['excluded_paths'] = stats_excluded_paths
+            statistics['kept_paths'] = len(ps)
             return ps, correspondence, statistics
 
         else:
             statistics['excluded_paths'] = 0
+            statistics['kept_paths'] = 0
             return [], correspondence, statistics
 
     correspondence_table = {}
@@ -1527,7 +1529,9 @@ def compute_paths_for_class(
             if newpaths:
                 # Store them
                 # paths.merge(newpaths)
-                paths[kl + [k] + [lbl]] = newpaths
+
+                pskeys = range(0, len(newpaths))
+                paths[kl + [k] + [lbl]] = IPL(data=dict(zip(pskeys, newpaths)))
 
                 if logger is not None:
                     logger.logging(
