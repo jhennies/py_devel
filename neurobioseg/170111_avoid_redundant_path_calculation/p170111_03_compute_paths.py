@@ -71,6 +71,7 @@ def compute_paths(yparams):
 
             exp_sources = final['sources']
             exp_params = final['params']
+            exp_target = final['target']
 
             # Load the necessary images
             data=ipl()
@@ -88,17 +89,25 @@ def compute_paths(yparams):
             # Compute the paths
             # -----------------
             paths = ipl()
-            paths[experiment][exp_class_lbl] = libip.compute_paths_for_class(
+            for_class = False
+            if exp_class_lbl == 'truepaths':
+                for_class = True
+            paths[exp_lbl][exp_class_lbl] = libip.compute_paths_for_class(
                 data, 'segm', 'conts', 'dt', 'gt',
-                exp_params, for_class=True, ignore=[], debug=all_params['debug'],
+                exp_params, for_class=for_class, ignore=[], debug=all_params['debug'],
                 logger=yparams
             )
 
             yparams.logging(
                 '\nPaths datastructure after running {}: \n\n{}',
                 exp_class_lbl,
-                paths.datastructure2string(maxdepth=3)
+                paths.datastructure2string()
             )
+
+            # Save the result to disk
+            # -----------------------
+            targetfile = all_params[exp_target[0]] + all_params[exp_target[1]]
+            paths.write(filepath=targetfile)
 
 
     #
@@ -261,7 +270,7 @@ def run_compute_paths(yamlfile, logging=True):
         yparams.stoplogger()
 
     except:
-
+        raise
         yparams.errout('Unexpected error')
 
 

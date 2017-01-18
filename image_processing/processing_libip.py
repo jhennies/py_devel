@@ -1330,7 +1330,7 @@ def compute_paths_for_class(
             gt, disttransf, pathends,
             for_class=True, correspondence={},
             avoid_duplicates=True,
-            max_end_count=[], max_end_count_seed=[], yield_in_bounds=False,
+            max_paths_per_object=[], max_paths_per_object_seed=[], yield_in_bounds=False,
             return_pathim=True, logger=None
     ):
         """
@@ -1396,8 +1396,18 @@ def compute_paths_for_class(
         if avoid_duplicates:
             correspondence.update(new_correspondence)
 
-        # TODO: Select a certain number of pairs if number is too high
-        # TODO: Do the above expecially for debugging!
+        # Select a certain number of pairs if number is too high
+        if max_paths_per_object:
+            if len(pairs) > max_paths_per_object:
+                if logger is not None:
+                    logger.logging('Reducing number of pairs to {}', max_paths_per_object)
+                if max_paths_per_object_seed:
+                    random.seed(max_paths_per_object_seed)
+                else:
+                    random.seed()
+                pairs = random.sample(pairs, max_paths_per_object)
+                if logger is not None:
+                    logger.logging('Modified pairs list: {}', pairs)
 
         # If pairs are found that satisfy all conditions
         if pairs:
@@ -1422,7 +1432,7 @@ def compute_paths_for_class(
 
             # Compute the shortest paths according to the pairs list
             ps = lib.shortest_paths(
-                disttransf, pairs, bounds=bounds, logger=None, return_pathim=False,
+                disttransf, pairs, bounds=bounds, logger=logger, return_pathim=False,
                 yield_in_bounds=False
             )
 
@@ -1436,36 +1446,6 @@ def compute_paths_for_class(
     # {tuple(labels_in_gt_i): [kl_labelsimage_i, label_i]
 
     paths = IPL()
-
-    # # TODO: Decide: Possibility 1
-    # # Iterate over segmentations (i.e. labelimages)
-    # for d, k, v, kl in indata[labelskey].data_iterator(leaves_only=True):
-    #
-    #     # Find undersegmented objects
-    #     false_merges = find_false_merges(v)
-    #     # false_merges should have the form:
-    #     # [[label_0, tuple(labels_in_gt_0), bounds_0], ..., [label_n, tuple(labels_in_gt_n), bounds_n]]
-    #
-    #     # For each undersegmented object
-    #     for false_merge in false_merges:
-    #
-    #         # # Check for duplicates
-    #         # if not in correspondence table
-    #         if false_merge[1] not in correspondence_table.keys():
-    #
-    #             # Fill into correspondence table
-    #             correspondence_table[false_merge[1]] = [kl, false_merge[0]]
-    #
-    #             # Compute all paths within this object
-    #             paths[kl] = compute_paths(
-    #                 label=false_merge[0], v,
-    #                 indata[disttransfkey][kl].yield_an_item(),
-    #                 indata[pathendkey][kl].yield_an_item(),
-    #                 params
-    #                 bounds=false_merge[2]
-    #             )
-
-    # TODO: Decide: Possibility 2
 
     # Iterate over segmentations
     for d, k, v, kl in indata[labelskey].data_iterator(leaves_only=True, yield_short_kl=True):
@@ -1490,59 +1470,43 @@ def compute_paths_for_class(
             # Crop the gt as well
             cropped_gt = lib.crop_bounding_rect(indata[gtkey].yield_an_item(), bounds=bounds)
 
-            # # TODO: Check for undersegmentation (or probably not... Needs decision, compare below)
-            # false_merge = check_for_false_merge(lblim, cropped_gt, params['false_merge_erosion_ellipsoid'])
-            # # false_merge should be [] if no merge is detected
-            # # If a merge is detected false_merge should have the form: tuple(labels_in_gt_0)
+            # Crop distance transform
+            cropped_dt = lib.crop_bounding_rect(indata[disttransfkey][kl][k].yield_an_item(), bounds=bounds)
+            # Crop and mask border contacts
+            cropped_bc = lib.crop_bounding_rect(indata[pathendkey][kl][k].yield_an_item(), bounds=bounds)
+            cropped_bc[lblim == 0] = 0
+            # Done: Check for correctness of all cropped images! -> all appeared correct
 
-            # If a false merge is detected
-            # TODO: Decide whether false merge detection should be performed by detecting the paths
-            # TODO:     not the objects themselves
-            # TODO: I.e., probably always do the following
-            # if false_merge:
-            if True:
-                # If not in correspondence table
-                # if false_merge in correspondence_table:
-                if True:
-                    # Crop distance transform
-                    cropped_dt = lib.crop_bounding_rect(indata[disttransfkey][kl][k].yield_an_item(), bounds=bounds)
-                    # Crop and mask border contacts
-                    cropped_bc = lib.crop_bounding_rect(indata[pathendkey][kl][k].yield_an_item(), bounds=bounds)
-                    cropped_bc[lblim == 0] = 0
-                    # Done: Check for correctness of all cropped images! -> all appeared correct
+            # Compute all paths within this object which start and end in different
+            #      gt-objects
+            # Supply the correspondence table to this function and only compute a path
+            #     if the respective correspondence is not found
+            newpaths, correspondence_table = shortest_paths(
+                params['penaltypower'], bounds,
+                lbl, lblim, kl + [k],
+                cropped_gt, cropped_dt, cropped_bc,
+                for_class=for_class, correspondence=correspondence_table,
+                avoid_duplicates=params['avoid_duplicates'],
+                max_paths_per_object=params['max_paths_per_object'],
+                max_paths_per_object_seed=params['max_paths_per_object_seed'],
+                yield_in_bounds=True,
+                return_pathim=False, logger=logger
+            )
 
-                    # Compute all paths within this object which start and end in different
-                    #      gt-objects
-                    # Supply the correspondence table to this function and only compute a path
-                    #     if the respective correspondence is not found
-                    newpaths, correspondence_table = shortest_paths(
-                        params['penaltypower'], bounds,
-                        lbl, lblim, kl + [k],
-                        cropped_gt, cropped_dt, cropped_bc,
-                        for_class=for_class, correspondence=correspondence_table,
-                        avoid_duplicates=params['avoid_duplicates'],
-                        max_end_count=[], max_end_count_seed=[], yield_in_bounds=True,
-                        return_pathim=False, logger=logger
+            # If new paths were detected
+            if newpaths:
+                # Store them
+                # paths.merge(newpaths)
+                paths[kl + [k] + [lbl]] = newpaths
+
+                if logger is not None:
+                    logger.logging(
+                        'Found {} paths in image {} at label {}', len(newpaths), k, lbl
                     )
-
-                    # If new paths were detected
-                    if newpaths:
-                        # Store them
-                        # paths.merge(newpaths)
-                        paths[kl + [k] + [lbl]] = newpaths
-
-                        if logger is not None:
-                            logger.logging(
-                                'Found {} paths in image {} at label {}', len(newpaths), k, lbl
-                            )
-                            logger.logging('-------------------')
-                        else:
-                            print 'Found {} paths in image {} at label {}'.format(len(newpaths), k, lbl)
-                            print '-------------------'
-
-                        # # TODO: Probably not here (see above)
-                        # # Fill into correspondence table
-                        # correspondence_table[false_merge] = [kl + [k], lbl]
+                    logger.logging('-------------------')
+                else:
+                    print 'Found {} paths in image {} at label {}'.format(len(newpaths), k, lbl)
+                    print '-------------------'
 
         # Unload the current segmentation image
         indata[labelskey][kl].unpopulate()
