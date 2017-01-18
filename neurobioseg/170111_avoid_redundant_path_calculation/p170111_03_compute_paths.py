@@ -60,6 +60,8 @@ def compute_paths(yparams):
         else:
             first_defaults = ipl()
 
+        statistics = rdict()
+
         for exp_class_lbl in ['truepaths', 'falsepaths']:
 
             # Final layer
@@ -89,10 +91,11 @@ def compute_paths(yparams):
             # Compute the paths
             # -----------------
             paths = ipl()
+
             for_class = False
             if exp_class_lbl == 'truepaths':
                 for_class = True
-            paths[exp_lbl][exp_class_lbl] = libip.compute_paths_for_class(
+            paths[exp_lbl][exp_class_lbl], statistics[exp_lbl][exp_class_lbl] = libip.compute_paths_for_class(
                 data, 'segm', 'conts', 'dt', 'gt',
                 exp_params, for_class=for_class, ignore=[], debug=all_params['debug'],
                 logger=yparams
@@ -108,6 +111,10 @@ def compute_paths(yparams):
             # -----------------------
             targetfile = all_params[exp_target[0]] + all_params[exp_target[1]]
             paths.write(filepath=targetfile)
+
+        def val(x):
+            return x
+        yparams.logging(statistics[exp_lbl].datastructure2string(function=val))
 
 
     #

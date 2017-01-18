@@ -1352,6 +1352,10 @@ def compute_paths_for_class(
         :return:
         """
 
+        # TODO: Pick up some statistics along the way
+        stats_excluded_paths = 0
+        statistics = rdict()
+
         # Determine the endpoints of the current object
         indices = np.where(pathends)
         coords = zip(indices[0], indices[1], indices[2])
@@ -1367,7 +1371,7 @@ def compute_paths_for_class(
             for j in xrange(i + 1, len(coords)):
                 all_pairs.append((coords[i], coords[j]))
         # And only use those that satisfy certain criteria:
-        # a) TODO: Are in either the same gt object and do not switch class on the way (for_class=True)
+        # a) Are in either the same gt object (for_class=True)
         #    or in different gt objects (for_class=False)
         # b) Are not in the correspondence list
         pairs = []
@@ -1431,21 +1435,45 @@ def compute_paths_for_class(
             disttransf = lib.power(disttransf, penaltypower)
 
             # Compute the shortest paths according to the pairs list
-            ps = lib.shortest_paths(
+            ps_computed, ps_in_bounds = lib.shortest_paths(
                 disttransf, pairs, bounds=bounds, logger=logger, return_pathim=False,
-                yield_in_bounds=False
+                yield_in_bounds=True
             )
 
-            return ps, correspondence
+            # Criteria for keeping paths which can only be computed after path computation
+            if for_class:
+                ps = []
+                for i in xrange(0, len(ps_computed)):
+                    if len(np.unique(
+                            gt[ps_in_bounds[i][:, 0], ps_in_bounds[i][:, 1], ps_in_bounds[i][:, 2]])) == 1:
+                        ps.append(ps_computed[i])
+                        if logger is not None:
+                            logger.logging('Path label = True')
+                    else:
+                        # The path switched objects multiple times on the way and is not added to the list\
+                        if logger is not None:
+                            logger.logging(
+                                'Path starting and ending in label = {} had multiple labels and was excluded',
+                                gt[tuple(ps_in_bounds[i][0])]
+                            )
+
+                        stats_excluded_paths += 1
+            else:
+                ps = ps_computed
+
+            statistics['excluded_paths'] = stats_excluded_paths
+            return ps, correspondence, statistics
 
         else:
-            return [], correspondence
+            statistics['excluded_paths'] = 0
+            return [], correspondence, statistics
 
     correspondence_table = {}
     # correspondence_table (type=dict) should have the form:
     # {tuple(labels_in_gt_i): [kl_labelsimage_i, label_i]
 
     paths = IPL()
+    statistics = rdict()
 
     # Iterate over segmentations
     for d, k, v, kl in indata[labelskey].data_iterator(leaves_only=True, yield_short_kl=True):
@@ -1481,7 +1509,7 @@ def compute_paths_for_class(
             #      gt-objects
             # Supply the correspondence table to this function and only compute a path
             #     if the respective correspondence is not found
-            newpaths, correspondence_table = shortest_paths(
+            newpaths, correspondence_table, new_statistics = shortest_paths(
                 params['penaltypower'], bounds,
                 lbl, lblim, kl + [k],
                 cropped_gt, cropped_dt, cropped_bc,
@@ -1492,6 +1520,8 @@ def compute_paths_for_class(
                 yield_in_bounds=True,
                 return_pathim=False, logger=logger
             )
+
+            statistics[kl + [k] + [lbl]] = new_statistics
 
             # If new paths were detected
             if newpaths:
@@ -1511,4 +1541,4 @@ def compute_paths_for_class(
         # Unload the current segmentation image
         indata[labelskey][kl].unpopulate()
 
-    return paths
+    return paths, statistics
