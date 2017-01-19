@@ -66,11 +66,8 @@ compute_feature_images:
     features:
         rawdata:
             raw: ~
-            gauss_1:
-                params: [1]
-                func: gaussian
-            gauss_3:
-                params: [3]
+            gauss_2:
+                params: [2]
                 func: gaussian
             gauss_5:
                 params: [5]
@@ -78,14 +75,47 @@ compute_feature_images:
             gauss_10:
                 params: [10]
                 func: gaussian
+            mag_1:
+                params: [1]
+                func: gaussian_gradient_magnitude
+            mag_5:
+                params: [5]
+                func: gaussian_gradient_magnitude
+            mag_10:
+                params: [10]
+                func: gaussian_gradient_magnitude
+            hess_1:
+                params: [1]
+                func: hessian_eigenvalues
+            hess_5:
+                params: [5]
+                func: hessian_eigenvalues
+            hess_10:
+                params: [10]
+                func: hessian_eigenvalues
+            lapl_1:
+                params: [1]
+                func: laplacian_of_gaussian
+            lapl_5:
+                params: [5]
+                func: laplacian_of_gaussian
+            lapl_10:
+                params: [10]
+                func: laplacian_of_gaussian
+            structen_1_2:
+                params: [1, 2]   # [inner_scale, outer_scale]
+                func: structure_tensor_eigenvalues
+            structen_4_8:
+                params: [5, 10]
+                func: structure_tensor_eigenvalues
+            structen_8_16:
+                params: [10, 20]
+                func: structure_tensor_eigenvalues
 
         probs:
             raw: ~
-            gauss_1:
-                params: [1]
-                func: gaussian
-            gauss_3:
-                params: [3]
+            gauss_2:
+                params: [2]
                 func: gaussian
             gauss_5:
                 params: [5]
@@ -93,17 +123,50 @@ compute_feature_images:
             gauss_10:
                 params: [10]
                 func: gaussian
+            mag_1:
+                params: [1]
+                func: gaussian_gradient_magnitude
+            mag_5:
+                params: [5]
+                func: gaussian_gradient_magnitude
+            mag_10:
+                params: [10]
+                func: gaussian_gradient_magnitude
+            hess_1:
+                params: [1]
+                func: hessian_eigenvalues
+            hess_5:
+                params: [5]
+                func: hessian_eigenvalues
+            hess_10:
+                params: [10]
+                func: hessian_eigenvalues
+            lapl_1:
+                params: [1]
+                func: laplacian_of_gaussian
+            lapl_5:
+                params: [5]
+                func: laplacian_of_gaussian
+            lapl_10:
+                params: [10]
+                func: laplacian_of_gaussian
+            structen_1_2:
+                params: [1, 2]   # [inner_scale, outer_scale]
+                func: structure_tensor_eigenvalues
+            structen_4_8:
+                params: [5, 10]
+                func: structure_tensor_eigenvalues
+            structen_8_16:
+                params: [10, 20]
+                func: structure_tensor_eigenvalues
 
         segmentation:
             disttransf:
                 params: ~
                 func: disttransf
                 raw: ~
-                gauss_1:
-                    params: [1]
-                    func: gaussian
-                gauss_3:
-                    params: [3]
+                gauss_2:
+                    params: [2]
                     func: gaussian
                 gauss_5:
                     params: [5]
@@ -111,6 +174,43 @@ compute_feature_images:
                 gauss_10:
                     params: [10]
                     func: gaussian
+                mag_1:
+                    params: [1]
+                    func: gaussian_gradient_magnitude
+                mag_5:
+                    params: [5]
+                    func: gaussian_gradient_magnitude
+                mag_10:
+                    params: [10]
+                    func: gaussian_gradient_magnitude
+                hess_1:
+                    params: [1]
+                    func: hessian_eigenvalues
+                hess_5:
+                    params: [5]
+                    func: hessian_eigenvalues
+                hess_10:
+                    params: [10]
+                    func: hessian_eigenvalues
+                lapl_1:
+                    params: [1]
+                    func: laplacian_of_gaussian
+                lapl_5:
+                    params: [5]
+                    func: laplacian_of_gaussian
+                lapl_10:
+                    params: [10]
+                    func: laplacian_of_gaussian
+                structen_1_2:
+                    params: [1, 2]   # [inner_scale, outer_scale]
+                    func: structure_tensor_eigenvalues
+                structen_4_8:
+                    params: [5, 10]
+                    func: structure_tensor_eigenvalues
+                structen_8_16:
+                    params: [10, 20]
+                    func: structure_tensor_eigenvalues
+
 
 find_border_contacts:
     sources:
@@ -123,56 +223,108 @@ find_border_contacts:
             recursive_search: True
     target: [intermedfolder, borderctfile]
 
+
 compute_paths:
-    sources:
-        segmentation: [intermedfolder, segmlargefile]
-        groundtruth: [intermedfolder, gtlargefile, neuron_ids]
-        contacts: [intermedfolder, borderctfile, contacts]
-        disttransf: [intermedfolder, segfeatsfile, [disttransf, raw]]
-    skwargs:
+
+    # Organize settings like this:
+    #
+    # experiment_0:
+    #     truepaths:
+    #         sources:
+    #             segm: [path, filename, {arguments: vals}]
+    #             gt: [path, filename, {arguments: vals}]
+    #             conts: [path, filename, {arguments: vals}]
+    #             dt: [path, filename, {arguments: vals}]
+    #         target: [path, filename]
+    #         params:
+    #             avoid_duplicates: True|False
+    #             penaltypower: value > 0
+    #             ignorelabels: []
+    #             max_paths_per_object: value >= 1
+    #             max_paths_per_object_seed: value
+    #     falsepaths:
+    #         ...
+    #     default:
+    #         ...
+    # experiment_1:
+    #     ...
+    # ...
+    # experiment_n:
+    #     ...
+    # default
+    #     ...
+
+    'experiment_0a':
+        falsepaths:
+            params:
+                avoid_duplicates: True
+
+    'experiment_1a': ~
+
+    default:
+        truepaths:
+            sources:
+                segm: [intermedfolder, segmlargefile, {skeys: [[x, '0', beta_0.5]]}]
+                gt: [intermedfolder, gtlargefile, {skeys: [[x, '0', neuron_ids]]}]
+                conts: [intermedfolder, borderctfile, {skeys: [[x, '0', beta_0.5, contacts]]}]
+                dt: [intermedfolder, segfeatsfile, {skeys: [[x, '0', beta_0.5, disttransf, raw]]}]
+            params:
+                max_paths_per_object: 1
+        falsepaths:
+            sources:
+                segm: [intermedfolder, segmlargefile, {skeys: [[x, '0']]}]
+                gt: [intermedfolder, gtlargefile, {skeys: [[x, '0', neuron_ids]]}]
+                conts: [intermedfolder, borderctfile, {skeys: [[x, '0', '*', contacts]]}]
+                dt: [intermedfolder, segfeatsfile, {skeys: [[x, '0', '*', disttransf, raw]]}]
+            params:
+                max_paths_per_object: ~
+
         default:
-            recursive_search: True
-        segmentation:
-            recursive_search: False
-    target: [intermedfolder, pathsfile]
-    penaltypower: 10
-    ignorelabels: []
-    max_end_count: 5
-    max_end_count_seed: ~
+            target: [intermedfolder, pathsfile]
+            params:
+                avoid_duplicates: False
+                penaltypower: 10
+                ignorelabels: []
+                max_paths_per_object_seed: ~
+
 
 features_of_paths:
-    sources:
-        paths:
-            truepaths: [intermedfolder, pathsfile, truepaths]
-            falsepaths: [intermedfolder, pathsfile, falsepaths]
-        featureims:
-            rawdata: [intermedfolder, rawfeatsfile]
-            probs: [intermedfolder, probsfeatsfile]
-            segmentation: [intermedfolder, segfeatsfile]
-        segmentation:
-            [intermedfolder, segmlargefile]
-    skwargs:
-        paths:
-            default:
-                recursive_search: True
-        featureims:
-            default:
-                recursive_search: False
-        segmentation:
-            recursive_search: False
-    target: [intermedfolder, featuresfile]
-    pathlist: [intermedfolder, pathlistfile]
-    anisotropy: [10, 1, 1]
-    features:
-        - Sum
-        - Mean
-        - Variance
-        - Maximum
-        - Minimum
-        - Kurtosis
-        - Skewness
-        - Pathlength
-    max_paths_per_label: 8
+
+    'experiment_0a':
+        sources:
+            paths:
+                truepaths: [intermedfolder, pathsfile, {skeys: [[experiment_0a, truepaths]]}]
+                falsepaths: [intermedfolder, pathsfile, {skeys: [[experiment_0a, falsepaths]]}]
+    'experiment_1a':
+        sources:
+            paths:
+                truepaths: [intermedfolder, pathsfile, {skeys: [[experiment_1a, truepaths]]}]
+                falsepaths: [intermedfolder, pathsfile, {skeys: [[experiment_1a, falsepaths]]}]
+
+    default:
+        sources:
+            featureims:
+                rawdata: [intermedfolder, rawfeatsfile, {skeys: ~}]
+                probs: [intermedfolder, probsfeatsfile, {skeys: ~}]
+                segmentation: [intermedfolder, segfeatsfile, {skeys: ~}]
+    #        segmentation:
+    #            [intermedfolder, segmlargefile, {skeys: ~}]
+        targets:
+            features: [intermedfolder, featuresfile]
+            pathlist: [intermedfolder, pathlistfile]
+        params:
+            anisotropy: [10, 1, 1]
+            features:
+                - Sum
+                - Mean
+                - Variance
+                - Maximum
+                - Minimum
+                - Kurtosis
+                - Skewness
+                - Pathlength
+            max_paths_per_label: 10
+
 
 random_forest:
     sources:

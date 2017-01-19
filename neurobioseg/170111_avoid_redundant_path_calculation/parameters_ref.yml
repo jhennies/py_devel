@@ -28,9 +28,9 @@ featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.s
 pathlistfile:   'cremi.splA.train.pathlist.crop.crop_x10_110_y200_712_z200_712.split_x.pkl'
 
 run_remove_small_objects: False
-run_compute_feature_images: False
+run_compute_feature_images: True
 run_find_border_contacts: False
-run_compute_paths: True
+run_compute_paths: False
 run_features_of_paths: False
 run_random_forest: False
 
@@ -66,16 +66,61 @@ compute_feature_images:
     features:
         rawdata:
             raw: ~
+            gauss_2:
+                params: [2]
+                func: gaussian
+            mag_1:
+                params: [1]
+                func: gaussian_gradient_magnitude
             hess_1:
                 params: [1]
                 func: hessian_eigenvalues
+            lapl_1:
+                params: [1]
+                func: laplacian_of_gaussian
+            structen_1_2:
+                params: [1, 2]   # [inner_scale, outer_scale]
+                func: structure_tensor_eigenvalues
+
         probs:
             raw: ~
+            gauss_2:
+                params: [2]
+                func: gaussian
+            mag_1:
+                params: [1]
+                func: gaussian_gradient_magnitude
+            hess_1:
+                params: [1]
+                func: hessian_eigenvalues
+            lapl_1:
+                params: [1]
+                func: laplacian_of_gaussian
+            structen_1_2:
+                params: [1, 2]   # [inner_scale, outer_scale]
+                func: structure_tensor_eigenvalues
+
         segmentation:
             disttransf:
                 params: ~
                 func: disttransf
                 raw: ~
+                gauss_2:
+                    params: [2]
+                    func: gaussian
+                mag_1:
+                    params: [1]
+                    func: gaussian_gradient_magnitude
+                hess_1:
+                    params: [1]
+                    func: hessian_eigenvalues
+                lapl_1:
+                    params: [1]
+                    func: laplacian_of_gaussian
+                structen_1_2:
+                    params: [1, 2]   # [inner_scale, outer_scale]
+                    func: structure_tensor_eigenvalues
+
 
 find_border_contacts:
     sources:

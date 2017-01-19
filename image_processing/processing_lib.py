@@ -231,15 +231,56 @@ def gaussian_smoothing(image, sigma, anisotropy=None):
 
 
 def hessian_of_gaussian_eigenvalues(image, scale, anisotropy=None):
-    # if anisotropy:
-    #     if type(scale) is not list and type(scale) is not tuple and type(scale) is not np.array:
-    #         scale = np.array([scale]*3).astype(np.float32) / anisotropy
-    #     else:
-    #         scale = np.array(scale) / anisotropy
+
+    if anisotropy:
+        if type(scale) is not list and type(scale) is not tuple and type(scale) is not np.array:
+            scale = list(np.array([scale]*3).astype(np.float32) / anisotropy)
+        else:
+            scale = list(np.array(scale) / anisotropy)
 
     image = image.astype(np.float32)
     result = vigra.filters.hessianOfGaussianEigenvalues(image, scale)
     return result
+
+
+def structure_tensor_eigenvalues(image, inner_scale, outer_scale, anisotropy=None):
+
+    if anisotropy:
+        if type(inner_scale) is not list and type(inner_scale) is not tuple and type(inner_scale) is not np.array:
+            inner_scale = list(np.array([inner_scale]*3).astype(np.float32) / anisotropy)
+        else:
+            inner_scale = list(np.array(inner_scale) / anisotropy)
+        if type(outer_scale) is not list and type(outer_scale) is not tuple and type(outer_scale) is not np.array:
+            outer_scale = list(np.array([outer_scale]*3).astype(np.float32) / anisotropy)
+        else:
+            outer_scale = list(np.array(inner_scale) / anisotropy)
+
+    image = image.astype(np.float32)
+    return vigra.filters.structureTensorEigenvalues(image, inner_scale, outer_scale)
+
+
+def gaussian_gradient_magnitude(image, sigma, anisotropy=None):
+
+    if anisotropy:
+        if type(sigma) is not list and type(sigma) is not tuple and type(sigma) is not np.array:
+            sigma = np.array([sigma]*3).astype(np.float32) / anisotropy
+        else:
+            sigma = np.array(sigma) / anisotropy
+
+    image = image.astype(np.float32)
+    return vigra.filters.gaussianGradientMagnitude(image, sigma)
+
+
+def laplacian_of_gaussian(image, sigma, anisotropy=None):
+
+    if anisotropy:
+        if type(sigma) is not list and type(sigma) is not tuple and type(sigma) is not np.array:
+            sigma = list(np.array([sigma]*3).astype(np.float32) / anisotropy)
+        else:
+            sigma = list(np.array(sigma) / anisotropy)
+
+    image = image.astype(np.float32)
+    return vigra.filters.laplacianOfGaussian(image, sigma)
 
 
 def extended_local_maxima(image, neighborhood=26):

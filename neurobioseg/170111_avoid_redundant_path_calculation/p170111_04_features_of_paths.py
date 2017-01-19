@@ -70,7 +70,7 @@ def features_of_paths(yparams):
         yparams.logging('exp_params = \n{}', exp_sources.datastructure2string(function=val))
         yparams.logging('exp_targets = \n{}', exp_targets.datastructure2string(function=val))
 
-        # TODO: Load feature images
+        # Load feature images
         # -------------------
         featureims = ipl()
         for k, v in exp_sources['featureims'].iteritems():

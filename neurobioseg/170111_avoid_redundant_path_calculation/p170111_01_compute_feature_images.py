@@ -15,43 +15,6 @@ from yaml_parameters import YamlParams
 __author__ = 'jhennies'
 
 
-# def load_images(ipl, ids):
-#
-#     params = ipl.get_params()
-#
-#     if 'rawdata' in ids:
-#         ipl.logging('Loading raw data from:\n{} ...', params['datafolder'] + params['rawdatafile'])
-#         ipl.data_from_file(
-#             params['datafolder'] + params['rawdatafile'],
-#             skeys=params['rawdataname'],
-#             recursive_search=True, nodata=True,
-#         )
-#
-#     if 'probs' in ids:
-#         ipl.logging('Loading probabilities from:\n{} ...', params['datafolder'] + params['probsfile'])
-#         ipl.data_from_file(
-#             params['datafolder'] + params['probsfile'],
-#             skeys=params['probsname'],
-#             recursive_search=True, nodata=True
-#         )
-#
-#     if 'largeobj' in ids:
-#         ipl.logging('Loading large objects from:\n{} ...', params['intermedfolder'] + params['largeobjfile'])
-#         ipl.data_from_file(
-#             params['intermedfolder'] + params['largeobjfile'],
-#             skeys=params['largeobjname'],
-#             recursive_search=True, nodata=True
-#         )
-#
-#     if 'largeobjm' in ids:
-#         ipl.logging('Loading merged objects from:\n{} ...', params['intermedfolder'] + params['largeobjmfile'])
-#         ipl.data_from_file(
-#             params['intermedfolder'] + params['largeobjmfile'],
-#             skeys=params['largeobjmnames'][0],
-#             recursive_search=True, nodata=True
-#         )
-
-
 def load_images(filepath, skeys=None, recursive_search=False, logger=None):
 
     if logger is not None:
@@ -103,20 +66,25 @@ class FeatureFunctions:
         )
 
     @staticmethod
-    def structure_tensor(image, general_params, specfic_params):
-        return image
+    def structure_tensor_eigenvalues(image, general_params, specific_params):
+        return lib.structure_tensor_eigenvalues(
+            image, specific_params[0], specific_params[1],
+            anisotropy=general_params['anisotropy']
+        )
 
     @staticmethod
-    def gaussian_divergence(image, general_params, specfic_params):
-        return image
+    def gaussian_gradient_magnitude(image, general_params, specific_params):
+        return lib.gaussian_gradient_magnitude(
+            image, specific_params[0],
+            anisotropy=general_params['anisotropy']
+        )
 
     @staticmethod
-    def gaussian_gradient_magnitude(image, general_params, specfic_params):
-        return image
-
-    @staticmethod
-    def laplacian_of_gaussian(image, general_params, specfic_params):
-        return image
+    def laplacian_of_gaussian(image, general_params, specific_params):
+        return lib.laplacian_of_gaussian(
+            image, specific_params[0],
+            anisotropy=general_params['anisotropy']
+        )
 
 
 def compute_features(image, general_params, subfeature_params):
@@ -127,6 +95,7 @@ def compute_features(image, general_params, subfeature_params):
     for k, v in subfeature_params.iteritems():
 
         if v:
+            print 'Computing {}'.format(v['func'])
             result[k] = getattr(ff, v.pop('func'))(image, general_params, v.pop('params'))
 
             if len(v) > 0:
