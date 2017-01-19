@@ -36,142 +36,396 @@ def load_images(filepath, skeys=None, recursive_search=False, logger=None):
 
 def features_of_paths(yparams):
 
-    params = yparams.get_params()
-    thisparams = rdict(params['features_of_paths'])
+    all_params = yparams.get_params()
 
-    featureims = ipl()
-
-    # Load feature images
-    feature_sources = thisparams['sources', 'featureims']
-    feature_skwargs = thisparams['skwargs', 'featureims']
-    for sourcekey, source in feature_sources.iteritems():
-
-        # Load the necessary images
-        #   1. Determine the settings for fetching the data
-        try:
-            recursive_search = False
-            recursive_search = feature_skwargs['default', 'recursive_search']
-            recursive_search = feature_skwargs[sourcekey, 'recursive_search']
-        except KeyError:
-            pass
-        if len(source) > 2:
-            skeys = source[2]
-        else:
-            skeys = None
-
-        #   2. Load the data
-        yparams.logging('skeys = {}', skeys)
-        yparams.logging('recursive_search = {}', recursive_search)
-        featureims[sourcekey] = load_images(
-            params[source[0]] + params[source[1]], skeys=skeys, recursive_search=recursive_search,
-            logger=yparams
-        )
-
-    yparams.logging('\nFeatureims datastructure: \n\n{}', featureims.datastructure2string())
-
-    # Load true and false paths
-    paths = ipl()
-    paths_sources = thisparams['sources', 'paths']
-    paths_skwargs = thisparams['skwargs', 'paths']
-    for sourcekey, source in paths_sources.iteritems():
-
-        # Load the necessary images
-        #   1. Determine the settings for fetching the data
-        try:
-            recursive_search = False
-            recursive_search = paths_skwargs['default', 'recursive_search']
-            recursive_search = paths_skwargs[sourcekey, 'recursive_search']
-        except KeyError:
-            pass
-        if len(source) > 2:
-            skeys = source[2]
-        else:
-            skeys = None
-
-        #   2. Load the data
-        yparams.logging('skeys = {}', skeys)
-        yparams.logging('recursive_search = {}', recursive_search)
-        paths[sourcekey] = load_images(
-            params[source[0]] + params[source[1]], skeys=skeys, recursive_search=recursive_search,
-            logger=yparams
-        )
-
-    yparams.logging('\nPaths datastructure: \n\n{}', paths.datastructure2string(maxdepth=4))
-
-    # Load the segmentation image datastructure (We just require the datastructure, not the data
-    # itself)
-    try:
-        recursive_search = False
-        recursive_search = thisparams['skwargs', 'segmentation', 'recursive_search']
-    except KeyError:
-        pass
-    if len(thisparams['sources', 'segmentation']) > 2:
-        skeys = thisparams['sources', 'segmentation'][2]
+    # Zero'th layer:
+    # --------------
+    zeroth = rdict(all_params['features_of_paths'])
+    if 'default' in zeroth:
+        zeroth_defaults = zeroth.pop('default')
     else:
-        skeys = None
-    segmentation = load_images(
-        params[thisparams['sources', 'segmentation'][0]] + params[thisparams['sources', 'segmentation'][1]],
-        skeys=skeys, recursive_search=recursive_search,
-        logger=yparams
-    )
-
-    yparams.logging('\nSegmentation datastructure: \n\n{}', segmentation.datastructure2string(maxdepth=4))
-
-    # data['contacts'].reduce_from_leafs(iterate=True)
-    # data['disttransf'].reduce_from_leafs(iterate=True)
-
-    # Set targetfile
-    featuresfile = params[thisparams['target'][0]] \
-                 + params[thisparams['target'][1]]
-    pathlistfile = params[thisparams['pathlist'][0]] \
-                 + params[thisparams['pathlist'][1]]
+        zeroth_defaults = ipl()
 
     pathlist = ipl()
+    pathlistfile = zeroth_defaults['targets', 'pathlist']
+    pathlistfile = all_params[pathlistfile[0]] + all_params[pathlistfile[1]]
 
-    for d, k, v, kl in segmentation.data_iterator(yield_short_kl=True, leaves_only=True):
-        yparams.logging('===============================\nWorking on image: {}', kl + [k])
+    for exp_lbl, experiment in zeroth.iteritems():
 
-        # # TODO: Implement copy full logger
-        # data[kl].set_logger(data.get_logger())
+        # First layer
+        # -----------
+        # An experiment is now selected and performed
+        yparams.logging('\n\nPerforming experiment {}\n==============================', exp_lbl)
 
-        # Bild an input featureims dict for the path computation
-        infeatims = ipl()
-        sourcelist = thisparams['sources', 'featureims'].dcp()
-        if 'segmentation' in sourcelist:
-            infeatims['segmentation'] = featureims['segmentation'][kl][k]
-            sourcelist.pop('segmentation')
-        for source in sourcelist:
-            infeatims[source] = featureims[source][kl]
-        infeatims.populate()
+        final = zeroth_defaults.dcp()
+        final.merge(experiment)
 
-        # Bild an input dict for true paths
-        intruepaths = paths['truepaths'][kl][k]['truepaths']
-        infalsepaths = paths['falsepaths'][kl][k]['falsepaths']
-        intruepaths.populate()
-        infalsepaths.populate()
+        exp_sources = final['sources']
+        exp_params = final['params']
+        exp_targets = final['targets']
 
-        yparams.logging('\nInfeatims datastructure: \n\n{}', infeatims.datastructure2string())
-        yparams.logging('\nIntruepaths datastructure: \n\n{}', intruepaths.datastructure2string(maxdepth=3))
-        yparams.logging('\nInfalsepaths datastructure: \n\n{}', infalsepaths.datastructure2string(maxdepth=3))
+        def val(x):
+            return x
+        yparams.logging('exp_sources = \n{}', exp_sources.datastructure2string(function=val))
+        yparams.logging('exp_params = \n{}', exp_sources.datastructure2string(function=val))
+        yparams.logging('exp_targets = \n{}', exp_targets.datastructure2string(function=val))
 
-
-        features = ipl()
-        features[kl + [k]], pathlist[kl + [k]] = libip.features_of_paths(
-            yparams,
-            intruepaths, infalsepaths,
-            infeatims, infeatims, kl,
-            return_pathlist=True
+        # TODO: Load feature images
+        # -------------------
+        featureims = ipl()
+        for k, v in exp_sources['featureims'].iteritems():
+            skeys = None
+            if 'skeys' in v[2]:
+                skeys = v[2]['skeys']
+            featureims[k] = load_images(
+                all_params[v[0]] + all_params[v[1]],
+                skeys=skeys, logger=yparams
+            )
+        yparams.logging(
+            '\nFeatureims datastructure: \n\n{}',
+            featureims.datastructure2string(maxdepth=4)
         )
 
-        yparams.logging('\nPathlist datastructure: \n\n{}', pathlist.datastructure2string(function=type, leaves_only=False))
+        for exp_class_lbl, exp_class_src in exp_sources['paths'].iteritems():
 
-        # Write the result to file
-        features.write(filepath=featuresfile)
-        # pathlist.astype(np.uint8)
-        # pathlist.write(filepath=pathlistfile)
+            yparams.logging('\nWorking on {}\n------------------------------', exp_class_lbl)
+
+            # Load paths
+            # ----------
+            skeys = None
+            if 'skeys' in exp_class_src[2]:
+                skeys = exp_class_src[2]['skeys']
+            paths = load_images(
+                all_params[exp_class_src[0]] + all_params[exp_class_src[1]],
+                skeys=skeys, logger=yparams
+            )
+            yparams.logging(
+                '\nPaths datastructure: \n\n{}',
+                paths.datastructure2string(maxdepth=4)
+            )
+
+            # Iterate over the segmentation images
+            for d, k, v, kl in paths[exp_class_src[2]['skeys'][0]].data_iterator(
+                    leaves_only=True, yield_short_kl=True, maxdepth=3
+            ):
+                yparams.logging('\nImage keylist: {}\n..............................', kl + [k])
+
+                segm_kl = kl + [k]
+                imgs_kl = kl
+                yparams.logging('segm_kl = {}', segm_kl)
+                yparams.logging('imgs_kl = {}', imgs_kl)
+
+                # Bild an input featureims dict for the path computation
+                infeatims = ipl()
+                sourcelist = exp_sources['featureims'].dcp()
+                if 'segmentation' in sourcelist:
+                    infeatims['segmentation'] = featureims['segmentation'][segm_kl]
+                    sourcelist.pop('segmentation')
+                for source in sourcelist:
+                    infeatims[source] = featureims[source][imgs_kl]
+                infeatims.populate()
+
+                # Bild an input dict for true paths
+                inpaths = v.dcp()
+                inpaths.populate()
+
+                features = ipl()
+                features[exp_lbl][kl + [exp_class_lbl] + [k]], pathlist[exp_lbl][kl + [exp_class_lbl] + [k]] = libip.get_features(
+                    inpaths, infeatims, list(exp_params['features']),
+                    exp_params['max_paths_per_label'], ipl=yparams,
+                    anisotropy=exp_params['anisotropy'], return_pathlist=True
+                )
+
+                yparams.logging(
+                    '\nFeatures datastructure: \n\n{}',
+                    features.datastructure2string(maxdepth=4)
+                )
+
+                # Write the result to file
+                features.write(
+                    filepath=all_params[exp_targets['features'][0]] + all_params[exp_targets['features'][1]]
+                )
+                # pathlist.astype(np.uint8)
+                # pathlist.write(filepath=pathlistfile)
 
     with open(pathlistfile, 'wb') as f:
         pickle.dump(pathlist, f)
+
+            # statistics = rdict()
+
+    # featureims = ipl()
+    #
+    # # Load feature images
+    # feature_sources = thisparams['sources', 'featureims']
+    # feature_skwargs = thisparams['skwargs', 'featureims']
+    # for sourcekey, source in feature_sources.iteritems():
+    #
+    #     # Load the necessary images
+    #     #   1. Determine the settings for fetching the data
+    #     try:
+    #         recursive_search = False
+    #         recursive_search = feature_skwargs['default', 'recursive_search']
+    #         recursive_search = feature_skwargs[sourcekey, 'recursive_search']
+    #     except KeyError:
+    #         pass
+    #     if len(source) > 2:
+    #         skeys = source[2]
+    #     else:
+    #         skeys = None
+    #
+    #     #   2. Load the data
+    #     yparams.logging('skeys = {}', skeys)
+    #     yparams.logging('recursive_search = {}', recursive_search)
+    #     featureims[sourcekey] = load_images(
+    #         params[source[0]] + params[source[1]], skeys=skeys, recursive_search=recursive_search,
+    #         logger=yparams
+    #     )
+    #
+    # yparams.logging('\nFeatureims datastructure: \n\n{}', featureims.datastructure2string())
+    #
+    # # Load true and false paths
+    # paths = ipl()
+    # paths_sources = thisparams['sources', 'paths']
+    # paths_skwargs = thisparams['skwargs', 'paths']
+    # for sourcekey, source in paths_sources.iteritems():
+    #
+    #     # Load the necessary images
+    #     #   1. Determine the settings for fetching the data
+    #     try:
+    #         recursive_search = False
+    #         recursive_search = paths_skwargs['default', 'recursive_search']
+    #         recursive_search = paths_skwargs[sourcekey, 'recursive_search']
+    #     except KeyError:
+    #         pass
+    #     if len(source) > 2:
+    #         skeys = source[2]
+    #     else:
+    #         skeys = None
+    #
+    #     #   2. Load the data
+    #     yparams.logging('skeys = {}', skeys)
+    #     yparams.logging('recursive_search = {}', recursive_search)
+    #     paths[sourcekey] = load_images(
+    #         params[source[0]] + params[source[1]], skeys=skeys, recursive_search=recursive_search,
+    #         logger=yparams
+    #     )
+    #
+    # yparams.logging('\nPaths datastructure: \n\n{}', paths.datastructure2string(maxdepth=4))
+    #
+    # # Load the segmentation image datastructure (We just require the datastructure, not the data
+    # # itself)
+    # try:
+    #     recursive_search = False
+    #     recursive_search = thisparams['skwargs', 'segmentation', 'recursive_search']
+    # except KeyError:
+    #     pass
+    # if len(thisparams['sources', 'segmentation']) > 2:
+    #     skeys = thisparams['sources', 'segmentation'][2]
+    # else:
+    #     skeys = None
+    # segmentation = load_images(
+    #     params[thisparams['sources', 'segmentation'][0]] + params[thisparams['sources', 'segmentation'][1]],
+    #     skeys=skeys, recursive_search=recursive_search,
+    #     logger=yparams
+    # )
+    #
+    # yparams.logging('\nSegmentation datastructure: \n\n{}', segmentation.datastructure2string(maxdepth=4))
+    #
+
+        # for exp_class_lbl in ['truepaths', 'falsepaths']:
+        #
+        #     # Final layer
+        #     # -----------
+        #     # The true or false paths for the current experiment are here computed, respectively
+        #     yparams.logging('Computing {}...\n------------------------------\n', exp_class_lbl)
+        #     final = first_defaults.dcp()
+        #     final.merge(first[exp_class_lbl])
+        #
+        #     exp_sources = final['sources']
+        #     exp_params = final['params']
+        #     exp_target = final['target']
+        #
+        #     # Load the necessary images
+        #     data = ipl()
+        #     for datakey, content in exp_sources.iteritems():
+        #         data[datakey] = load_images(
+        #             all_params[content[0]] + all_params[content[1]],
+        #             skeys=content[2]['skeys'],
+        #             recursive_search=False,
+        #             logger=yparams
+        #         )
+        #
+        #     yparams.logging('\nInitial datastructure: \n\n{}', data.datastructure2string(maxdepth=4))
+        #     yparams.logging('experiment_params: \n{}', exp_params)
+        #
+        #     # Compute the paths
+        #     # -----------------
+        #     paths = ipl()
+        #
+        #     for_class = False
+        #     if exp_class_lbl == 'truepaths':
+        #         for_class = True
+        #     paths[exp_lbl][exp_class_lbl], statistics[exp_lbl][exp_class_lbl] = libip.compute_paths_for_class(
+        #         data, 'segm', 'conts', 'dt', 'gt',
+        #         exp_params, for_class=for_class, ignore=[], debug=all_params['debug'],
+        #         logger=yparams
+        #     )
+        #
+        #     yparams.logging(
+        #         '\nPaths datastructure after running {}: \n\n{}',
+        #         exp_class_lbl,
+        #         paths.datastructure2string()
+        #     )
+        #
+        #     def val(x):
+        #         return x
+        #
+        #     yparams.logging(
+        #         '\nStatistics after {}: \n\n{}', exp_class_lbl,
+        #         simplify_statistics(statistics[exp_lbl]).datastructure2string(function=val)
+        #     )
+        #
+        #     # Save the result to disk
+        #     # -----------------------
+        #     targetfile = all_params[exp_target[0]] + all_params[exp_target[1]]
+        #     paths.write(filepath=targetfile)
+
+    # params = yparams.get_params()
+    # thisparams = rdict(params['features_of_paths'])
+    #
+    # featureims = ipl()
+    #
+    # # Load feature images
+    # feature_sources = thisparams['sources', 'featureims']
+    # feature_skwargs = thisparams['skwargs', 'featureims']
+    # for sourcekey, source in feature_sources.iteritems():
+    #
+    #     # Load the necessary images
+    #     #   1. Determine the settings for fetching the data
+    #     try:
+    #         recursive_search = False
+    #         recursive_search = feature_skwargs['default', 'recursive_search']
+    #         recursive_search = feature_skwargs[sourcekey, 'recursive_search']
+    #     except KeyError:
+    #         pass
+    #     if len(source) > 2:
+    #         skeys = source[2]
+    #     else:
+    #         skeys = None
+    #
+    #     #   2. Load the data
+    #     yparams.logging('skeys = {}', skeys)
+    #     yparams.logging('recursive_search = {}', recursive_search)
+    #     featureims[sourcekey] = load_images(
+    #         params[source[0]] + params[source[1]], skeys=skeys, recursive_search=recursive_search,
+    #         logger=yparams
+    #     )
+    #
+    # yparams.logging('\nFeatureims datastructure: \n\n{}', featureims.datastructure2string())
+    #
+    # # Load true and false paths
+    # paths = ipl()
+    # paths_sources = thisparams['sources', 'paths']
+    # paths_skwargs = thisparams['skwargs', 'paths']
+    # for sourcekey, source in paths_sources.iteritems():
+    #
+    #     # Load the necessary images
+    #     #   1. Determine the settings for fetching the data
+    #     try:
+    #         recursive_search = False
+    #         recursive_search = paths_skwargs['default', 'recursive_search']
+    #         recursive_search = paths_skwargs[sourcekey, 'recursive_search']
+    #     except KeyError:
+    #         pass
+    #     if len(source) > 2:
+    #         skeys = source[2]
+    #     else:
+    #         skeys = None
+    #
+    #     #   2. Load the data
+    #     yparams.logging('skeys = {}', skeys)
+    #     yparams.logging('recursive_search = {}', recursive_search)
+    #     paths[sourcekey] = load_images(
+    #         params[source[0]] + params[source[1]], skeys=skeys, recursive_search=recursive_search,
+    #         logger=yparams
+    #     )
+    #
+    # yparams.logging('\nPaths datastructure: \n\n{}', paths.datastructure2string(maxdepth=4))
+    #
+    # # Load the segmentation image datastructure (We just require the datastructure, not the data
+    # # itself)
+    # try:
+    #     recursive_search = False
+    #     recursive_search = thisparams['skwargs', 'segmentation', 'recursive_search']
+    # except KeyError:
+    #     pass
+    # if len(thisparams['sources', 'segmentation']) > 2:
+    #     skeys = thisparams['sources', 'segmentation'][2]
+    # else:
+    #     skeys = None
+    # segmentation = load_images(
+    #     params[thisparams['sources', 'segmentation'][0]] + params[thisparams['sources', 'segmentation'][1]],
+    #     skeys=skeys, recursive_search=recursive_search,
+    #     logger=yparams
+    # )
+    #
+    # yparams.logging('\nSegmentation datastructure: \n\n{}', segmentation.datastructure2string(maxdepth=4))
+    #
+    # # data['contacts'].reduce_from_leafs(iterate=True)
+    # # data['disttransf'].reduce_from_leafs(iterate=True)
+    #
+    # # Set targetfile
+    # featuresfile = params[thisparams['target'][0]] \
+    #              + params[thisparams['target'][1]]
+    # pathlistfile = params[thisparams['pathlist'][0]] \
+    #              + params[thisparams['pathlist'][1]]
+    #
+    # pathlist = ipl()
+    #
+    # for d, k, v, kl in segmentation.data_iterator(yield_short_kl=True, leaves_only=True):
+    #     yparams.logging('===============================\nWorking on image: {}', kl + [k])
+    #
+    #     # # TODO: Implement copy full logger
+    #     # data[kl].set_logger(data.get_logger())
+    #
+    #     # Bild an input featureims dict for the path computation
+    #     infeatims = ipl()
+    #     sourcelist = thisparams['sources', 'featureims'].dcp()
+    #     if 'segmentation' in sourcelist:
+    #         infeatims['segmentation'] = featureims['segmentation'][kl][k]
+    #         sourcelist.pop('segmentation')
+    #     for source in sourcelist:
+    #         infeatims[source] = featureims[source][kl]
+    #     infeatims.populate()
+    #
+    #     # Bild an input dict for true paths
+    #     intruepaths = paths['truepaths'][kl][k]['truepaths']
+    #     infalsepaths = paths['falsepaths'][kl][k]['falsepaths']
+    #     intruepaths.populate()
+    #     infalsepaths.populate()
+    #
+    #     yparams.logging('\nInfeatims datastructure: \n\n{}', infeatims.datastructure2string())
+    #     yparams.logging('\nIntruepaths datastructure: \n\n{}', intruepaths.datastructure2string(maxdepth=3))
+    #     yparams.logging('\nInfalsepaths datastructure: \n\n{}', infalsepaths.datastructure2string(maxdepth=3))
+    #
+    #
+    #     features = ipl()
+    #     features[kl + [k]], pathlist[kl + [k]] = libip.features_of_paths(
+    #         yparams,
+    #         intruepaths, infalsepaths,
+    #         infeatims, infeatims, kl,
+    #         return_pathlist=True
+    #     )
+    #
+    #     yparams.logging('\nPathlist datastructure: \n\n{}', pathlist.datastructure2string(function=type, leaves_only=False))
+    #
+    #     # Write the result to file
+    #     features.write(filepath=featuresfile)
+    #     # pathlist.astype(np.uint8)
+    #     # pathlist.write(filepath=pathlistfile)
+    #
+    # with open(pathlistfile, 'wb') as f:
+    #     pickle.dump(pathlist, f)
 
 
 def run_features_of_paths(yamlfile, logging=True):

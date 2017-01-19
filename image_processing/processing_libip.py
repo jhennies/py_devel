@@ -833,12 +833,21 @@ def features_of_paths(
 ):
     """
 
-    :param ipl:
+    :param ipl: logger
     :param paths_true:
+        ipl() with structure:
+        label:
+            number: [path]
     :param paths_false:
+        ipl() with structure:
+        label:
+            number: [path]
     :param featureims_true:
-    :param featureims_false:
-    :param kl:
+        'segmentation': [image]
+        'source_0': [image]
+        ...
+    :param featureims_false: same structure as featureims_treu (can be identical)
+    :param kl: not used
     :return:
     """
 

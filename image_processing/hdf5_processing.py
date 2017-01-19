@@ -228,8 +228,12 @@ class RecursiveDict(dict, SimpleLogger):
                 if not leaves_only and not branches_only:
                     yield [depth-1, key, val, kl]
                 if leaves_only:
-                    if type(val) is not type(self):
-                        yield [depth-1, key, val, kl]
+                    if maxdepth is None:
+                        if type(val) is not type(self):
+                            yield [depth-1, key, val, kl]
+                    else:
+                        if type(val) is not type(self) or depth == maxdepth:
+                            yield [depth-1, key, val, kl]
                 if branches_only:
                     if type(val) is type(self):
                         yield [depth-1, key, val, kl]
