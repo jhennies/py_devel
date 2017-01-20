@@ -152,16 +152,23 @@ def compute_feature_images(yparams):
 
         # Load the necessary images
         #   1. Determine the settings for fetching the data
-        try:
-            recursive_search = False
-            recursive_search = thisparams['skwargs', 'default', 'recursive_search']
-            recursive_search = thisparams['skwargs', sourcekey, 'recursive_search']
-        except KeyError:
-            pass
-        if len(source) > 2:
-            skeys = source[2]
-        else:
-            skeys = None
+        # try:
+        #     recursive_search = False
+        #     recursive_search = thisparams['skwargs', 'default', 'recursive_search']
+        #     recursive_search = thisparams['skwargs', sourcekey, 'recursive_search']
+        # except KeyError:
+        #     pass
+        # if len(source) > 2:
+        #     skeys = source[2]
+        # else:
+        #     skeys = None
+
+        recursive_search = False
+        if 'recursive_search' in source[2].keys():
+            recursive_search = source[2]['recursive_search']
+        skeys = None
+        if 'skeys' in source[2].keys():
+            skeys = source[2]['skeys']
 
         #   2. Load the data
         data = load_images(
@@ -215,7 +222,7 @@ def run_compute_feature_images(yamlfile):
         yparams.stoplogger()
 
     except:
-        raise
+
         yparams.errout('Unexpected error')
 
 

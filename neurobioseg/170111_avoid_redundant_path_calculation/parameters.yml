@@ -51,14 +51,9 @@ compute_feature_images:
     general_params:
         anisotropy: [10, 1, 1]
     sources:
-        rawdata: [datafolder, rawdatafile, raw]
-        probs: [datafolder, probsfile, data]
-        segmentation: [intermedfolder, segmlargefile]
-    skwargs:
-        default:
-            recursive_search: True
-        segmentation:
-            recursive_search: False
+        rawdata: [datafolder, rawdatafile, {skeys: [['x', '*', raw]]}]
+        probs: [datafolder, probsfile, {skeys: [['x', '*', data]]}]
+        segmentation: [intermedfolder, segmlargefile, {skeys: [['x', '0', 'beta_0.35'], ['x', '0', 'beta_0.45'], ['x', '0', 'beta_0.55'], ['x', '0', 'beta_0.6']]}]
     targets:
         rawdata: [intermedfolder, rawfeatsfile]
         probs: [intermedfolder, probsfeatsfile]

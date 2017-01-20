@@ -51,14 +51,9 @@ compute_feature_images:
     general_params:
         anisotropy: [10, 1, 1]
     sources:
-        rawdata: [datafolder, rawdatafile, raw]
-        probs: [datafolder, probsfile, data]
-        segmentation: [intermedfolder, segmlargefile]
-    skwargs:
-        default:
-            recursive_search: True
-        segmentation:
-            recursive_search: False
+        rawdata: [datafolder, rawdatafile, {skeys: [['x', '*', raw]]}]
+        probs: [datafolder, probsfile, {skeys: [['x', '*', data]]}]
+        segmentation: [intermedfolder, segmlargefile, {skeys: [['x', '0', 'beta_0.35'], ['x', '0', 'beta_0.45'], ['x', '0', 'beta_0.55'], ['x', '0', 'beta_0.6']]}]
     targets:
         rawdata: [intermedfolder, rawfeatsfile]
         probs: [intermedfolder, probsfeatsfile]
@@ -171,6 +166,22 @@ compute_paths:
 
     'experiment_1a': ~
 
+    'predict':
+        truepaths:
+            sources:
+                segm: [intermedfolder, segmlargefile, {skeys: [[x, '1', beta_0.5]]}]
+                gt: [intermedfolder, gtlargefile, {skeys: [[x, '1', neuron_ids]]}]
+                conts: [intermedfolder, borderctfile, {skeys: [[x, '1', beta_0.5, contacts]]}]
+                dt: [intermedfolder, segfeatsfile, {skeys: [[x, '1', beta_0.5, disttransf, raw]]}]
+        falsepaths:
+            sources:
+                segm: [intermedfolder, segmlargefile, {skeys: [[x, '1']]}]
+                gt: [intermedfolder, gtlargefile, {skeys: [[x, '1', neuron_ids]]}]
+                conts: [intermedfolder, borderctfile, {skeys: [[x, '1', 'beta_0.5', contacts]]}]
+                dt: [intermedfolder, segfeatsfile, {skeys: [[x, '1', 'beta_0.5', disttransf, raw]]}]
+            params:
+                avoid_duplicates: True
+
     default:
         truepaths:
             sources:
@@ -211,14 +222,18 @@ features_of_paths:
                 truepaths: [intermedfolder, pathsfile, {skeys: [[experiment_1a, truepaths]]}]
                 falsepaths: [intermedfolder, pathsfile, {skeys: [[experiment_1a, falsepaths]]}]
 
+    'predict':
+        sources:
+            paths:
+                truepaths: [intermedfolder, pathsfile, {skeys: [[predict, truepaths]]}]
+                falsepaths: [intermedfolder, pathsfile, {skeys: [[predict, falsepaths]]}]
+
     default:
         sources:
             featureims:
                 rawdata: [intermedfolder, rawfeatsfile, {skeys: ~}]
                 probs: [intermedfolder, probsfeatsfile, {skeys: ~}]
                 segmentation: [intermedfolder, segfeatsfile, {skeys: ~}]
-    #        segmentation:
-    #            [intermedfolder, segmlargefile, {skeys: ~}]
         targets:
             features: [intermedfolder, featuresfile]
             pathlist: [intermedfolder, pathlistfile]
@@ -237,35 +252,26 @@ features_of_paths:
 
 
 random_forest:
-    sources:
-        0a:
-            train: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
-            predict: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
+
+    'experiment_0a':
+        sources:
+            train: [intermedfolder, featuresfile, {skeys: experiment_0a}]
+            predict: [intermedfolder, featuresfile, {skeys: predict}]
+
+    'experiment_1a':
+        sources:
+            train: [intermedfolder, featuresfile, {skeys: experiment_1a}]
+            predict: [intermedfolder, featuresfile, {skeys: predict}]
+
+    default:
+        sources:
+            pathlist: [intermedfolder, pathlistfile]
+        params:
             balance_classes: False
-        0b:
-            train: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
-            predict: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
-            balance_classes: False
-        1a:
-            train: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
-            predict: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
-            balance_classes: True
-        1b:
-            train: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
-            predict: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
-            balance_classes: True
-        2a:
-            traintrue: [intermedfolder, featuresfile, {skeys: [x, 0, beta_0.5], recursive_search: True}]
-            trainfalse: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
-            predict: [intermedfolder, featuresfile, {skeys: [x, 1, beta_0.5], recursive_search: True}]
-            balance_classes: False
-        2b:
-            traintrue: [intermedfolder, featuresfile, {skeys: [x, 1, beta_0.5], recursive_search: True}]
-            trainfalse: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
-            predict: [intermedfolder, featuresfile, {skeys: [x, 0, beta_0.5], recursive_search: True}]
-            balance_classes: False
-    targets: [resultfolder, resultfile]
-    pathlistin: [intermedfolder, pathlistfile]
-    pathlistout: [intermedfolder, pathlistforestfile]
+        targets:
+            result: [resultfolder, resultfile]
+            pathlist: [intermedfolder, pathlistforestfile]
+
+
 
 
