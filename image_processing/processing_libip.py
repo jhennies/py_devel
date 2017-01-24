@@ -1014,6 +1014,17 @@ def rf_make_forest_input(features):
     return [data, classes]
 
 
+def rf_combine_sources():
+    """
+    What we have:
+    [keylist to experiment]:
+        'truepaths'|'falsepaths':
+            [segmimage]
+
+    :return:
+    """
+
+
 def rf_combine_sources(features, search_for='true', pathlist=None):
     """
     Concatenate all the features of the different input images, i.e. all the betas
@@ -1067,7 +1078,7 @@ def rf_combine_sources(features, search_for='true', pathlist=None):
 
             if pathlist is not None:
 
-                newpathlist[search_for] += [kl + list(x) for x in pathlist[kl]]
+                newpathlist[search_for] += [kl + list(x) for x in pathlist[kl].keys()]
 
             for d2, k2, v2, kl2 in v.data_iterator(leaves_only=True):
 

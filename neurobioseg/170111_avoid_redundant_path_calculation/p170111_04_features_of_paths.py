@@ -130,7 +130,7 @@ def features_of_paths(yparams):
                 inpaths.populate()
 
                 features = ipl()
-                features[exp_lbl][kl + [exp_class_lbl] + [k]], pathlist[exp_lbl][kl + [exp_class_lbl] + [k]] = libip.get_features(
+                features[exp_lbl][[exp_class_lbl] + kl + [k]], pathlist[exp_lbl][[exp_class_lbl] + kl + [k]] = libip.get_features(
                     inpaths, np.array(np.array(infeatims.yield_an_item()).shape)[0:3],
                     infeatims, list(exp_params['features']),
                     exp_params['max_paths_per_label'], ipl=yparams,
