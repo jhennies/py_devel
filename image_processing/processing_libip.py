@@ -712,7 +712,7 @@ def paths_of_labelpairs(
 
 
 def get_features(
-        paths, featureimages, featurelist, max_paths_per_label,
+        paths, shp, featureimages, featurelist, max_paths_per_label,
         ipl=None, anisotropy=[1, 1, 1], return_pathlist=False
 ):
     """
@@ -778,7 +778,7 @@ def get_features(
             continue
 
         # Create a working image
-        image = np.zeros(np.array(featureimages.yield_an_item()).shape, dtype=np.uint32)
+        image = np.zeros(shp, dtype=np.uint32)
         # And fill it with one path per label object
         c = 1
         for curk, curv in (dict(zip(keys, vals))).iteritems():
