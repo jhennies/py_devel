@@ -1,5 +1,6 @@
-import h5py
+
 import numpy as np
+import h5py
 from simple_logger import SimpleLogger
 from yaml_parameters import YamlParams
 import multiprocessing

@@ -5,6 +5,7 @@ import processing_lib as lib
 import numpy as np
 from copy import deepcopy
 # import numpy.lib.index_tricks
+import traceback
 
 __author__ = 'jhennies'
 
@@ -278,7 +279,6 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
         for lbl in labellist:
             yield lbl
 
-
     def label_image_iterator(self, key=None, labellist=None, background=None,
                              accumulate=False, area=None, relabel=False):
 
@@ -365,6 +365,8 @@ if __name__ == '__main__':
                  #tkeys=zip(('result',)*2, hipl.resultkey_name_gen(('ab', 'ab2'), ('ab', 'ab2'))))
 
     print hipl.datastructure2string()
+
+    hipl.reduce_from_leaves()
 
     #
     # # hipl.anytask(lib.add2im, keys=(('a', 'b'),), keys2=(('a', 'b2'),), tkeys='result')
