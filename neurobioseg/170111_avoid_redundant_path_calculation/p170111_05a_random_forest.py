@@ -55,6 +55,48 @@ def load_data(filepath, skeys=None, recursive_search=False, logger=None):
 
 def random_forest(yparams, debug=False):
 
+    all_params = yparams.get_params()
+
+    # Zero'th layer:
+    # --------------
+    zeroth = rdict(all_params['random_forest'])
+    if 'default' in zeroth:
+        zeroth_defaults = zeroth.pop('default')
+    else:
+        zeroth_defaults = ipl()
+
+    # pathlist = ipl()
+    # pathlistfile = zeroth_defaults['targets', 'pathlist']
+    # pathlistfile = all_params[pathlistfile[0]] + all_params[pathlistfile[1]]
+
+    # yparams.logging('\nDatastructure of pathlistin:\n\n{}', pathlistin.datastructure2string())
+
+    for exp_lbl, experiment in zeroth.iteritems():
+
+        # First layer
+        # -----------
+        # An experiment is now selected and performed
+        yparams.logging('\n\nPerforming experiment {}\n==============================', exp_lbl)
+
+        final = zeroth_defaults.dcp()
+        final.merge(experiment)
+
+        exp_sources = final['sources']
+        exp_params = final['params']
+        exp_targets = final['targets']
+
+        # Get the pathlist stored in features_of_paths
+        pathlistfile = all_params[exp_sources['pathlist'][0]] \
+                       + all_params[exp_sources['pathlist'][1]]
+        with open(pathlistfile, 'r') as f:
+            pathlistin = pickle.load(f)
+        pathlistout = ipl()
+
+
+
+    sys.exit()
+
+
     params = yparams.get_params()
     thisparams = rdict(params['random_forest'])
 
@@ -244,6 +286,6 @@ def run_random_forest(
 
 if __name__ == '__main__':
 
-    yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters.yml'
+    yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters_ref.yml'
 
     run_random_forest(yamlfile, logging=False, make_only_feature_array=False, debug=True, write=False)

@@ -56,15 +56,16 @@ def find_border_contacts(yparams):
             logger=yparams
         )
 
-    data.reduce_from_leafs(iterate=True)
+    data.reduce_from_leaves(iterate=False)
+    data.reduce_from_leaves(iterate=False)
 
     # Set targetfile
     targetfile = params[thisparams['target'][0]] \
                  + params[thisparams['target'][1]]
 
-    yparams.logging('\nInitial datastructure: \n\n{}', data.datastructure2string(maxdepth=3))
+    yparams.logging('\nInitial datastructure: \n\n{}', data.datastructure2string(maxdepth=4))
 
-    for d, k, v, kl in data['segmentation'].data_iterator(yield_short_kl=True, leaves_only=True):
+    for d, k, v, kl in data['disttransf'].data_iterator(yield_short_kl=True, leaves_only=True):
 
         yparams.logging('===============================\nWorking on image: {}', kl + [k])
 

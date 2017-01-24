@@ -135,7 +135,7 @@ def find_border_centroids(ipl, faces, key, facesinfo, facesd, resultkey, results
     for k, startpoint in facesinfo[key, 'startpoints'].iteritems():
 
         # bounds = (shp[0],) * 2
-        for lbl, lblim in faces[key].label_image_iterator(key=k, background=0, area=facesinfo[key, 'areas', k]):
+        for lbl, lblim in faces[key].label_image_iterator(key=[k], background=0, area=facesinfo[key, 'areas', k]):
 
             ipl.logging('---\nLabel {} found in image {}', lbl, k)
 

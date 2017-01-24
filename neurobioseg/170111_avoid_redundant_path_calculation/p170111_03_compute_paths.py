@@ -302,7 +302,7 @@ def run_compute_paths(yamlfile, logging=True):
         yparams.stoplogger()
 
     except:
-        raise
+
         yparams.errout('Unexpected error')
 
 
