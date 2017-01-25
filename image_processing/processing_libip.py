@@ -978,7 +978,10 @@ def rf_make_feature_array_with_keylist(features, keylist):
 
     for k in keylist:
         if featsarray is None:
-            featsarray = np.array([features[k]])
+            if features[k].ndim == 1:
+                featsarray = np.array([features[k]])
+            elif features[k].ndim == 2:
+                featsarray = np.array(features[k]).swapaxes(0, 1)
         else:
             if features[k].ndim == 1:
                 featsarray = np.concatenate((featsarray, [features[k]]), 0)
@@ -1014,15 +1017,53 @@ def rf_make_forest_input(features):
     return [data, classes]
 
 
-def rf_combine_sources():
+def rf_combine_sources_new(features, pathlist):
     """
+    features:
+    ---------
+
     What we have:
-    [keylist to experiment]:
-        'truepaths'|'falsepaths':
-            [segmimage]
+    [somesource_0]
+        [features]: [f_00, f_10, ..., f_n0]    # with n being the number of paths
+    ...
+    [somesource_N]:
+        [features]: [f_0N, f_1N, ..., f_nN]
+
+    What we want to have:
+    [features]: [f_00, ..., f_n0, f_01, ..., f_n1, ..., f_0N, ..., fnN]
+
+    pathlist:
+    ---------
+
+    What we have:
+    [somesource_0]: [kl_00, kl_10, ..., kl_n0]    # with n being the number of paths
+    ...
+    [somesource_N]: [kl_0N, kl_1N, ..., kl_nN]
+
+    What we want to have:
+    [somesource_0 + kl_00, ..., somesource_N + kl_nN]
 
     :return:
     """
+
+    outfeatures = IPL()
+    newpathlist = []
+
+    # print 'Starting rf_combine_sources_new\n'
+
+    for d, k, v, kl in pathlist.data_iterator(leaves_only=True):
+        # print kl
+
+        newpathlist += [kl + list(x) for x in pathlist[kl]]
+
+        for d, k, v, kl in features[kl].data_iterator(leaves_only=True):
+            if outfeatures.inkeys(kl):
+                outfeatures[kl] \
+                    = np.concatenate((outfeatures[kl], v), axis=0)
+            else:
+                outfeatures[kl] = v
+
+    return outfeatures, newpathlist
 
 
 def rf_combine_sources(features, search_for='true', pathlist=None):
@@ -1078,7 +1119,7 @@ def rf_combine_sources(features, search_for='true', pathlist=None):
 
             if pathlist is not None:
 
-                newpathlist[search_for] += [kl + list(x) for x in pathlist[kl].keys()]
+                newpathlist[search_for] += [kl + list(x) for x in pathlist[kl]]
 
             for d2, k2, v2, kl2 in v.data_iterator(leaves_only=True):
 

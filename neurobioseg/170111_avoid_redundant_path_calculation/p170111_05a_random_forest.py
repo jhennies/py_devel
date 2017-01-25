@@ -84,15 +84,147 @@ def random_forest(yparams, debug=False):
         exp_sources = final['sources']
         exp_params = final['params']
         exp_targets = final['targets']
+        exp_source_kl = [exp_lbl]
+        if 'skeys' in exp_sources['train'][2]:
+            exp_source_kl = exp_sources['train'][2]['skeys']
+        exp_predict_kl = ['predict']
+        if 'skeys' in exp_sources['predict'][2]:
+            exp_precdict_kl = exp_sources['predict'][2]['skeys']
+        if type(exp_source_kl) is str:
+            exp_source_kl = [exp_source_kl]
+        if type(exp_predict_kl) is str:
+            exp_predict_kl = [exp_predict_kl]
 
         # Get the pathlist stored in features_of_paths
-        pathlistfile = all_params[exp_sources['pathlist'][0]] \
-                       + all_params[exp_sources['pathlist'][1]]
+        pathlist_source = exp_sources.pop('pathlist')
+        pathlistfile = all_params[pathlist_source[0]] \
+                       + all_params[pathlist_source[1]]
         with open(pathlistfile, 'r') as f:
             pathlistin = pickle.load(f)
         pathlistout = ipl()
 
+        # Load training data
+        if 'train' in exp_sources.keys():
+            truesource = exp_sources['train']
+            falsesource = exp_sources['train']
+        else:
+            truesource = exp_sources['traintrue']
+            falsesource = exp_sources['trainfalse']
+        truetrainfeats = load_data(
+            all_params[truesource[0]] + all_params[truesource[1]], logger=yparams, **truesource[2]
+        ).subset('truepaths', search=True)
+        falsetrainfeats = load_data(
+            all_params[falsesource[0]] + all_params[falsesource[1]], logger=yparams, **falsesource[2]
+        ).subset('falsepaths', search=True)
 
+        # Load prediction data
+        predictsource = exp_sources['predict']
+        predictfeats = load_data(
+            all_params[predictsource[0]] + all_params[predictsource[1]],
+            logger=yparams, **predictsource[2]
+        )
+
+        # Load the data into memory
+        truetrainfeats.populate()
+        falsetrainfeats.populate()
+        predictfeats.populate()
+
+        # Concatenate the different sources
+        # 1. Of training data
+        plo_true = ipl()
+        truetrainfeats, plo_true['truepaths'] = libip.rf_combine_sources_new(
+            truetrainfeats[exp_source_kl]['truepaths'].dcp(),
+            pathlistin[exp_source_kl]['truepaths'].dcp()
+        )
+        plo_false = ipl()
+        falsetrainfeats, plo_false['falsepaths'] = libip.rf_combine_sources_new(
+            falsetrainfeats[exp_source_kl]['falsepaths'].dcp(),
+            pathlistin[exp_source_kl]['falsepaths'].dcp()
+        )
+        pathlistout[exp_source_kl + ['train']] = plo_true + plo_false
+        # 2. Of prediction data
+        ipf_true = ipl()
+        plo_true = ipl()
+        ipf_true['truepaths'], plo_true['truepaths'] = libip.rf_combine_sources_new(
+            predictfeats[exp_predict_kl]['truepaths'].dcp(),
+            pathlistin[exp_predict_kl]['truepaths'].dcp()
+        )
+        ipf_false = ipl()
+        plo_false = ipl()
+        ipf_false['falsepaths'], plo_false['falsepaths'] = libip.rf_combine_sources_new(
+            predictfeats[exp_predict_kl]['falsepaths'].dcp(),
+            pathlistin[exp_predict_kl]['falsepaths'].dcp()
+        )
+        inpredictfeats = ipf_true + ipf_false
+        pathlistout[exp_source_kl, 'predict'] = plo_true + plo_false
+
+        # Note:
+        #   Due to the feature input being a dictionary organized by the feature images where
+        #   the feature values come from
+        #
+        #       [source]
+        #           'truepaths'|'falsepaths'
+        #               [featureims]
+        #                   'Sum':      [s1, ..., sN]
+        #                   'Variance': [v1, ..., vN]
+        #                   ...
+        #               [Pathlength]:   [l1, ..., lN]
+        #
+        #   the exact order in which items are iterated over by data_iterator() is not known.
+        #
+        # Solution:
+        #   Iterate over it once and store the keylist in an array (which conserves the order)
+        #   When accumulating the features for each of the four corresponding subsets, namely
+        #   training and testing set with true and false paths each, i.e.
+        #   ['0'|'1']['truefeats'|'falsefeats'],
+        #   the the keylist is used, thus maintaining the correct order in every subset.
+        #
+        # And that is what is happening here:
+        # #   1. Get the keylist of a full feature list, e.g. one of true paths
+        # example_kl = None
+        # for d2, k2, v2, kl2 in truetrainfeats.data_iterator():
+        #     if k2 == 'truepaths':
+        #         example_kl = kl2
+        #         break
+        # 2. Get the keylist order of the feature space
+        feature_space_list = []
+        for d2, k2, v2, kl2 in truetrainfeats.data_iterator():
+            if type(v2) is not type(truetrainfeats):
+                feature_space_list.append(kl2)
+
+        intrain = ipl()
+        intrain['true'] = libip.rf_make_feature_array_with_keylist(truetrainfeats, feature_space_list)
+        yparams.logging("Computed feature array for train['true'] with shape {}", intrain['true'].shape)
+        intrain['false'] = libip.rf_make_feature_array_with_keylist(falsetrainfeats, feature_space_list)
+        yparams.logging("Computed feature array for train['false'] with shape {}", intrain['false'].shape)
+
+        # TODO: Make this right
+        inpredictfeats['true'] = libip.rf_make_feature_array_with_keylist(inpredictfeats['truepaths'], feature_space_list)
+        yparams.logging("Computed feature array for predict['true'] with shape {}", inpredictfeats['true'].shape)
+        inpredictfeats['false'] = libip.rf_make_feature_array_with_keylist(inpredictfeats['falsepaths'], feature_space_list)
+        yparams.logging("Computed feature array for predict['false'] with shape {}", inpredictfeats['false'].shape)
+
+        # Classify
+        result = ipl()
+        result[exp_lbl] = libip.random_forest(
+            intrain, inpredictfeats, debug=debug, balance=exp_params['balance_classes'],
+            logger=yparams
+        )
+
+        # Evaluate
+        new_eval = ipl()
+        # print [x[0] for x in result[kl]]
+        # print [x[1] for x in result[kl]]
+        new_eval[exp_lbl] = libip.new_eval([x[0] for x in result[exp_lbl]], [x[1] for x in result[exp_lbl]])
+
+        yparams.logging('+++ RESULTS +++')
+        yparams.logging("[kl]")
+        # for i in result[kl]:
+        #     yparams.logging('{}', i)
+        for key, value in new_eval[exp_lbl].iteritems():
+            yparams.logging('{} = {}', key, value)
+
+        pass
 
     sys.exit()
 
