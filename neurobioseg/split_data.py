@@ -26,12 +26,12 @@ debug = False
 path = '/mnt/localdata01/jhennies/neuraldata/cremi_2016/sample_A_train_betas/'
 
 # Set sourcenames
-sourcename = 'cremi.splA.train.mcseg_beta_{}.crop.h5'
+sourcename = 'cremi.splA.train.mcseg_beta_{}.crop.crop_x10_110_y200_712_z200_712.h5'
 ids = ['0.3', '0.35', '0.4', '0.45', '0.5', '0.55', '0.6', '0.65', '0.7']
 
 # Set targetnames
-targetname = 'cremi.splA.train.mcseg_beta_{}.crop{}.h5'
-append2name = '.split_x'
+targetname = 'cremi.splA.train.mcseg_beta_{}.crop.crop_x10_110_y200_712_z200_712{}.h5'
+append2name = '.split_xyz'
 
 # Generate file name lists
 sourcefiles = [sourcename.format(x) for x in ids]
@@ -40,7 +40,7 @@ targetfiles = [targetname.format(x, append2name) for x in ids]
 print 'targetfiles = {}'.format(targetfiles)
 
 # Parameters
-dims = ['x']
+dims = ['x', 'y', 'z']
 
 files = dict(zip(sourcefiles, targetfiles))
 

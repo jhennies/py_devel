@@ -85,11 +85,11 @@ def random_forest(yparams, debug=False):
         exp_params = final['params']
         exp_targets = final['targets']
         exp_source_kl = [exp_lbl]
-        if 'skeys' in exp_sources['train'][2]:
-            exp_source_kl = exp_sources['train'][2]['skeys']
+        if len(exp_sources['train']) == 4:
+            exp_source_kl = exp_sources['train'][3]
         exp_predict_kl = ['predict']
-        if 'skeys' in exp_sources['predict'][2]:
-            exp_precdict_kl = exp_sources['predict'][2]['skeys']
+        if len(exp_sources['predict']) == 4:
+            exp_predict_kl = exp_sources['predict'][3]
         if type(exp_source_kl) is str:
             exp_source_kl = [exp_source_kl]
         if type(exp_predict_kl) is str:
@@ -101,6 +101,10 @@ def random_forest(yparams, debug=False):
                        + all_params[pathlist_source[1]]
         with open(pathlistfile, 'r') as f:
             pathlistin = pickle.load(f)
+	if 'skeys' in pathlist_source[2]:
+            pathlistin = pathlistin.subset(*pathlist_source[2]['skeys'])
+            print 'I was here...'
+        yparams.logging('pathlistin.datastructure: \n{}\n', pathlistin.datastructure2string(maxdepth=4))
         pathlistout = ipl()
 
         # Load training data
@@ -117,12 +121,16 @@ def random_forest(yparams, debug=False):
             all_params[falsesource[0]] + all_params[falsesource[1]], logger=yparams, **falsesource[2]
         ).subset('falsepaths', search=True)
 
+        yparams.logging('\ntruetrainfeats.datastructure: \n{}\n', truetrainfeats.datastructure2string(maxdepth=4))
+        yparams.logging('\nfalsetrainfeats.datastructure: \n{}\n', falsetrainfeats.datastructure2string(maxdepth=4))
+
         # Load prediction data
         predictsource = exp_sources['predict']
         predictfeats = load_data(
             all_params[predictsource[0]] + all_params[predictsource[1]],
             logger=yparams, **predictsource[2]
         )
+        yparams.logging('\npredictfeats.datastructure: \n{}\n', predictfeats.datastructure2string(maxdepth=4))
 
         # Load the data into memory
         truetrainfeats.populate()
@@ -198,7 +206,6 @@ def random_forest(yparams, debug=False):
         intrain['false'] = libip.rf_make_feature_array_with_keylist(falsetrainfeats, feature_space_list)
         yparams.logging("Computed feature array for train['false'] with shape {}", intrain['false'].shape)
 
-        # TODO: Make this right
         inpredictfeats['true'] = libip.rf_make_feature_array_with_keylist(inpredictfeats['truepaths'], feature_space_list)
         yparams.logging("Computed feature array for predict['true'] with shape {}", inpredictfeats['true'].shape)
         inpredictfeats['false'] = libip.rf_make_feature_array_with_keylist(inpredictfeats['falsepaths'], feature_space_list)
@@ -418,6 +425,7 @@ def run_random_forest(
 
 if __name__ == '__main__':
 
-    yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters_ref.yml'
+    # yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters_ref.yml'
+    yamlfile = '/mnt/localdata01/jhennies/neuraldata/results/cremi_2016/170127_only_on_beta_5_train0_predict1_full/parameters.yml'
 
     run_random_forest(yamlfile, logging=False, make_only_feature_array=False, debug=True, write=False)

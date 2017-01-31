@@ -56,8 +56,9 @@ def find_border_contacts(yparams):
             logger=yparams
         )
 
-    data.reduce_from_leaves(iterate=False)
-    data.reduce_from_leaves(iterate=False)
+    # TODO: Get rid of this at some point! Probable re-implement the whole data-loading step
+    data['disttransf'].reduce_from_leaves(iterate=False)
+    data['disttransf'].reduce_from_leaves(iterate=False)
 
     # Set targetfile
     targetfile = params[thisparams['target'][0]] \

@@ -1,51 +1,50 @@
 datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
-resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170124_neurobioseg_x_cropped_avoid_duplicates_develop/
-intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170124_neurobioseg_x_cropped_avoid_duplicates_develop/intermed/
-scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170124_neurobioseg_x_cropped_avoid_duplicates_develop/scripts/
+resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170130_slice_selection_test_z_develop/
+intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170130_slice_selection_test_z_develop/intermed/
+scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170130_slice_selection_test_z_develop/scripts/
 
 debug: True
 
 createfolders: True
 overwriteresults: True
 
-rawdatafile:    'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+rawdatafile:    'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 rawdataname:    'raw'
-gtruthfile:     'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+gtruthfile:     'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 gtruthname:     'neuron_ids'
-gtlargefile:    'cremi.splA.train.gtlarge.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+gtlargefile:    'cremi.splA.train.gtlarge.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
 gtlargename:    'neuron_ids'
-probsfile:      'cremi.splA.train.probs.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+probsfile:      'cremi.splA.train.probs.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 probsname:      'data'
-segmfile:       'cremi.splA.train.mcseg_betas.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-segmlargefile:  'cremi.splA.train.segmlarge.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-rawfeatsfile:   'cremi.splA.train.rawfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-probsfeatsfile: 'cremi.splA.train.probsfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-segfeatsfile:   'cremi.splA.train.segfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+segmfile:       'cremi.splA.train.mcseg_betas.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+segmlargefile:  'cremi.splA.train.segmlarge.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
+rawfeatsfile:   'cremi.splA.train.rawfeats.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
+probsfeatsfile: 'cremi.splA.train.probsfeats.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
+segfeatsfile:   'cremi.splA.train.segfeats.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
+borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
 borderctname:   'contacts'
-pathsfile:      'cremi.splA.train.paths.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-pathlistfile:   'cremi.splA.train.pathlist.crop.crop_x10_110_y200_712_z200_712.split_x.pkl'
+pathsfile:      'cremi.splA.train.paths.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
+featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
+pathlistfile:   'cremi.splA.train.pathlist.crop.crop_x10_110_y200_712_z200_712.split_z.pkl'
 
-run_remove_small_objects: False
+run_remove_small_objects: True
 run_compute_feature_images: False
 run_find_border_contacts: False
 run_compute_paths: False
-run_features_of_paths: True
+run_features_of_paths: False
 run_random_forest: False
+
 
 remove_small_objects:
     sources:
-        - [datafolder, segmfile]
-        - [datafolder, gtruthfile]
+        - [datafolder, segmfile, {skeys: [['z']]}]
+        - [datafolder, gtruthfile, {skeys: [['z', '*', 'neuron_ids']]}]
     targets:
         - [intermedfolder, segmlargefile]
         - [intermedfolder, gtlargefile]
-    kwargs:
-        skeys: [~, neuron_ids]
-        recursive_search: [False, True]
     bysize: 10000
     relabel: True
+
 
 compute_feature_images:
     general_params:

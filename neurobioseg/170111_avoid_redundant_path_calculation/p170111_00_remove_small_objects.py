@@ -57,11 +57,18 @@ def remove_small_objects(yparams):
 
     for i in xrange(0, len(thisparams['sources'])):
 
+        # data = load_images(
+        #     params[thisparams['sources'][i][0]] + params[thisparams['sources'][i][1]],
+        #     skeys=thisparams['kwargs']['skeys'][i],
+        #     recursive_search=thisparams['kwargs']['recursive_search'][i],
+        #     logger=yparams
+        # )
+        kwargs = None
+        if len(thisparams['sources'][i]) > 2:
+            kwargs = thisparams['sources'][i][2]
         data = load_images(
             params[thisparams['sources'][i][0]] + params[thisparams['sources'][i][1]],
-            skeys=thisparams['kwargs']['skeys'][i],
-            recursive_search=thisparams['kwargs']['recursive_search'][i],
-            logger=yparams
+            logger=yparams, **kwargs
         )
 
         targetfile = params[thisparams['targets'][i][0]] + params[thisparams['targets'][i][1]]
