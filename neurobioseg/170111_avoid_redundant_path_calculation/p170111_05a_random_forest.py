@@ -101,9 +101,12 @@ def random_forest(yparams, debug=False):
                        + all_params[pathlist_source[1]]
         with open(pathlistfile, 'r') as f:
             pathlistin = pickle.load(f)
-	if 'skeys' in pathlist_source[2]:
-            pathlistin = pathlistin.subset(*pathlist_source[2]['skeys'])
-            print 'I was here...'
+
+        if len(pathlist_source) > 2:
+            if 'skeys' in pathlist_source[2]:
+                pathlistin = pathlistin.subset(*pathlist_source[2]['skeys'])
+                print 'I was here...'
+
         yparams.logging('pathlistin.datastructure: \n{}\n', pathlistin.datastructure2string(maxdepth=4))
         pathlistout = ipl()
 
@@ -428,4 +431,4 @@ if __name__ == '__main__':
     # yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters_ref.yml'
     yamlfile = '/mnt/localdata01/jhennies/neuraldata/results/cremi_2016/170127_only_on_beta_5_train0_predict1_full/parameters.yml'
 
-    run_random_forest(yamlfile, logging=False, make_only_feature_array=False, debug=True, write=False)
+    run_random_forest(yamlfile, logging=False, make_only_feature_array=False, debug=False, write=False)
