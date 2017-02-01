@@ -3,6 +3,7 @@ import numpy as np
 from skimage import morphology
 import vigra
 import processing_lib as lib
+import gen_lib as glib
 from hdf5_image_processing import Hdf5ImageProcessingLib as IPL
 import random
 from vigra import graphs
@@ -134,7 +135,7 @@ def find_border_centroids(ipl, faces, key, facesinfo, facesd, resultkey, results
     for k, startpoint in facesinfo[key, 'startpoints'].iteritems():
 
         # bounds = (shp[0],) * 2
-        for lbl, lblim in faces[key].label_image_iterator(key=k, background=0, area=facesinfo[key, 'areas', k]):
+        for lbl, lblim in faces[key].label_image_iterator(key=[k], background=0, area=facesinfo[key, 'areas', k]):
 
             ipl.logging('---\nLabel {} found in image {}', lbl, k)
 
@@ -711,7 +712,7 @@ def paths_of_labelpairs(
 
 
 def get_features(
-        paths, featureimages, featurelist, max_paths_per_label,
+        paths, shp, featureimages, featurelist, max_paths_per_label,
         ipl=None, anisotropy=[1, 1, 1], return_pathlist=False
 ):
     """
@@ -777,7 +778,7 @@ def get_features(
             continue
 
         # Create a working image
-        image = np.zeros(np.array(featureimages.yield_an_item()).shape, dtype=np.uint32)
+        image = np.zeros(shp, dtype=np.uint32)
         # And fill it with one path per label object
         c = 1
         for curk, curv in (dict(zip(keys, vals))).iteritems():
@@ -832,12 +833,21 @@ def features_of_paths(
 ):
     """
 
-    :param ipl:
+    :param ipl: logger
     :param paths_true:
+        ipl() with structure:
+        label:
+            number: [path]
     :param paths_false:
+        ipl() with structure:
+        label:
+            number: [path]
     :param featureims_true:
-    :param featureims_false:
-    :param kl:
+        'segmentation': [image]
+        'source_0': [image]
+        ...
+    :param featureims_false: same structure as featureims_treu (can be identical)
+    :param kl: not used
     :return:
     """
 
@@ -968,7 +978,10 @@ def rf_make_feature_array_with_keylist(features, keylist):
 
     for k in keylist:
         if featsarray is None:
-            featsarray = np.array([features[k]])
+            if features[k].ndim == 1:
+                featsarray = np.array([features[k]])
+            elif features[k].ndim == 2:
+                featsarray = np.array(features[k]).swapaxes(0, 1)
         else:
             if features[k].ndim == 1:
                 featsarray = np.concatenate((featsarray, [features[k]]), 0)
@@ -1002,6 +1015,55 @@ def rf_make_forest_input(features):
     data = rf_eliminate_invalid_entries(data)
 
     return [data, classes]
+
+
+def rf_combine_sources_new(features, pathlist):
+    """
+    features:
+    ---------
+
+    What we have:
+    [somesource_0]
+        [features]: [f_00, f_10, ..., f_n0]    # with n being the number of paths
+    ...
+    [somesource_N]:
+        [features]: [f_0N, f_1N, ..., f_nN]
+
+    What we want to have:
+    [features]: [f_00, ..., f_n0, f_01, ..., f_n1, ..., f_0N, ..., fnN]
+
+    pathlist:
+    ---------
+
+    What we have:
+    [somesource_0]: [kl_00, kl_10, ..., kl_n0]    # with n being the number of paths
+    ...
+    [somesource_N]: [kl_0N, kl_1N, ..., kl_nN]
+
+    What we want to have:
+    [somesource_0 + kl_00, ..., somesource_N + kl_nN]
+
+    :return:
+    """
+
+    outfeatures = IPL()
+    newpathlist = []
+
+    # print 'Starting rf_combine_sources_new\n'
+
+    for d, k, v, kl in pathlist.data_iterator(leaves_only=True):
+        # print kl
+
+        newpathlist += [kl + list(x) for x in pathlist[kl]]
+
+        for d, k, v, kl in features[kl].data_iterator(leaves_only=True):
+            if outfeatures.inkeys(kl):
+                outfeatures[kl] \
+                    = np.concatenate((outfeatures[kl], v), axis=0)
+            else:
+                outfeatures[kl] = v
+
+    return outfeatures, newpathlist
 
 
 def rf_combine_sources(features, search_for='true', pathlist=None):
@@ -1300,4 +1362,248 @@ def compute_paths_with_class(
     return paths
 
 
+def compute_paths_for_class(
+        indata, labelskey, pathendkey, disttransfkey, gtkey,
+        params, for_class=True, ignore=[], logger=None, debug=False
+):
 
+    # def find_false_merges():
+    #     return []
+
+    def check_for_false_merge(segmentation, gt, erosion_ellipsoid):
+
+        # Reduce the segmentation object in size (erode)
+        # This should ensure that slight inaccuracies in the object boundary doesn't get picked up
+        se = glib.ellipsoid_se(*erosion_ellipsoid['args'], **erosion_ellipsoid['kwargs'])
+        print se
+        eroded_segmentation = morphology.binary_erosion(segmentation, se)
+
+        # TODO: Determine the unique values in the gt at the area of the eroded segmentation object
+        unique_vals, counts = np.unique(gt[eroded_segmentation > 0], return_counts=True)
+        print 'unique_vals = {}'.format(unique_vals)
+        print 'counts = {}'.format(counts)
+
+        return []
+
+    def shortest_paths(
+            penaltypower, bounds,
+            lbl, lblim, keylist_lblim,
+            gt, disttransf, pathends,
+            for_class=True, correspondence={},
+            avoid_duplicates=True,
+            max_paths_per_object=[], max_paths_per_object_seed=[], yield_in_bounds=False,
+            return_pathim=True, logger=None
+    ):
+        """
+        :param penaltypower:
+        :param bounds:
+        :param lbl:
+        :param lblim:
+        :param disttransf:
+        :param pathends:
+        :param for_class:
+            True: paths are computed for when endpoints are in the same ground truth oject
+            False: paths are computed for when endpoints are in different ground truth objects
+        :param correspondence:
+        :param max_end_count:
+        :param max_end_count_seed:
+        :param yield_in_bounds:
+        :param return_pathim:
+        :param logger:
+        :return:
+        """
+
+        # TODO: Pick up some statistics along the way
+        stats_excluded_paths = 0
+        statistics = rdict()
+
+        # Determine the endpoints of the current object
+        indices = np.where(pathends)
+        coords = zip(indices[0], indices[1], indices[2])
+        # if logger is not None:
+        #     logger.logging('Local maxima coordinates: {}', coords)
+        # else:
+        #     print 'Local maxima coordinates: {}'.format(coords)
+
+        # Make pairwise list of coordinates serving as source and target
+        # First determine all pairings
+        all_pairs = []
+        for i in xrange(0, len(coords) - 1):
+            for j in xrange(i + 1, len(coords)):
+                all_pairs.append((coords[i], coords[j]))
+        # And only use those that satisfy certain criteria:
+        # a) Are in either the same gt object (for_class=True)
+        #    or in different gt objects (for_class=False)
+        # b) Are not in the correspondence list
+        pairs = []
+        label_pairs = []
+        if avoid_duplicates:
+            new_correspondence = {}
+        for pair in all_pairs:
+            # Determine whether the endpoints are in different gt objects
+            if (gt[pair[0]] == gt[pair[1]]) == for_class:
+                # Check correspondence list if pairings were already computed in different image
+                labelpair = tuple(sorted([gt[pair[0]], gt[pair[1]]]))
+                if avoid_duplicates:
+                    if labelpair not in correspondence.keys():
+                        pairs.append(pair)
+                        label_pairs.append(labelpair)
+                        new_correspondence[labelpair] = [keylist_lblim, lbl]
+                        if logger is not None:
+                            logger.logging('Found pairing: {}', labelpair)
+                    else:
+                        if logger is not None:
+                            logger.logging('Pairing already in correspondence table: {}', labelpair)
+                else:
+                    pairs.append(pair)
+                    if logger is not None:
+                        logger.logging('Found pairing: {}', labelpair)
+        if avoid_duplicates:
+            correspondence.update(new_correspondence)
+
+        # Select a certain number of pairs if number is too high
+        if max_paths_per_object:
+            if len(pairs) > max_paths_per_object:
+                if logger is not None:
+                    logger.logging('Reducing number of pairs to {}', max_paths_per_object)
+                if max_paths_per_object_seed:
+                    random.seed(max_paths_per_object_seed)
+                else:
+                    random.seed()
+                pairs = random.sample(pairs, max_paths_per_object)
+                if logger is not None:
+                    logger.logging('Modified pairs list: {}', pairs)
+
+        # If pairs are found that satisfy all conditions
+        if pairs:
+
+            if logger is not None:
+                logger.logging('Found {} pairings which satisfy all criteria', len(pairs))
+            else:
+                print 'Found {} pairings which satisfy all criteria'.format(len(pairs))
+
+            # Pre-processing of the distance transform
+            # a) Invert: the lowest values (i.e. the lowest penalty for the shortest path
+            #    detection) should be at the center of the current process
+            disttransf = lib.invert_image(disttransf)
+            #
+            # b) Set all values outside the process to infinity
+            disttransf = lib.filter_values(disttransf, np.amax(disttransf), type='eq', setto=np.inf)
+            #
+            # c) Increase the value difference between pixels near the boundaries and pixels
+            #    central within the processes. This increases the likelihood of the paths to
+            #    follow the center of processes, thus avoiding short-cuts
+            disttransf = lib.power(disttransf, penaltypower)
+
+            # Compute the shortest paths according to the pairs list
+            ps_computed, ps_in_bounds = lib.shortest_paths(
+                disttransf, pairs, bounds=bounds, logger=logger, return_pathim=False,
+                yield_in_bounds=True
+            )
+
+            # Criteria for keeping paths which can only be computed after path computation
+            if for_class:
+                ps = []
+                for i in xrange(0, len(ps_computed)):
+                    if len(np.unique(
+                            gt[ps_in_bounds[i][:, 0], ps_in_bounds[i][:, 1], ps_in_bounds[i][:, 2]])) == 1:
+                        ps.append(ps_computed[i])
+                        if logger is not None:
+                            logger.logging('Path label = True')
+                    else:
+                        # The path switched objects multiple times on the way and is not added to the list\
+                        if logger is not None:
+                            logger.logging(
+                                'Path starting and ending in label = {} had multiple labels and was excluded',
+                                gt[tuple(ps_in_bounds[i][0])]
+                            )
+
+                        stats_excluded_paths += 1
+            else:
+                ps = ps_computed
+
+            statistics['excluded_paths'] = stats_excluded_paths
+            statistics['kept_paths'] = len(ps)
+            return ps, correspondence, statistics
+
+        else:
+            statistics['excluded_paths'] = 0
+            statistics['kept_paths'] = 0
+            return [], correspondence, statistics
+
+    correspondence_table = {}
+    # correspondence_table (type=dict) should have the form:
+    # {tuple(labels_in_gt_i): [kl_labelsimage_i, label_i]
+
+    paths = IPL()
+    statistics = rdict()
+
+    # Iterate over segmentations
+    for d, k, v, kl in indata[labelskey].data_iterator(leaves_only=True, yield_short_kl=True):
+
+        if logger is not None:
+            logger.logging('====================')
+            logger.logging('Working on image {}', k)
+            logger.logging('correspondence_table = {}', correspondence_table)
+        else:
+            print '===================='
+            print 'Working on image {}'.format(k)
+            print 'correspondence_table = {}'.format(correspondence_table)
+
+        # Load the current segmentation image
+        indata[labelskey][kl].populate(k)
+
+        # Iterate over all labels of that image (including cropping for speed-up)
+        for lbl, lblim, bounds in indata[labelskey].label_image_bounds_iterator(
+                key=[kl + [k]], background=0, maskvalue=0, value=0
+        ):
+
+            # Crop the gt as well
+            cropped_gt = lib.crop_bounding_rect(indata[gtkey].yield_an_item(), bounds=bounds)
+
+            # Crop distance transform
+            cropped_dt = lib.crop_bounding_rect(indata[disttransfkey][kl][k].yield_an_item(), bounds=bounds)
+            # Crop and mask border contacts
+            cropped_bc = lib.crop_bounding_rect(indata[pathendkey][kl][k].yield_an_item(), bounds=bounds)
+            cropped_bc[lblim == 0] = 0
+            # Done: Check for correctness of all cropped images! -> all appeared correct
+
+            # Compute all paths within this object which start and end in different
+            #      gt-objects
+            # Supply the correspondence table to this function and only compute a path
+            #     if the respective correspondence is not found
+            newpaths, correspondence_table, new_statistics = shortest_paths(
+                params['penaltypower'], bounds,
+                lbl, lblim, kl + [k],
+                cropped_gt, cropped_dt, cropped_bc,
+                for_class=for_class, correspondence=correspondence_table,
+                avoid_duplicates=params['avoid_duplicates'],
+                max_paths_per_object=params['max_paths_per_object'],
+                max_paths_per_object_seed=params['max_paths_per_object_seed'],
+                yield_in_bounds=True,
+                return_pathim=False, logger=logger
+            )
+
+            statistics[kl + [k] + [lbl]] = new_statistics
+
+            # If new paths were detected
+            if newpaths:
+                # Store them
+                # paths.merge(newpaths)
+
+                pskeys = range(0, len(newpaths))
+                paths[kl + [k] + [lbl]] = IPL(data=dict(zip(pskeys, newpaths)))
+
+                if logger is not None:
+                    logger.logging(
+                        'Found {} paths in image {} at label {}', len(newpaths), k, lbl
+                    )
+                    logger.logging('-------------------')
+                else:
+                    print 'Found {} paths in image {} at label {}'.format(len(newpaths), k, lbl)
+                    print '-------------------'
+
+        # Unload the current segmentation image
+        indata[labelskey][kl].unpopulate()
+
+    return paths, statistics

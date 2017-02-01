@@ -1,5 +1,6 @@
-import h5py
+
 import numpy as np
+import h5py
 from simple_logger import SimpleLogger
 from yaml_parameters import YamlParams
 import multiprocessing
@@ -142,10 +143,14 @@ class RecursiveDict(dict, SimpleLogger):
 
         return rtrndict
 
-    def merge(self, rdict):
+    def merge(self, rdict, overwrite=True):
 
         for d, k, v, kl in rdict.data_iterator(leaves_only=True):
-            self[kl] = v
+            if overwrite:
+                self[kl] = v
+            else:
+                if not self.inkeys(kl):
+                    self[kl] = v
 
     def rename_entry(self, old, new, search=False):
         """
@@ -224,8 +229,12 @@ class RecursiveDict(dict, SimpleLogger):
                 if not leaves_only and not branches_only:
                     yield [depth-1, key, val, kl]
                 if leaves_only:
-                    if type(val) is not type(self):
-                        yield [depth-1, key, val, kl]
+                    if maxdepth is None:
+                        if type(val) is not type(self):
+                            yield [depth-1, key, val, kl]
+                    else:
+                        if type(val) is not type(self) or depth == maxdepth:
+                            yield [depth-1, key, val, kl]
                 if branches_only:
                     if type(val) is type(self):
                         yield [depth-1, key, val, kl]
@@ -456,9 +465,9 @@ class RecursiveDict(dict, SimpleLogger):
                         self[layernewname] = self.pop(layername)
                         # print self.datastructure2string(maxdepth=2)
 
-    def reduce_from_leafs(self, iterate=False):
+    def reduce_from_leaves(self, iterate=False):
         """
-        If the branches at the leafs have only one entry, i.e.
+        If the branches at the leaves have only one entry, i.e.
         a:
             b:
                 c: leaf1
@@ -487,8 +496,9 @@ class RecursiveDict(dict, SimpleLogger):
             for d, k, v, kl in self.data_iterator(yield_short_kl=True):
 
                 if type(v) is not type(self):
-                    if len(self[kl].keys()) == 1:
-                        self[kl] = v
+                    if kl:
+                        if len(self[kl].keys()) == 1:
+                            self[kl] = v
 
         else:
 
@@ -498,9 +508,10 @@ class RecursiveDict(dict, SimpleLogger):
                 busy = False
                 for d, k, v, kl in self.data_iterator(yield_short_kl=True, leaves_only=True):
 
-                    if len(self[kl].keys()) == 1:
-                        self[kl] = v
-                        busy = True
+                    if kl:
+                        if len(self[kl].keys()) == 1:
+                            self[kl] = v
+                            busy = True
 
     def dcp(self):
         """
@@ -765,16 +776,41 @@ class Hdf5Processing(RecursiveDict, YamlParams):
 
         else:
 
+            # When not using recursive_search wild cards are now allowed
+
+            def find(a, b):
+
+                def items_equal(item0, item1):
+                    if len(item0) != len(item1):
+                        return False
+                    else:
+                        for i in xrange(0, len(item0)):
+                            if item0[i] != item1[i] and item0[i] != '*' and item1[i] != '*':
+                                return False
+                        return True
+
+                # Find a in b and return True or False
+                for bi in b:
+                    if items_equal(a, bi):
+                        return True
+
+                return False
+
             for d, k, v, kl in newentries.data_iterator(yield_short_kl=True):
 
-                if kl + [k] in skeys:
+                # if kl + [k] in skeys:
+                if find(kl + [k], skeys):
 
-                    keyid = skeys.index(kl + [k])
-                    tkey = tkeys[keyid]
-                    if type(tkey) is str:
-                        tkey = [tkey]
+                    try:
+                        keyid = skeys.index(kl + [k])
+                        tkey = tkeys[keyid]
+                        if type(tkey) is str:
+                            tkey = [tkey]
 
-                    self[tkey] = v
+                        self[tkey] = v
+
+                    except ValueError:
+                        self[kl + [k]] = v
 
     def data_from_file(self, filepath, skeys=None, tkeys=None, castkey=None,
                        recursive_search=False, nodata=False):
@@ -788,9 +824,17 @@ class Hdf5Processing(RecursiveDict, YamlParams):
 
 if __name__ == '__main__':
 
-    a = RecursiveDict(data={'a': {'b': {'c': 1, 'd': 2}, 'e': {'f': 3}}, 'g': {'h': {'i': 4}}})
-    a.dss()
-    b = a.subset('c', 'h', search=True)
+    a = Hdf5Processing()
+    a.data_from_file(
+        filepath='/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170109_neurobioseg_x_cropped_add_featureims_develop/intermed/cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_x.h5',
+        nodata=True,
+        skeys=[['x', '0', '*', 'contacts']]
+    )
+    a.dss(maxdepth=4)
+
+    # a = RecursiveDict(data={'a': {'b': {'c': 1, 'd': 2}, 'e': {'f': 3}}, 'g': {'h': {'i': 4}}})
+    # a.dss()
+    # b = a.subset('c', 'h', search=True)
 
     # resultfolder = '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/161111_random_forest_of_paths_add_features_develop/'
     #

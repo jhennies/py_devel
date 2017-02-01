@@ -181,7 +181,8 @@ def find_bounding_rect(image, s_=False):
             return [[rows.min(), rows.max()+1], [cols.min(), cols.max()+1]]
 
     else:
-        raise TypeError('find_bounding_rect: This number of dimensions is currently not supported!')
+        raise TypeError('find_bounding_rect: This number of dimensions ({}) is currently not supported!'.format(image.ndim))
+
 
 def crop_bounding_rect(image, bounds=None):
 
@@ -230,15 +231,56 @@ def gaussian_smoothing(image, sigma, anisotropy=None):
 
 
 def hessian_of_gaussian_eigenvalues(image, scale, anisotropy=None):
-    # if anisotropy:
-    #     if type(scale) is not list and type(scale) is not tuple and type(scale) is not np.array:
-    #         scale = np.array([scale]*3).astype(np.float32) / anisotropy
-    #     else:
-    #         scale = np.array(scale) / anisotropy
+
+    if anisotropy:
+        if type(scale) is not list and type(scale) is not tuple and type(scale) is not np.array:
+            scale = list(np.array([scale]*3).astype(np.float32) / anisotropy)
+        else:
+            scale = list(np.array(scale) / anisotropy)
 
     image = image.astype(np.float32)
     result = vigra.filters.hessianOfGaussianEigenvalues(image, scale)
     return result
+
+
+def structure_tensor_eigenvalues(image, inner_scale, outer_scale, anisotropy=None):
+
+    if anisotropy:
+        if type(inner_scale) is not list and type(inner_scale) is not tuple and type(inner_scale) is not np.array:
+            inner_scale = list(np.array([inner_scale]*3).astype(np.float32) / anisotropy)
+        else:
+            inner_scale = list(np.array(inner_scale) / anisotropy)
+        if type(outer_scale) is not list and type(outer_scale) is not tuple and type(outer_scale) is not np.array:
+            outer_scale = list(np.array([outer_scale]*3).astype(np.float32) / anisotropy)
+        else:
+            outer_scale = list(np.array(inner_scale) / anisotropy)
+
+    image = image.astype(np.float32)
+    return vigra.filters.structureTensorEigenvalues(image, inner_scale, outer_scale)
+
+
+def gaussian_gradient_magnitude(image, sigma, anisotropy=None):
+
+    if anisotropy:
+        if type(sigma) is not list and type(sigma) is not tuple and type(sigma) is not np.array:
+            sigma = np.array([sigma]*3).astype(np.float32) / anisotropy
+        else:
+            sigma = np.array(sigma) / anisotropy
+
+    image = image.astype(np.float32)
+    return vigra.filters.gaussianGradientMagnitude(image, sigma)
+
+
+def laplacian_of_gaussian(image, sigma, anisotropy=None):
+
+    if anisotropy:
+        if type(sigma) is not list and type(sigma) is not tuple and type(sigma) is not np.array:
+            sigma = list(np.array([sigma]*3).astype(np.float32) / anisotropy)
+        else:
+            sigma = list(np.array(sigma) / anisotropy)
+
+    image = image.astype(np.float32)
+    return vigra.filters.laplacianOfGaussian(image, sigma)
 
 
 def extended_local_maxima(image, neighborhood=26):
@@ -277,11 +319,13 @@ def positions2value(image, coordinates, value):
     image[coordinates[0], coordinates[1], coordinates[2]] = value
     return image
 
+
 def getvaluesfromcoords(image, coordinates):
 
     values = [image[x[0], x[1], x[2]] for x in coordinates]
 
     return values
+
 
 def get_faces_with_neighbors(image, rtrntype=dict):
 
@@ -369,7 +413,7 @@ def get_faces_with_neighbors(image, rtrntype=dict):
     return faces
 
 
-def shortest_paths(indicator, pairs, bounds=None, hfp=None,
+def shortest_paths(indicator, pairs, bounds=None, logger=None,
                    return_pathim=True, yield_in_bounds=False):
 
     # Crate the grid graph and shortest path objects
@@ -391,8 +435,8 @@ def shortest_paths(indicator, pairs, bounds=None, hfp=None,
         source = pair[0]
         target = pair[1]
 
-        if hfp is not None:
-            hfp.logging('Calculating path from {} to {}', source, target)
+        if logger is not None:
+            logger.logging('Calculating path from {} to {}', source, target)
 
         targetNode = gridgr.coordinateToNode(target)
         sourceNode = gridgr.coordinateToNode(source)

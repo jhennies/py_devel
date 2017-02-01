@@ -5,6 +5,7 @@ import processing_lib as lib
 import numpy as np
 from copy import deepcopy
 # import numpy.lib.index_tricks
+import traceback
 
 __author__ = 'jhennies'
 
@@ -267,7 +268,7 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
         """
 
         if labellist is None:
-            labellist = self.unique(keys=key, return_only=True)[key]
+            labellist = self.unique(keys=key, return_only=True).yield_an_item()
             if area is not None:
 
                 labellist = lib.unique(self[key][area])
@@ -277,7 +278,6 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
 
         for lbl in labellist:
             yield lbl
-
 
     def label_image_iterator(self, key=None, labellist=None, background=None,
                              accumulate=False, area=None, relabel=False):
@@ -301,7 +301,12 @@ class Hdf5ImageProcessingLib(Hdf5ImageProcessing):
 
             for lbl in self.label_iterator(key=key, labellist=labellist, background=background, area=area):
 
-                lblim = lib.getlabel(self[key], lbl)
+                # changed 'self[key]' to 'self.subset(*key).yield_an_item()' which means that I can now
+                # cope with more complicated key lists, i.e., key=[[path, to, image]]
+                # This solution is valid because within this iterator the key must point to a single
+                # image only. Thus, yield_an_item() returns the one and only leaf that is present in the
+                # return dictionary of subset()
+                lblim = lib.getlabel(self.subset(*key).yield_an_item(), lbl)
                 yield [lbl, lblim]
 
     def label_image_bounds_iterator(self, key=None, labellist=None, background=None,
@@ -360,6 +365,8 @@ if __name__ == '__main__':
                  #tkeys=zip(('result',)*2, hipl.resultkey_name_gen(('ab', 'ab2'), ('ab', 'ab2'))))
 
     print hipl.datastructure2string()
+
+    hipl.reduce_from_leaves()
 
     #
     # # hipl.anytask(lib.add2im, keys=(('a', 'b'),), keys2=(('a', 'b2'),), tkeys='result')
