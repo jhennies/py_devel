@@ -12,20 +12,20 @@ rawdatafile:    'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_71
 rawdataname:    'raw'
 gtruthfile:     'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 gtruthname:     'neuron_ids'
-gtlargefile:    'cremi.splA.train.gtlarge.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
+gtlargefile:    'cremi.splA.train.gtlarge.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 gtlargename:    'neuron_ids'
 probsfile:      'cremi.splA.train.probs.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
 probsname:      'data'
 segmfile:       'cremi.splA.train.mcseg_betas.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
-segmlargefile:  'cremi.splA.train.segmlarge.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
-rawfeatsfile:   'cremi.splA.train.rawfeats.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
-probsfeatsfile: 'cremi.splA.train.probsfeats.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
-segfeatsfile:   'cremi.splA.train.segfeats.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
-borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
+segmlargefile:  'cremi.splA.train.segmlarge.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+rawfeatsfile:   'cremi.splA.train.rawfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+probsfeatsfile: 'cremi.splA.train.probsfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+segfeatsfile:   'cremi.splA.train.segfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
 borderctname:   'contacts'
-pathsfile:      'cremi.splA.train.paths.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
-featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
-pathlistfile:   'cremi.splA.train.pathlist.crop.crop_x10_110_y200_712_z200_712.split_z.pkl'
+pathsfile:      'cremi.splA.train.paths.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+pathlistfile:   'cremi.splA.train.pathlist.crop.crop_x10_110_y200_712_z200_712.split_x.pkl'
 
 run_remove_small_objects: False
 run_compute_feature_images: True
@@ -70,75 +70,73 @@ compute_feature_images:
     'rawdata':
         source: [datafolder, rawdatafile, {skeys: [['x', '*', raw]]}]
         target: [intermedfolder, rawfeatsfile]
+        features:
+            raw: ~
+            gauss_2:
+                params: [2]
+                func: gaussian
+            mag_1:
+                params: [1]
+                func: gaussian_gradient_magnitude
+            hess_1:
+                params: [1]
+                func: hessian_eigenvalues
+            lapl_1:
+                params: [1]
+                func: laplacian_of_gaussian
+            structen_1_2:
+                params: [1, 2]   # [inner_scale, outer_scale]
+                func: structure_tensor_eigenvalues
 
     'probs':
         source: [datafolder, probsfile, {skeys: [['x', '*', data]]}]
         target: [intermedfolder, probsfeatsfile]
+        features:
+            raw: ~
+            gauss_2:
+                params: [2]
+                func: gaussian
+            mag_1:
+                params: [1]
+                func: gaussian_gradient_magnitude
+            hess_1:
+                params: [1]
+                func: hessian_eigenvalues
+            lapl_1:
+                params: [1]
+                func: laplacian_of_gaussian
+            structen_1_2:
+                params: [1, 2]   # [inner_scale, outer_scale]
+                func: structure_tensor_eigenvalues
 
     'segmentation':
         source: [intermedfolder, segmlargefile, {skeys: [['x', '0'], ['x', '1', 'beta_0.5']]}]
         target: [intermedfolder, segfeatsfile]
+        features:
+            disttransf:
+                params: ~
+                func: disttransf
+                raw: ~
+                gauss_2:
+                    params: [2]
+                    func: gaussian
+                mag_1:
+                    params: [1]
+                    func: gaussian_gradient_magnitude
+                hess_1:
+                    params: [1]
+                    func: hessian_eigenvalues
+                lapl_1:
+                    params: [1]
+                    func: laplacian_of_gaussian
+                structen_1_2:
+                    params: [1, 2]   # [inner_scale, outer_scale]
+                    func: structure_tensor_eigenvalues
 
     'default':
         params:
             anisotropy: [10, 1, 1]
-        features:
-            rawdata:
-                raw: ~
-                gauss_2:
-                    params: [2]
-                    func: gaussian
-                mag_1:
-                    params: [1]
-                    func: gaussian_gradient_magnitude
-                hess_1:
-                    params: [1]
-                    func: hessian_eigenvalues
-                lapl_1:
-                    params: [1]
-                    func: laplacian_of_gaussian
-                structen_1_2:
-                    params: [1, 2]   # [inner_scale, outer_scale]
-                    func: structure_tensor_eigenvalues
-
-            probs:
-                raw: ~
-                gauss_2:
-                    params: [2]
-                    func: gaussian
-                mag_1:
-                    params: [1]
-                    func: gaussian_gradient_magnitude
-                hess_1:
-                    params: [1]
-                    func: hessian_eigenvalues
-                lapl_1:
-                    params: [1]
-                    func: laplacian_of_gaussian
-                structen_1_2:
-                    params: [1, 2]   # [inner_scale, outer_scale]
-                    func: structure_tensor_eigenvalues
-
-            segmentation:
-                disttransf:
-                    params: ~
-                    func: disttransf
-                    raw: ~
-                    gauss_2:
-                        params: [2]
-                        func: gaussian
-                    mag_1:
-                        params: [1]
-                        func: gaussian_gradient_magnitude
-                    hess_1:
-                        params: [1]
-                        func: hessian_eigenvalues
-                    lapl_1:
-                        params: [1]
-                        func: laplacian_of_gaussian
-                    structen_1_2:
-                        params: [1, 2]   # [inner_scale, outer_scale]
-                        func: structure_tensor_eigenvalues
+            max_threads: 3
 
 
 find_border_contacts:
