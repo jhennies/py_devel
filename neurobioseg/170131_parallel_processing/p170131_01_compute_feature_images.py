@@ -7,6 +7,7 @@ import numpy as np
 import processing_lib as lib
 from yaml_parameters import YamlParams
 from concurrent import futures
+from timeit import default_timer as timer
 
 
 __author__ = 'jhennies'
@@ -130,10 +131,28 @@ def return_img(image):
     return image
 
 
+def compute_features_multi_wrapper(image, general_params, features, kl, target_file, logger=None):
+
+    if kl is not None and logger is not None:
+        logger.logging('Computing features on image {}', kl)
+
+    result = Hp()
+
+    result[kl] = compute_features_multi(image, general_params, features, logger=logger)
+    image = None
+
+    # Write result
+    logger.logging('Writing in {}', target_file)
+    result.write(target_file)
+
+
 def compute_features_multi(image, general_params, features, logger=None):
 
     ff = FeatureFunctions()
     result = Hp()
+
+    if type(image) is not np.ndarray:
+        image = np.array(image)
 
     if logger is not None:
         logger.logging('Starting thread pool with a max of {} threads', general_params['max_threads'])
@@ -163,15 +182,21 @@ def compute_features_multi(image, general_params, features, logger=None):
     return result
 
 
-def compute_features(image, general_params, features):
+def compute_features(image, general_params, features, logger=None, name=None):
 
     ff = FeatureFunctions()
     result = Hp()
 
+    if type(image) is not np.ndarray:
+        image = np.array(image)
+
+    if name is not None and logger is not None:
+        logger.logging('Computing features on image {}', name)
+
     for k, v in features.iteritems():
 
         if v:
-            print 'Computing {}'.format(v['func'])
+            # print 'Computing {}'.format(v['func'])
             result[k] = getattr(ff, v.pop('func'))(image, general_params, v.pop('params'))
 
             if len(v) > 0:
@@ -181,7 +206,42 @@ def compute_features(image, general_params, features):
 
     return result
 
-from timeit import default_timer as timer
+
+def compute_feature_images_multi(experiment, yparams):
+
+    all_params = yparams.get_params()
+
+    source = experiment['source']
+    target = experiment['target']
+    params = experiment['params']
+    features = experiment['features']
+
+    # Load data
+    if len(source) > 2:
+        kw_load = source[2]
+    data = load_images(
+        all_params[source[0]] + all_params[source[1]], logger=yparams, **kw_load
+    )
+
+    yparams.logging('\nInitial datastructure: \n\n{}', data.datastructure2string(maxdepth=3))
+
+    # Set target file
+    target_file = all_params[target[0]] + all_params[target[1]]
+
+    # TODO: Parallelize here
+    with futures.ThreadPoolExecutor(params['max_threads']) as do_stuff:
+        tasks = Hp()
+        for d, k, v, kl in data.data_iterator(leaves_only=True):
+            tasks[kl] = do_stuff.submit(
+                compute_features_multi_wrapper, data[kl], params, features.dcp(),
+                kl, target_file, logger=yparams
+            )
+
+        # # result = [x.result() for x in tasks]
+        # for d, k, v, kl in tasks.data_iterator(leaves_only=True):
+        #     data[kl] = v.result()
+
+
 def compute_feature_images(experiment, yparams):
 
     all_params = yparams.get_params()
@@ -203,35 +263,28 @@ def compute_feature_images(experiment, yparams):
     # Set target file
     target_file = all_params[target[0]] + all_params[target[1]]
 
-    # # TODO: Parallelize here
-    # with futures.ThreadPoolExecutor as do_stuff:
-    #     tasks = []
-    #     for d, k, v, kl in data.data_iterator(yield_short_kl=True, leaves_only=True):
-    #         tasks.append(do_stuff.submit(compute_features(v, params, )))
-    #
-    #     result = [x.result() for x in tasks]
-
     for d, k, v, kl in data.data_iterator(leaves_only=True):
         yparams.logging('===============================\nWorking on image: {}', kl)
 
         # Load data into memory
         data[kl] = np.array(v)
 
-        # Feature calculation
-        start = timer()
-        data[kl] = compute_features_multi(data[kl], params, features, logger=yparams)
-        elapsed = timer()
-        elapsed = elapsed - start
-        print "Time spent in compute_features_multi is: ", elapsed
-
+        # # Feature calculation
         # start = timer()
-        # data[kl] = compute_features(data[kl], params, features)
+        # data[kl] = compute_features_multi(data[kl], params, features.dcp(), logger=yparams)
+        # # data[kl] = None
         # elapsed = timer()
         # elapsed = elapsed - start
-        # print "Time spent in compute_features is: ", elapsed
+        # print "Time spent in compute_features_multi is: ", elapsed
 
-        # Write result
-        data.write(target_file, keys=kl)
+        start = timer()
+        data[kl] = compute_features(data[kl], params, features.dcp(), logger=yparams, name=kl)
+        elapsed = timer()
+        elapsed = elapsed - start
+        print "Time spent in compute_features is: ", elapsed
+
+        # # Write result
+        # data.write(target_file, keys=kl)
         # Free memory
         data[kl] = None
 
@@ -253,7 +306,8 @@ def run_compute_feature_images(yamlfile):
 
     try:
 
-        experiment_parser(yparams, compute_feature_images, 'compute_feature_images')
+        # experiment_parser(yparams, compute_feature_images, 'compute_feature_images')
+        experiment_parser(yparams, compute_feature_images_multi, 'compute_feature_images')
         # compute_feature_images(yparams)
 
         yparams.logging('')

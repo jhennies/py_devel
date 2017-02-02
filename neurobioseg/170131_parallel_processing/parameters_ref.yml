@@ -136,7 +136,7 @@ compute_feature_images:
     'default':
         params:
             anisotropy: [10, 1, 1]
-            max_threads: 3
+            max_threads: 10
 
 
 find_border_contacts:
