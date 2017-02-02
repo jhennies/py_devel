@@ -1,7 +1,7 @@
 datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
-resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170130_slice_selection_test_z_develop/
-intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170130_slice_selection_test_z_develop/intermed/
-scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170130_slice_selection_test_z_develop/scripts/
+resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170124_neurobioseg_x_cropped_avoid_duplicates_develop/
+intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170124_neurobioseg_x_cropped_avoid_duplicates_develop/intermed/
+scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170124_neurobioseg_x_cropped_avoid_duplicates_develop/scripts/
 
 debug: True
 
@@ -27,8 +27,8 @@ pathsfile:      'cremi.splA.train.paths.crop.crop_x10_110_y200_712_z200_712.spli
 featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
 pathlistfile:   'cremi.splA.train.pathlist.crop.crop_x10_110_y200_712_z200_712.split_z.pkl'
 
-run_remove_small_objects: True
-run_compute_feature_images: False
+run_remove_small_objects: False
+run_compute_feature_images: True
 run_find_border_contacts: False
 run_compute_paths: False
 run_features_of_paths: False
@@ -46,7 +46,7 @@ remove_small_objects:
     relabel: True
 
 
-compute_feature_images:
+compute_feature_images_old:
     general_params:
         anisotropy: [10, 1, 1]
     sources:
@@ -63,41 +63,27 @@ compute_feature_images:
             gauss_2:
                 params: [2]
                 func: gaussian
-            mag_1:
-                params: [1]
-                func: gaussian_gradient_magnitude
-            hess_1:
-                params: [1]
-                func: hessian_eigenvalues
-            lapl_1:
-                params: [1]
-                func: laplacian_of_gaussian
-            structen_1_2:
-                params: [1, 2]   # [inner_scale, outer_scale]
-                func: structure_tensor_eigenvalues
 
-        probs:
-            raw: ~
-            gauss_2:
-                params: [2]
-                func: gaussian
-            mag_1:
-                params: [1]
-                func: gaussian_gradient_magnitude
-            hess_1:
-                params: [1]
-                func: hessian_eigenvalues
-            lapl_1:
-                params: [1]
-                func: laplacian_of_gaussian
-            structen_1_2:
-                params: [1, 2]   # [inner_scale, outer_scale]
-                func: structure_tensor_eigenvalues
 
-        segmentation:
-            disttransf:
-                params: ~
-                func: disttransf
+compute_feature_images:
+
+    'rawdata':
+        source: [datafolder, rawdatafile, {skeys: [['x', '*', raw]]}]
+        target: [intermedfolder, rawfeatsfile]
+
+    'probs':
+        source: [datafolder, probsfile, {skeys: [['x', '*', data]]}]
+        target: [intermedfolder, probsfeatsfile]
+
+    'segmentation':
+        source: [intermedfolder, segmlargefile, {skeys: [['x', '0'], ['x', '1', 'beta_0.5']]}]
+        target: [intermedfolder, segfeatsfile]
+
+    'default':
+        params:
+            anisotropy: [10, 1, 1]
+        features:
+            rawdata:
                 raw: ~
                 gauss_2:
                     params: [2]
@@ -114,6 +100,45 @@ compute_feature_images:
                 structen_1_2:
                     params: [1, 2]   # [inner_scale, outer_scale]
                     func: structure_tensor_eigenvalues
+
+            probs:
+                raw: ~
+                gauss_2:
+                    params: [2]
+                    func: gaussian
+                mag_1:
+                    params: [1]
+                    func: gaussian_gradient_magnitude
+                hess_1:
+                    params: [1]
+                    func: hessian_eigenvalues
+                lapl_1:
+                    params: [1]
+                    func: laplacian_of_gaussian
+                structen_1_2:
+                    params: [1, 2]   # [inner_scale, outer_scale]
+                    func: structure_tensor_eigenvalues
+
+            segmentation:
+                disttransf:
+                    params: ~
+                    func: disttransf
+                    raw: ~
+                    gauss_2:
+                        params: [2]
+                        func: gaussian
+                    mag_1:
+                        params: [1]
+                        func: gaussian_gradient_magnitude
+                    hess_1:
+                        params: [1]
+                        func: hessian_eigenvalues
+                    lapl_1:
+                        params: [1]
+                        func: laplacian_of_gaussian
+                    structen_1_2:
+                        params: [1, 2]   # [inner_scale, outer_scale]
+                        func: structure_tensor_eigenvalues
 
 
 find_border_contacts:
@@ -271,36 +296,3 @@ random_forest:
             result: [resultfolder, resultfile]
             pathlist: [intermedfolder, pathlistforestfile]
 
-
-
-random_forest_old:
-    sources:
-        0a:
-            train: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
-            predict: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
-            balance_classes: False
-        0b:
-            train: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
-            predict: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
-            balance_classes: False
-        1a:
-            train: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
-            predict: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
-            balance_classes: True
-        1b:
-            train: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
-            predict: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
-            balance_classes: True
-        2a:
-            traintrue: [intermedfolder, featuresfile, {skeys: [x, 0, beta_0.5], recursive_search: True}]
-            trainfalse: [intermedfolder, featuresfile, {skeys: [x, 0], recursive_search: True}]
-            predict: [intermedfolder, featuresfile, {skeys: [x, 1, beta_0.5], recursive_search: True}]
-            balance_classes: False
-        2b:
-            traintrue: [intermedfolder, featuresfile, {skeys: [x, 1, beta_0.5], recursive_search: True}]
-            trainfalse: [intermedfolder, featuresfile, {skeys: [x, 1], recursive_search: True}]
-            predict: [intermedfolder, featuresfile, {skeys: [x, 0, beta_0.5], recursive_search: True}]
-            balance_classes: False
-    targets: [resultfolder, resultfile]
-    pathlistin: [intermedfolder, pathlistfile]
-    pathlistout: [intermedfolder, pathlistforestfile]

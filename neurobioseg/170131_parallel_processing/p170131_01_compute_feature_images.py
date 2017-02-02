@@ -1,13 +1,9 @@
 
 import os
-import inspect
-from hdf5_image_processing import Hdf5ImageProcessing as IP, Hdf5ImageProcessingLib as IPL
-from hdf5_processing import RecursiveDict as rdict
-from shutil import copy, copyfile
+# from hdf5_image_processing import Hdf5ImageProcessingLib as IPL
+from hdf5_slim_processing import RecursiveDict as Rdict
+from hdf5_slim_processing import Hdf5Processing as Hp
 import numpy as np
-import matplotlib.pyplot as plt
-import processing_libip as libip
-import sys
 import processing_lib as lib
 from yaml_parameters import YamlParams
 
@@ -22,7 +18,7 @@ def load_images(filepath, skeys=None, recursive_search=False, logger=None):
     else:
         print 'Loading data from \n{}'.format(filepath)
 
-    data = IPL()
+    data = Hp()
 
     data.data_from_file(
         filepath=filepath,
@@ -106,100 +102,52 @@ def compute_features(image, general_params, subfeature_params):
     return result
 
 
-# def compute_selected_features(ipl, params):
-#
-#     thisparams = rdict(data=params['compute_feature_images'])
-#     targetfile = params['intermedfolder'] + params['featureimsfile']
-#
-#     maxd = ipl.maxdepth()
-#
-#     for d, k, v, kl in ipl.data_iterator(yield_short_kl=True):
-#
-#         if d == maxd:
-#             ipl.logging('----------------------\nWorking on image: {}', k)
-#
-#             ipl[kl].populate(k)
-#
-#             if k in [params['rawdataname'], params['probsname'], params['largeobjname'], params['largeobjmnames'][0]]:
-#                 general_params = thisparams.dcp()
-#                 del general_params['features']
-#
-#                 if k == params['rawdataname']:
-#                     subfeature_params = thisparams['features']['rawdata']
-#                     ipl[kl][k] = compute_features(ipl[kl][k], general_params, subfeature_params)
-#                 elif k == params['probsname']:
-#                     subfeature_params = thisparams['features']['probs']
-#                     ipl[kl][k] = compute_features(ipl[kl][k], general_params, subfeature_params)
-#                 elif k == params['largeobjname']:
-#                     subfeature_params = thisparams['features']['largeobj']
-#                     ipl[kl][k] = compute_features(ipl[kl][k], general_params, subfeature_params)
-#                 elif k == params['largeobjmnames'][0]:
-#                     subfeature_params = thisparams['features']['largeobjm']
-#                     ipl[kl][k] = compute_features(ipl[kl][k], general_params, subfeature_params)
-#
-#                 ipl.write(filepath=targetfile, keys=[kl + [k]])
-#                 ipl[kl][k] = None
+def experiment_parser(yparams, function, name):
+
+    all_params = yparams.get_params()
+
+    # Zero'th layer:
+    # --------------
+    zeroth = Rdict(all_params[name])
+    if 'default' in zeroth:
+        zeroth_defaults = zeroth.pop('default')
+    else:
+        zeroth_defaults = Rdict()
+
+    for exp_lbl, experiment in zeroth.iteritems():
+
+        # First layer
+        # -----------
+        # An experiment is now selected and performed
+        yparams.logging('\n\nPerforming experiment {}\n==============================', exp_lbl)
+
+        final = zeroth_defaults.dcp()
+        final.merge(experiment)
+
+        compute_feature_images(final, yparams)
 
 
-def compute_feature_images(yparams):
+def compute_feature_images(experiment, yparams):
 
-    params = yparams.get_params()
-    thisparams = rdict(params['compute_feature_images'])
-    # targetfile = params['intermedfolder'] + params['featureimsfile']
-    general_params = thisparams['general_params']
+    all_params = yparams.get_params()
 
-    for sourcekey, source in thisparams['sources'].iteritems():
+    source = experiment['source']
+    target = experiment['target']
+    params = experiment['params']
+    features = experiment['features']
 
-        # Load the necessary images
-        #   1. Determine the settings for fetching the data
-        # try:
-        #     recursive_search = False
-        #     recursive_search = thisparams['skwargs', 'default', 'recursive_search']
-        #     recursive_search = thisparams['skwargs', sourcekey, 'recursive_search']
-        # except KeyError:
-        #     pass
-        # if len(source) > 2:
-        #     skeys = source[2]
-        # else:
-        #     skeys = None
+    # Load data
+    if len(source) > 2:
+        kw_load = source[2]
+    data = load_images(
+        all_params[source[0]] + params[source[1]], logger=yparams, **kw_load
+    )
 
-        recursive_search = False
-        if 'recursive_search' in source[2].keys():
-            recursive_search = source[2]['recursive_search']
-        skeys = None
-        if 'skeys' in source[2].keys():
-            skeys = source[2]['skeys']
+    yparams.logging('\nInitial datastructure: \n\n{}', data.datastructure2string(maxdepth=3))
 
-        #   2. Load the data
-        data = load_images(
-            params[source[0]] + params[source[1]], skeys=skeys, recursive_search=recursive_search,
-            logger=yparams
-        )
+    # Set target file
+    target_file = all_params[target[0]] + all_params[target[1]]
 
-        # Set targetfile
-        targetfile = params[thisparams['targets', sourcekey][0]] \
-                     + params[thisparams['targets', sourcekey][1]]
-
-        yparams.logging('\nInitial datastructure: \n\n{}', data.datastructure2string(maxdepth=3))
-
-        for d, k, v, kl in data.data_iterator(yield_short_kl=True, leaves_only=True):
-
-            yparams.logging('===============================\nWorking on image: {}', kl + [k])
-
-            # # TODO: Implement copy full logger
-            # data[kl].set_logger(data.get_logger())
-
-            # Load the image data into memory
-            data[kl].populate(k)
-
-            # compute_selected_features(data.subset(kl), params)
-            subfeature_params = thisparams['features', sourcekey].dcp()
-            data[kl][k] = compute_features(data[kl][k], general_params, subfeature_params)
-
-            # Write the result to file
-            data.write(filepath=targetfile, keys=[kl + [k]])
-            # Free memory
-            data[kl][k] = None
 
 
 def run_compute_feature_images(yamlfile):
@@ -216,7 +164,8 @@ def run_compute_feature_images(yamlfile):
 
     try:
 
-        compute_feature_images(yparams)
+        experiment_parser(yparams, compute_feature_images, 'compute_feature_images')
+        # compute_feature_images(yparams)
 
         yparams.logging('')
         yparams.stoplogger()
@@ -227,6 +176,7 @@ def run_compute_feature_images(yamlfile):
 
 
 if __name__ == '__main__':
+
     yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters_ref.yml'
 
     run_compute_feature_images(yamlfile)
