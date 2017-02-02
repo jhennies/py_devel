@@ -369,7 +369,10 @@ class RecursiveDict(dict):
 
         for k in data.keys():
             try:
-                self[k] = type(self)(data[k])
+                if data[k] is not None:
+                    self[k] = type(self)(data[k])
+                else:
+                    self[k] = None
             except:
                 self[k] = data[k]
 
@@ -483,6 +486,8 @@ class RecursiveDict(dict):
                 else:
                     if type(v) is str:
                         dstr += "{}{}: '{}'\n".format(indentstr * d, k, v)
+                    elif v is None:
+                        dstr += "{}{}: ~\n".format(indentstr * d, k)
                     else:
                         dstr += '{}{}: {}\n'.format(indentstr * d, k, v)
 
@@ -518,7 +523,7 @@ class RecursiveDict(dict):
             print print_text.format(print_value)
 
     def data_iterator(
-            self, maxdepth=None, data=None, depth=0, keylist=[], yield_short_kl=False,
+            self, maxdepth=None, data=[], depth=0, keylist=[], yield_short_kl=False,
             leaves_only=False, branches_only=False
     ):
 
@@ -527,7 +532,7 @@ class RecursiveDict(dict):
             if depth-1 > maxdepth:
                 return
 
-        if data is None:
+        if data == []:
             data = self
 
         try:
@@ -679,73 +684,6 @@ class Hdf5Processing(RecursiveDict):
                 except AttributeError:
                     group.create_dataset(str(k), data=v)
 
-    def set_source(self, source, key):
-        try:
-            self._sources[key] = source
-        except TypeError:
-            self._sources = type(self)()
-            self._sources[key] = source
-
-    def get_sources(self):
-        return self._sources
-
-    def clear_sources(self):
-        for d, k, v, kl in self.data_iterator(yield_short_kl=True, leaves_only=True):
-            self[kl].set_source(None, k)
-
-    def populate(self, key=None):
-
-        if key is None:
-            for d, k, v, kl in self.data_iterator(yield_short_kl=True):
-
-                if kl:
-                    if type(self[kl][k]) is h5py.Dataset:
-                        self[kl].set_source(v, k)
-                        self[kl][k] = np.array(v)
-                else:
-                    if type(self[k]) is h5py.Dataset:
-                        self.set_source(v, k)
-                        self[k] = np.array(v)
-
-        else:
-
-            try:
-                self[key].populate()
-            except AttributeError:
-                if type(self[key]) is h5py.Dataset:
-                    if type(key) is list or type(key) is tuple:
-                        lastkey = key.pop(-1)
-                        self[key].set_source(self[key][lastkey], lastkey)
-                        self[key][lastkey] = np.array(self[key][lastkey])
-                    else:
-                        self.set_source(self[key], key)
-                        self[key] = np.array(self[key])
-                else:
-                    raise
-
-    def unpopulate(self, key=None):
-
-        if key is None:
-            for d, k, v, kl in self.data_iterator(yield_short_kl=True):
-
-                if kl:
-                    if self[kl].get_sources() is not None:
-                        if type(self[kl].get_sources()[k]) is h5py.Dataset:
-                            self[kl + [k]] = self[kl].get_sources()[k]
-                else:
-                    if self.get_sources() is not None:
-                        if type(self.get_sources()[k]) is h5py.Dataset:
-                            self[k] = self.get_sources()[k]
-
-        else:
-
-            try:
-                self[key].unpopulate()
-            except AttributeError:
-                lastkey = key.pop(-1)
-                if type(self[key].get_sources()[lastkey]) is h5py.Dataset:
-                    self[key][lastkey] = self[key].get_sources()[lastkey]
-
     def get_h5_entries(self, f, skeys=None, tkeys=None, recursive_search=False):
 
         if skeys is None:
@@ -852,12 +790,14 @@ class Hdf5Processing(RecursiveDict):
 
 if __name__ == '__main__':
 
-    filepath = '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170130_slice_selection_test_z_develop/intermed/cremi.splA.train.segmlarge.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
+    # filepath = '/mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170130_slice_selection_test_z_develop/intermed/cremi.splA.train.segmlarge.crop.crop_x10_110_y200_712_z200_712.split_z.h5'
+    #
+    # a = Hdf5Processing(
+    #     filepath=filepath, nodata=True
+    # )
 
-    a = Hdf5Processing(
-        filepath=filepath, nodata=True
-    )
-
+    a = Hdf5Processing()
+    a['1'] = None
 
     a.dss(as_yaml=True)
 
