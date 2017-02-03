@@ -2,12 +2,12 @@
 import sys
 sys.path.append('../../image_processing/')
 
-from p170111_00_remove_small_objects import run_remove_small_objects
-from p170111_01_compute_feature_images import run_compute_feature_images
-from p170111_02_find_border_contacts import run_find_border_contacts
-from p170111_03_compute_paths import run_compute_paths
-from p170111_04_features_of_paths import run_features_of_paths
-from p170111_05a_random_forest import run_random_forest
+from p170131_00_remove_small_objects import run_remove_small_objects
+from p170131_01_compute_feature_images import run_compute_feature_images
+from p170131_02_find_border_contacts import run_find_border_contacts
+from p170131_03_compute_paths import run_compute_paths
+from p170131_04_features_of_paths import run_features_of_paths
+from p170131_05a_random_forest import run_random_forest
 from yaml_parameters import YamlParams
 import os
 from shutil import copy
@@ -112,22 +112,22 @@ if __name__ == '__main__':
     #   time) but it makes sense if one re-computes part of the pipeline with different parameters. Also it doesn't take
     #   much disk space
     if params['run_remove_small_objects']:
-        copy('p170111_00_remove_small_objects.py', params['scriptsfolder'])
+        copy('p170131_00_remove_small_objects.py', params['scriptsfolder'])
         copy(yamlfile, paramfile_rso)
     if params['run_compute_feature_images']:
-        copy('p170111_01_compute_feature_images.py', params['scriptsfolder'])
+        copy('p170131_01_compute_feature_images.py', params['scriptsfolder'])
         copy(yamlfile, paramfile_cfi)
     if params['run_find_border_contacts']:
-        copy('p170111_02_find_border_contacts.py', params['scriptsfolder'])
+        copy('p170131_02_find_border_contacts.py', params['scriptsfolder'])
         copy(yamlfile, paramfile_fbc)
     if params['run_compute_paths']:
-        copy('p170111_03_compute_paths.py', params['scriptsfolder'])
+        copy('p170131_03_compute_paths.py', params['scriptsfolder'])
         copy(yamlfile, paramfile_pth)
     if params['run_features_of_paths']:
-        copy('p170111_04_features_of_paths.py', params['scriptsfolder'])
+        copy('p170131_04_features_of_paths.py', params['scriptsfolder'])
         copy(yamlfile, paramfile_fop)
     if params['run_random_forest']:
-        copy('p170111_05a_random_forest.py', params['scriptsfolder'])
+        copy('p170131_05a_random_forest.py', params['scriptsfolder'])
         copy(yamlfile, paramfile_rdf)
 
     # The pipeline
