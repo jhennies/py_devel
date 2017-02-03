@@ -155,8 +155,10 @@ def compute_features_multi(image, general_params, features, logger=None):
         image = np.array(image)
 
     if logger is not None:
-        logger.logging('Starting thread pool with a max of {} threads', general_params['max_threads'])
-    with futures.ThreadPoolExecutor(general_params['max_threads']) as do_stuff:
+        logger.logging(
+            'Starting thread pool with a max of {} threads', general_params['max_threads_features']
+        )
+    with futures.ThreadPoolExecutor(general_params['max_threads_features']) as do_stuff:
 
         keys = []
         vals = []
@@ -228,8 +230,9 @@ def compute_feature_images_multi(experiment, yparams):
     # Set target file
     target_file = all_params[target[0]] + all_params[target[1]]
 
-    # TODO: Parallelize here
-    with futures.ThreadPoolExecutor(params['max_threads']) as do_stuff:
+
+    yparams.logging('Starting thread pool with a max of {} threads', params['max_threads_sources'])
+    with futures.ThreadPoolExecutor(params['max_threads_sources']) as do_stuff:
         tasks = Hp()
         for d, k, v, kl in data.data_iterator(leaves_only=True):
             tasks[kl] = do_stuff.submit(
