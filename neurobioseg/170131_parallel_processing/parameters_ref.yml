@@ -28,9 +28,9 @@ featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.s
 pathlistfile:   'cremi.splA.train.pathlist.crop.crop_x10_110_y200_712_z200_712.split_x.pkl'
 
 run_remove_small_objects: False
-run_compute_feature_images: True
-run_find_border_contacts: False
-run_compute_paths: False
+run_compute_feature_images: False
+run_find_border_contacts: True
+run_compute_paths: True
 run_features_of_paths: False
 run_random_forest: False
 

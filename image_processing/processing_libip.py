@@ -29,23 +29,24 @@ def filter_small_objects(ipl, key, threshold, tkey=None, relabel=False, logger=N
         ipl.logging('Filtering objects smaller than {} voxels...', threshold)
 
     unique, counts = np.unique(ipl[key], return_counts=True)
-    if logger is not None:
-        logger.logging('Found objects: {}\nCorresponding sizes: {}', unique, counts)
-        logger.logging('Removing theses objects: {}', unique[counts <= threshold])
-    else:
-        ipl.logging('Found objects: {}\nCorresponding sizes: {}', unique, counts)
-        ipl.logging('Removing theses objects: {}', unique[counts <= threshold])
-
+    # if logger is not None:
+    #     logger.logging('Found objects: {}\nCorresponding sizes: {}', unique, counts)
+    #     logger.logging('Removing theses objects: {}', unique[counts <= threshold])
+    # else:
+    #     ipl.logging('Found objects: {}\nCorresponding sizes: {}', unique, counts)
+    #     ipl.logging('Removing theses objects: {}', unique[counts <= threshold])
 
     # With accumulate set to True, this iterator does everything we need:
     # Each label with a count larger than size_exclusion is added to lblim which is initialized as np.zeros(...)
     for lbl, lblim in ipl.label_image_iterator(key=key,
                                                labellist=unique[counts > threshold],
                                                accumulate=True, relabel=relabel):
-        if logger is not None:
-            logger.logging('---\nIncluding label {}', lbl)
-        else:
-            ipl.logging('---\nIncluding label {}', lbl)
+
+        pass
+        # if logger is not None:
+        #     logger.logging('---\nIncluding label {}', lbl)
+        # else:
+        #     ipl.logging('---\nIncluding label {}', lbl)
 
     if tkey is None:
         ipl[key] = lblim
@@ -1563,6 +1564,8 @@ def compute_paths_for_class(
 
             # Crop distance transform
             cropped_dt = lib.crop_bounding_rect(indata[disttransfkey][kl][k].yield_an_item(), bounds=bounds)
+            # Mask distance transform
+            cropped_dt[lblim == 0] = 0
             # Crop and mask border contacts
             cropped_bc = lib.crop_bounding_rect(indata[pathendkey][kl][k].yield_an_item(), bounds=bounds)
             cropped_bc[lblim == 0] = 0

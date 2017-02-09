@@ -25,7 +25,7 @@ def rollaxis(image, axis, start=0):
     return np.rollaxis(image, axis, start)
 
 
-def resize(image, zoom, mode):
+def resize(image, zoom, mode='nearest'):
     # self._image = vigra.sampling.resizeImageNoInterpolation(self._image, shape=shape)
     print 'Resizing with mode = ' + mode
     return scipy.ndimage.interpolation.zoom(image, zoom, mode=mode, order=0)

@@ -88,7 +88,7 @@ class FeatureFunctions:
             image, specific_params[0],
             anisotropy=general_params['anisotropy']
         )
-        print 'Gradient magniture: End!'
+        print 'Gradient magnitude: End!'
         return mag
 
     @staticmethod
