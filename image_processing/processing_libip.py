@@ -754,7 +754,7 @@ def get_features(
         pathlength = True
         # newfeats['Pathlength'] = compute_path_lengths(paths, anisotropy)
 
-    keylist = range(0, max_paths_per_label)
+    keylist = range(0, max_paths_per_label - 1)
     keylist = [str(x) for x in keylist]
 
     if return_pathlist:
