@@ -5,14 +5,14 @@ import numpy as np
 
 debug = False
 
-path = '/mnt/localdata01/jhennies/neuraldata/cremi_2016/sample_A_train_betas/'
+path = '/mnt/localdata01/jhennies/neuraldata/cremi_2016/sample_BC_train_betas/'
 
 # Set sourcenames
-sourcename = 'cremi.splA.train.mcseg_{}.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+sourcename = 'cremi.splC.train.mcseg_{}.crop.split_xyz.h5'
 ids = ['beta_0.3', 'beta_0.35', 'beta_0.4', 'beta_0.45', 'beta_0.5', 'beta_0.55', 'beta_0.6', 'beta_0.65', 'beta_0.7']
 
 # Set targetname
-targetname = 'cremi.splA.train.mcseg_betas.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+targetname = 'cremi.splC.train.mcseg_betas.crop.split_xyz.h5'
 
 # Generate file name lists
 # sourcefiles = [sourcename.format(x) for x in ids]
