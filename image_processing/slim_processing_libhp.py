@@ -90,8 +90,6 @@ def get_features(
             c += 1
 
         # TODO: If this loop iterated over the parameter list it would be more broadly applicable
-        # TODO: Parallelize here!
-
         if not parallelized:
             for d, k, v, kl in featureimages.data_iterator():
 
