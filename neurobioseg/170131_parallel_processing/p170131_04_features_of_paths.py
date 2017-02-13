@@ -1,12 +1,14 @@
 
 import os
 import inspect
-from hdf5_image_processing import Hdf5ImageProcessing as IP, Hdf5ImageProcessingLib as ipl
-from hdf5_processing import RecursiveDict as rdict
+# from hdf5_image_processing import Hdf5ImageProcessing as IP, Hdf5ImageProcessingLib as ipl
+from hdf5_slim_processing import Hdf5Processing as hp
+# from hdf5_processing import RecursiveDict as rdict
+from hdf5_slim_processing import RecursiveDict as Rdict
 from shutil import copy, copyfile
 import numpy as np
 import matplotlib.pyplot as plt
-import processing_libip as libip
+import slim_processing_libhp as libhp
 import sys
 from yaml_parameters import YamlParams
 import pickle
@@ -22,7 +24,7 @@ def load_images(filepath, skeys=None, recursive_search=False, logger=None):
     else:
         print 'Loading data from \n{}'.format(filepath)
 
-    data = ipl()
+    data = hp()
 
     data.data_from_file(
         filepath=filepath,
@@ -40,13 +42,13 @@ def features_of_paths(yparams):
 
     # Zero'th layer:
     # --------------
-    zeroth = rdict(all_params['features_of_paths'])
+    zeroth = Rdict(all_params['features_of_paths'])
     if 'default' in zeroth:
         zeroth_defaults = zeroth.pop('default')
     else:
-        zeroth_defaults = ipl()
+        zeroth_defaults = hp()
 
-    pathlist = ipl()
+    pathlist = hp()
     pathlistfile = zeroth_defaults['targets', 'pathlist']
     pathlistfile = all_params[pathlistfile[0]] + all_params[pathlistfile[1]]
 
@@ -72,7 +74,7 @@ def features_of_paths(yparams):
 
         # Load feature images
         # -------------------
-        featureims = ipl()
+        featureims = hp()
         for k, v in exp_sources['featureims'].iteritems():
             skeys = None
             if 'skeys' in v[2]:
@@ -116,7 +118,7 @@ def features_of_paths(yparams):
                 yparams.logging('imgs_kl = {}', imgs_kl)
 
                 # Bild an input featureims dict for the path computation
-                infeatims = ipl()
+                infeatims = hp()
                 sourcelist = exp_sources['featureims'].dcp()
                 if 'segmentation' in sourcelist:
                     infeatims['segmentation'] = featureims['segmentation'][segm_kl]
@@ -127,15 +129,27 @@ def features_of_paths(yparams):
 
                 # Bild an input dict for true paths
                 inpaths = v.dcp()
-                inpaths.populate()
+                # inpaths.populate()
 
-                features = ipl()
-                features[exp_lbl][[exp_class_lbl] + kl + [k]], pathlist[exp_lbl][[exp_class_lbl] + kl + [k]] = libip.get_features(
-                    inpaths, np.array(np.array(infeatims.yield_an_item()).shape)[0:3],
+                # Get the necessary image shape
+                for d2, k2, v2, kl2 in infeatims.data_iterator(leaves_only=True):
+                    im_shp = v2.shape
+                    break
+
+                features = hp()
+                import time
+                start = time.time()
+                print 'Starting get_features'
+                features[exp_lbl][[exp_class_lbl] + kl + [k]], pathlist[exp_lbl][[exp_class_lbl] + kl + [k]] = libhp.get_features(
+                    inpaths, np.array(im_shp)[0:3],
                     infeatims, list(exp_params['features']),
-                    exp_params['max_paths_per_label'], ipl=yparams,
-                    anisotropy=exp_params['anisotropy'], return_pathlist=True
+                    exp_params['max_paths_per_label'], logger=yparams,
+                    anisotropy=exp_params['anisotropy'], return_pathlist=True,
+                    parallelized=False, max_threads=5
                 )
+                print 'Stopping get_features'
+                stop = time.time()
+                print stop-start
 
                 yparams.logging(
                     '\nFeatures datastructure: \n\n{}',
