@@ -23,21 +23,33 @@ def split_in_xyz(data, dims):
 
 debug = False
 
-path = '/mnt/localdata01/jhennies/neuraldata/cremi_2016/sample_BC_train_betas/'
+path = '/mnt/localdata01/jhennies/neuraldata/cremi_2016/'
 
 # Set sourcenames
-sourcename = 'cremi.splC.train.mcseg_beta_{}.crop.h5'
-ids = ['0.3', '0.35', '0.4', '0.45', '0.5', '0.55', '0.6', '0.65', '0.7']
+sourcename = 'cremi.splC.train.probs.crop.h5'
 
 # Set targetnames
-targetname = 'cremi.splC.train.mcseg_beta_{}.crop{}.h5'
-append2name = '.split_xyz'
+targetname = 'cremi.splC.train.probs.crop.split_xyz.h5'
 
-# Generate file name lists
-sourcefiles = [sourcename.format(x) for x in ids]
-print 'files = {}'.format(sourcefiles)
-targetfiles = [targetname.format(x, append2name) for x in ids]
-print 'targetfiles = {}'.format(targetfiles)
+sourcefiles = [sourcename]
+targetfiles = [targetname]
+
+# # For betas
+# path = '/mnt/localdata01/jhennies/neuraldata/cremi_2016/sample_BC_train_betas/'
+#
+# # Set sourcenames
+# sourcename = 'cremi.splC.train.mcseg_beta_{}.crop.h5'
+# ids = ['0.3', '0.35', '0.4', '0.45', '0.5', '0.55', '0.6', '0.65', '0.7']
+#
+# # Set targetnames
+# targetname = 'cremi.splC.train.mcseg_beta_{}.crop{}.h5'
+# append2name = '.split_xyz'
+#
+# # Generate file name lists
+# sourcefiles = [sourcename.format(x) for x in ids]
+# print 'files = {}'.format(sourcefiles)
+# targetfiles = [targetname.format(x, append2name) for x in ids]
+# print 'targetfiles = {}'.format(targetfiles)
 
 # Parameters
 dims = ['x', 'y', 'z']
