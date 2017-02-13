@@ -137,9 +137,9 @@ def features_of_paths(yparams):
                     break
 
                 features = hp()
-                import time
-                start = time.time()
-                print 'Starting get_features'
+                # import time
+                # start = time.time()
+                # print 'Starting get_features'
                 features[exp_lbl][[exp_class_lbl] + kl + [k]], pathlist[exp_lbl][[exp_class_lbl] + kl + [k]] = libhp.get_features(
                     inpaths, np.array(im_shp)[0:3],
                     infeatims, list(exp_params['features']),
@@ -147,9 +147,9 @@ def features_of_paths(yparams):
                     anisotropy=exp_params['anisotropy'], return_pathlist=True,
                     parallelized=exp_params['parallelize'], max_threads=exp_params['max_threads']
                 )
-                print 'Stopping get_features'
-                stop = time.time()
-                print stop-start
+                # print 'Stopping get_features'
+                # stop = time.time()
+                # print stop-start
 
                 yparams.logging(
                     '\nFeatures datastructure: \n\n{}',

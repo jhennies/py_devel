@@ -230,6 +230,8 @@ compute_paths:
                 penaltypower: 10
                 ignorelabels: []
                 max_paths_per_object_seed: ~
+                parallelize: True
+                max_threads: 20
 
 
 features_of_paths:

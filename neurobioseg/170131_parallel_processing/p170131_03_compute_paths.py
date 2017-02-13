@@ -1,12 +1,15 @@
 
 import os
 import inspect
-from hdf5_image_processing import Hdf5ImageProcessing as IP, Hdf5ImageProcessingLib as ipl
-from hdf5_processing import RecursiveDict as rdict
+# from hdf5_image_processing import Hdf5ImageProcessing as IP, Hdf5ImageProcessingLib as ipl
+from hdf5_slim_processing import Hdf5Processing as hp
+# from hdf5_processing import RecursiveDict as rdict
+from hdf5_slim_processing import RecursiveDict as Rdict
 from shutil import copy, copyfile
 import numpy as np
 import matplotlib.pyplot as plt
-import processing_libip as libip
+# import processing_libip as libip
+import slim_processing_libhp as libhp
 import sys
 from yaml_parameters import YamlParams
 
@@ -22,7 +25,7 @@ def load_images(filepath, skeys=None, recursive_search=False, logger=None):
     else:
         print 'Loading data from \n{}'.format(filepath)
 
-    data = ipl()
+    data = hp()
 
     data.data_from_file(
         filepath=filepath,
@@ -54,11 +57,11 @@ def compute_paths(yparams):
 
     # Zero'th layer:
     # --------------
-    zeroth = rdict(all_params['compute_paths'])
+    zeroth = Rdict(all_params['compute_paths'])
     if 'default' in zeroth:
         zeroth_defaults = zeroth.pop('default')
     else:
-        zeroth_defaults = ipl()
+        zeroth_defaults = hp()
 
     for exp_lbl, experiment in zeroth.iteritems():
 
@@ -68,13 +71,14 @@ def compute_paths(yparams):
         yparams.logging('Performing experiment {}\n==============================\n', exp_lbl)
 
         first = zeroth_defaults.dcp()
-        first.merge(experiment)
+        if experiment is not None:
+            first.merge(experiment)
         if 'default' in first:
             first_defaults = first.pop('default')
         else:
-            first_defaults = ipl()
+            first_defaults = hp()
 
-        statistics = rdict()
+        statistics = Rdict()
 
         for exp_class_lbl in ['truepaths', 'falsepaths']:
 
@@ -90,7 +94,7 @@ def compute_paths(yparams):
             exp_target = final['target']
 
             # Load the necessary images
-            data=ipl()
+            data=hp()
             for datakey, content in exp_sources.iteritems():
                 data[datakey] = load_images(
                     all_params[content[0]] + all_params[content[1]],
@@ -104,12 +108,12 @@ def compute_paths(yparams):
 
             # Compute the paths
             # -----------------
-            paths = ipl()
+            paths = hp()
 
             for_class = False
             if exp_class_lbl == 'truepaths':
                 for_class = True
-            paths[exp_lbl][exp_class_lbl], statistics[exp_lbl][exp_class_lbl] = libip.compute_paths_for_class(
+            paths[exp_lbl][exp_class_lbl], statistics[exp_lbl][exp_class_lbl] = libhp.compute_paths_for_class(
                 data, 'segm', 'conts', 'dt', 'gt',
                 exp_params, for_class=for_class, ignore=[], debug=all_params['debug'],
                 logger=yparams
