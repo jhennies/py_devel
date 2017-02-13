@@ -123,7 +123,7 @@ def features_of_paths(yparams):
                     sourcelist.pop('segmentation')
                 for source in sourcelist:
                     infeatims[source] = featureims[source][imgs_kl]
-                infeatims.populate()
+                # infeatims.populate()
 
                 # Bild an input dict for true paths
                 inpaths = v.dcp()
