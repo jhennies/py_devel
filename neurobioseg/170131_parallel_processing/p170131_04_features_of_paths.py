@@ -145,7 +145,7 @@ def features_of_paths(yparams):
                     infeatims, list(exp_params['features']),
                     exp_params['max_paths_per_label'], logger=yparams,
                     anisotropy=exp_params['anisotropy'], return_pathlist=True,
-                    parallelized=False, max_threads=5
+                    parallelized=exp_params['parallelize'], max_threads=exp_params['max_threads']
                 )
                 print 'Stopping get_features'
                 stop = time.time()
