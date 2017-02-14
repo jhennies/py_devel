@@ -457,8 +457,8 @@ def compute_paths_for_class(
                     np.array(indata[pathendkey][kl][k]['contacts']),
                     lbl, kl, k,
                     params,
-                    for_class=True,
-                    correspondence={},
+                    for_class=for_class,
+                    correspondence=correspondence_table,
                     logger=logger
                 )
 
