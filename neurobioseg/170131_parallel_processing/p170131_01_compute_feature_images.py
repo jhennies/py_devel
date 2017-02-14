@@ -168,7 +168,9 @@ def compute_features_multi(image, general_params, features, logger=None):
 
             if v:
 
-                tasks[k] = do_stuff.submit(getattr(ff, v.pop('func')), image, general_params, v.pop('params'))
+                tasks[k] = do_stuff.submit(
+                    getattr(ff, v.pop('func')), image, general_params, v.pop('params')
+                )
                 # print 'In the for loop: {}'.format(do_stuff.done())
                 keys.append(k)
                 vals.append(v)

@@ -570,6 +570,44 @@ class RecursiveDict(dict):
         except AttributeError:
             pass
 
+    def simultaneous_iterator(self, data=None, keylist=None, max_count_per_item=None):
+
+        if data is None:
+            data = self
+
+        if max_count_per_item is None:
+            max_count_per_item = data.maxlength(depth=0)
+        else:
+            if max_count_per_item > data.maxlength(depth=0):
+                max_count_per_item = data.maxlength(depth=0)
+
+        if keylist is None:
+
+            for i in xrange(max_count_per_item):
+                keys = []
+                vals = []
+                for key, val in data.iteritems():
+                    try:
+                        vals.append(val[val.keys()[i]])
+                        keys.append((key, val.keys()[i]))
+                    except:
+                        pass
+                yield [i, keys, vals]
+
+        else:
+
+            for key in keylist:
+                keys = []
+                vals = []
+                for dkey, dval in data.iteritems():
+                    try:
+                        if key in dval.keys():
+                            vals.append(dval[key])
+                            keys.append((dkey, key))
+                    except:
+                        pass
+                yield [key, keys, vals]
+
     def lengths(self, depth=0):
 
         returndict = type(self)()
