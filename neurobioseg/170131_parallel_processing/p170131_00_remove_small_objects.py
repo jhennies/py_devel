@@ -90,6 +90,8 @@ def remove_small_objects(yparams):
         # Write the result to file
         result.write(filepath=targetfile)
 
+        return result[kl[1:]]
+
     if thisparams['image_threads'] > 1:
 
         with futures.ThreadPoolExecutor(thisparams['image_threads']) as filter_small:
@@ -97,6 +99,9 @@ def remove_small_objects(yparams):
             tasks = hp()
             for d, k, v, kl in all_data.data_iterator(leaves_only=True):
                 tasks[kl] = filter_small.submit(filtering_wrapper, d, k, v, kl)
+
+        # for d, k, v, kl in tasks.data_iterator(leaves_only=True):
+        #     result = v.result()
 
     else:
         for d, k, v, kl in all_data.data_iterator(leaves_only=True):
