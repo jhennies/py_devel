@@ -44,25 +44,9 @@ remove_small_objects:
         - [intermedfolder, gtlargefile]
     bysize: 10000
     relabel: True
-
-
-compute_feature_images_old:
-    general_params:
-        anisotropy: [10, 1, 1]
-    sources:
-        rawdata: [datafolder, rawdatafile, {skeys: [['x', '*', raw]]}]
-        probs: [datafolder, probsfile, {skeys: [['x', '*', data]]}]
-        segmentation: [intermedfolder, segmlargefile, {skeys: [['x', '0'], ['x', '1', 'beta_0.5']]}]
-    targets:
-        rawdata: [intermedfolder, rawfeatsfile]
-        probs: [intermedfolder, probsfeatsfile]
-        segmentation: [intermedfolder, segfeatsfile]
-    features:
-        rawdata:
-            raw: ~
-            gauss_2:
-                params: [2]
-                func: gaussian
+    consecutive_labels: True
+    filtering_threads: 1
+    image_threads: 32
 
 
 compute_feature_images:
