@@ -48,13 +48,25 @@ def remove_small_objects(image, size_thresh,
     else:
 
         if len(small_objs) > len(large_objs):
-            mask = np.logical_not(np.any([image == x for x in large_objs], axis=0))
-        else:
-            mask = np.any([image == x for x in small_objs], axis=0)
 
-        timage = np.array(image)
-        print mask.shape
-        timage[mask] = 0
+            timage = np.zeros(image.shape, dtype=image.dtype)
+            for lo in large_objs:
+                timage[image == lo] = lo
+
+        else:
+
+            timage = np.array(image)
+            for so in small_objs:
+                timage[timage == so] = 0
+
+        # if len(small_objs) > len(large_objs):
+        #     mask = np.logical_not(np.any([image == x for x in large_objs], axis=0))
+        # else:
+        #     mask = np.any([image == x for x in small_objs], axis=0)
+        #
+        # timage = np.array(image)
+        # print mask.shape
+        # timage[mask] = 0
 
     return timage
 
