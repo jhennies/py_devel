@@ -140,15 +140,20 @@ def find_border_centroids(ipl, faces, key, facesinfo, facesd, resultkey, results
 
             ipl.logging('---\nLabel {} found in image {}', lbl, k)
 
-            # Avoid very small artifacts
-            lblim = morphology.opening(lblim)
-
             # Connected component analysis to detect when a label touches the border multiple times
             conncomp = vigra.analysis.labelImageWithBackground(lblim.astype(np.uint32), neighborhood=8, background_value=0)
+
+            # Only these labels will be used for further processing
+            opened_labels = np.unique(morphology.opening(conncomp))
+            unopened_labels = np.unique(conncomp)
+            print 'opened_labels = {}'.format(opened_labels)
+            print 'unopened_labels = {}'.format(unopened_labels)
 
             for l in np.unique(conncomp):
                 # Ignore background
                 if l == 0: continue
+                # Ignore very small artifacts
+                if not l in opened_labels: continue
 
                 # Get the current label object
                 curobj = conncomp == l
