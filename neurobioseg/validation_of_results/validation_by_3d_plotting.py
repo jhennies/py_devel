@@ -69,8 +69,6 @@ print 'Selected label = {}'.format(label)
 print 'Selected pathid = {}'.format(pathid)
 path = np.array(paths[label, pathid])
 
-sys.exit()
-
 import processing_lib as lib
 
 if surface_source == 'seg':
