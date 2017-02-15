@@ -479,17 +479,25 @@ class RecursiveDict(dict):
 
             for d, k, v, kl in data.data_iterator(maxdepth=maxdepth):
                 if type(v) is type(self):
-                    if type(k) is str:
+                    if type(k) is str or type(k) is unicode:
                         dstr += "{}'{}':\n".format(indentstr * d, k)
                     else:
                         dstr += '{}{}:\n'.format(indentstr * d, k)
                 else:
-                    if type(v) is str:
-                        dstr += "{}{}: '{}'\n".format(indentstr * d, k, v)
-                    elif v is None:
-                        dstr += "{}{}: ~\n".format(indentstr * d, k)
+                    if type(k) is str or type(k) is unicode:
+                        if type(v) is str:
+                            dstr += "{}'{}': '{}'\n".format(indentstr * d, k, v)
+                        elif v is None:
+                            dstr += "{}'{}': ~\n".format(indentstr * d, k)
+                        else:
+                            dstr += "{}'{}': {}\n".format(indentstr * d, k, v)
                     else:
-                        dstr += '{}{}: {}\n'.format(indentstr * d, k, v)
+                        if type(v) is str:
+                            dstr += "{}{}: '{}'\n".format(indentstr * d, k, v)
+                        elif v is None:
+                            dstr += "{}{}: ~\n".format(indentstr * d, k)
+                        else:
+                            dstr += '{}{}: {}\n'.format(indentstr * d, k, v)
 
         else:
 
