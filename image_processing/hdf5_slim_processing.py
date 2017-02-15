@@ -642,7 +642,7 @@ class RecursiveDict(dict):
                 maxd = d
         return d
 
-    def inkeys(self, kl):
+    def inkeys(self, kl, return_kl=False):
 
         if kl:
             if kl[0] in self.keys():
@@ -665,6 +665,15 @@ class RecursiveDict(dict):
         Deep copy this instance
         """
         return type(self)(self)
+
+    def find_key_lists(self, key):
+
+        keylists = []
+        for d, k, v, kl in self.data_iterator():
+            if k == key:
+                keylists.append(kl)
+
+        return keylists
 
 
 class Hdf5Processing(RecursiveDict):
