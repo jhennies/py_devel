@@ -10,27 +10,27 @@ interpolation_mode = 'nearest'
 transparent = True
 opacity = 0.25
 # label = '118'
-label = '153'
+label = 'random'
 pathid = '0'
-surface_source = 'seg'
+surface_source = 'gt'
 
 # Specify the files
 raw_path = '/mnt/localdata02/jhennies/neuraldata/cremi_2016/'
-raw_file = 'cremi.splA.train.raw_neurons.crop.split_xyz.h5'
-raw_skey = ['z', '0', 'raw']
+raw_file = 'cremi.splB.train.raw_neurons.crop.split_xyz.h5'
+raw_skey = ['z', '1', 'raw']
 
-seg_path = '/mnt/localdata01/jhennies/neuraldata/results/cremi_2016/170208_avoid_redundant_path_calculation_sample_a_slice_z_train01_predict10_full/intermed/'
-seg_file = 'cremi.splA.train.segmlarge.crop.split_z.h5'
-seg_skey = ['z', '0', 'beta_0.65']
+seg_path = '/mnt/localdata01/jhennies/neuraldata/results/cremi_2016/170208_avoid_redundant_path_calculation_sample_b_slice_z_train01_predict10_full/intermed/'
+seg_file = 'cremi.splB.train.segmlarge.crop.split_z.h5'
+seg_skey = ['z', '1', 'beta_0.5']
 
 gt_path = seg_path
-gt_file = 'cremi.splA.train.gtlarge.crop.split_z.h5'
-gt_skey = ['z', '0', 'neuron_ids']
+gt_file = 'cremi.splB.train.gtlarge.crop.split_z.h5'
+gt_skey = ['z', '1', 'neuron_ids']
 
 paths_path = seg_path
-paths_file = 'cremi.splA.train.paths.crop.split_z.h5'
-pathlist_file = 'cremi.splA.train.pathlist.crop.split_z.pkl'
-paths_skey = ['z_train0_predict1', 'falsepaths', 'z', '0', 'beta_0.65']
+paths_file = 'cremi.splB.train.paths.crop.split_z.h5'
+pathlist_file = 'cremi.splB.train.pathlist.crop.split_z.pkl'
+paths_skey = ['z_predict1', 'falsepaths', 'z', '1', 'beta_0.5']
 
 # # DEVELOP ----
 # # Specify the files
