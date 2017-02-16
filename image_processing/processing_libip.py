@@ -145,10 +145,12 @@ def find_border_centroids(ipl, faces, key, facesinfo, facesd, resultkey, results
 
             # Only these labels will be used for further processing
             opened_labels = np.unique(morphology.opening(conncomp))
-            unopened_labels = np.unique(conncomp)
-            print 'opened_labels = {}'.format(opened_labels)
-            print 'unopened_labels = {}'.format(unopened_labels)
+            # unopened_labels = np.unique(conncomp)
+            # print 'opened_labels = {}'.format(opened_labels)
+            # print 'unopened_labels = {}'.format(unopened_labels)
 
+            # TODO: This is currently inefficient: Cropping can be performed here already
+            # TODO: Only the labels in the central area are of actual interest
             for l in np.unique(conncomp):
                 # Ignore background
                 if l == 0: continue
