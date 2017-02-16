@@ -10,8 +10,8 @@ interpolation_mode = 'nearest'
 transparent = True
 opacity = 0.25
 # label = '118'
-label = 'random'
-pathid = '1'
+label = '153'
+pathid = '0'
 surface_source = 'seg'
 
 # Specify the files
@@ -21,7 +21,7 @@ raw_skey = ['z', '0', 'raw']
 
 seg_path = '/mnt/localdata01/jhennies/neuraldata/results/cremi_2016/170208_avoid_redundant_path_calculation_sample_a_slice_z_train01_predict10_full/intermed/'
 seg_file = 'cremi.splA.train.segmlarge.crop.split_z.h5'
-seg_skey = ['z', '0', 'beta_0.5']
+seg_skey = ['z', '0', 'beta_0.65']
 
 gt_path = seg_path
 gt_file = 'cremi.splA.train.gtlarge.crop.split_z.h5'
@@ -30,7 +30,7 @@ gt_skey = ['z', '0', 'neuron_ids']
 paths_path = seg_path
 paths_file = 'cremi.splA.train.paths.crop.split_z.h5'
 pathlist_file = 'cremi.splA.train.pathlist.crop.split_z.pkl'
-paths_skey = ['z_train0_predict1', 'truepaths', 'z', '0', 'beta_0.5']
+paths_skey = ['z_train0_predict1', 'falsepaths', 'z', '0', 'beta_0.65']
 
 # # DEVELOP ----
 # # Specify the files
@@ -61,6 +61,7 @@ if label == 'random':
     for d, k, v, kl in paths.data_iterator(leaves_only=True):
         paths_list.append(kl)
     import random
+    random.seed()
     chosen_path = random.choice(paths_list)
     label = chosen_path[0]
     pathid = chosen_path[1]
