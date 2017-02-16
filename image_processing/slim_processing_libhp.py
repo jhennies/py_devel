@@ -464,8 +464,24 @@ def compute_paths_for_class(
     paths = hp()
     statistics = Rdict()
 
+    if params['order_of_betas'] is not None:
+
+        key_lists = []
+        for i in params['order_of_betas']:
+            key_lists += indata[labelskey].find_key_lists(i)
+
+    else:
+
+        key_lists = []
+        for d, k, v, kl in indata[labelskey].data_iterator(leaves_only=True):
+            key_lists.append(kl)
+
     # Iterate over segmentations
-    for d, k, v, kl in indata[labelskey].data_iterator(leaves_only=True, yield_short_kl=True):
+    # for d, k, v, kl in indata[labelskey].data_iterator(leaves_only=True, yield_short_kl=True):
+    for i in key_lists:
+
+        k = i[-1]
+        kl = i[0:-1]
 
         if logger is not None:
             logger.logging('====================')

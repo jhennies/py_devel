@@ -37,8 +37,8 @@ run_random_forest: False
 
 remove_small_objects:
     sources:
-        - [datafolder, segmfile, {skeys: [['z']]}]
-        - [datafolder, gtruthfile, {skeys: [['z', '*', 'neuron_ids']]}]
+        - [datafolder, segmfile, {skeys: [['x']]}]
+        - [datafolder, gtruthfile, {skeys: [['x', '*', 'neuron_ids']]}]
     targets:
         - [intermedfolder, segmlargefile]
         - [intermedfolder, gtlargefile]
@@ -216,6 +216,16 @@ compute_paths:
                 max_paths_per_object_seed: ~
                 parallelize: True
                 max_threads: 20
+                order_of_betas:
+                    - beta_0.5
+                    - beta_0.45
+                    - beta_0.55
+                    - beta_0.4
+                    - beta_0.6
+                    - beta_0.35
+                    - beta_0.65
+                    - beta_0.3
+                    - beta_0.7
 
 
 features_of_paths:
