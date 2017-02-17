@@ -273,7 +273,8 @@ def compute_paths_for_class(
             for_class=True, correspondence={},
             avoid_duplicates=True,
             max_paths_per_object=[], max_paths_per_object_seed=[], yield_in_bounds=False,
-            return_pathim=True, logger=None
+            return_pathim=True, minimum_alternative_label_count=0,
+            logger=None
     ):
         """
         :param penaltypower:
@@ -291,6 +292,8 @@ def compute_paths_for_class(
         :param max_paths_per_object_seed:
         :param yield_in_bounds:
         :param return_pathim:
+        :param minimum_alternative_label_count: Paths of merges (for_class=False) are removed if
+            too little pixels of the merged object are found
         :param logger:
         :return:
         """
@@ -302,10 +305,6 @@ def compute_paths_for_class(
         # Determine the endpoints of the current object
         indices = np.where(pathends)
         coords = zip(indices[0], indices[1], indices[2])
-        # if logger is not None:
-        #     logger.logging('Local maxima coordinates: {}', coords)
-        # else:
-        #     print 'Local maxima coordinates: {}'.format(coords)
 
         # Make pairwise list of coordinates serving as source and target
         # First determine all pairings
@@ -330,7 +329,7 @@ def compute_paths_for_class(
                     if labelpair not in correspondence.keys():
                         pairs.append(pair)
                         label_pairs.append(labelpair)
-                        new_correspondence[labelpair] = [keylist_lblim, lbl]
+                        # new_correspondence[labelpair] = [keylist_lblim, lbl]
                         if logger is not None:
                             logger.logging('Found pairing: {}', labelpair)
                     else:
@@ -385,6 +384,7 @@ def compute_paths_for_class(
 
             # Criteria for keeping paths which can only be computed after path computation
             if for_class:
+                # A path without merge must not switch labels on the way!
                 ps = []
                 for i in xrange(0, len(ps_computed)):
                     if len(np.unique(
@@ -392,6 +392,11 @@ def compute_paths_for_class(
                         ps.append(ps_computed[i])
                         if logger is not None:
                             logger.logging('Path label = True')
+
+                        # Add entry to correspondence table
+                        if avoid_duplicates:
+                            new_correspondence[label_pairs[i]] = [keylist_lblim, lbl]
+
                     else:
                         # The path switched objects multiple times on the way and is not added to the list\
                         if logger is not None:
@@ -402,7 +407,34 @@ def compute_paths_for_class(
 
                         stats_excluded_paths += 1
             else:
-                ps = ps_computed
+                ps = []
+                for i in xrange(0, len(ps_computed)):
+                    un, counts = np.unique(
+                        gt[ps_in_bounds[i][:, 0], ps_in_bounds[i][:, 1], ps_in_bounds[i][:, 2]],
+                        return_counts=True
+                    )
+                    # At least two of the entries in counts have to be larger than the threshold
+                    c = 0
+                    for count in counts:
+                        if count >= minimum_alternative_label_count:
+                            c += 1
+                        if c > 1:
+                            break
+                    if c > 1:
+                        ps.append(ps_computed[i])
+
+                        # Add entry to correspondence table
+                        if avoid_duplicates:
+                            new_correspondence[label_pairs[i]] = [keylist_lblim, lbl]
+
+                    else:
+                        if logger is not None:
+                            logger.logging(
+                                'Path starting in label {} and ending in {} only crossed one of the labels for {} voxels',
+                                gt[tuple(ps_in_bounds[i][0])],
+                                gt[tuple(ps_in_bounds[i][-1])],
+                                np.min(counts)
+                            )
 
             statistics['excluded_paths'] = stats_excluded_paths
             statistics['kept_paths'] = len(ps)
@@ -457,7 +489,9 @@ def compute_paths_for_class(
             max_paths_per_object=params['max_paths_per_object'],
             max_paths_per_object_seed=params['max_paths_per_object_seed'],
             yield_in_bounds=True,
-            return_pathim=False, logger=logger
+            return_pathim=False,
+            minimum_alternative_label_count=params['minimum_alternative_label_count'],
+            logger=logger
         )
 
     correspondence_table = {}
