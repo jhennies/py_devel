@@ -139,8 +139,11 @@ def get_features(
         # 'Pathlength' was in the list and is now successfully removed
         pathlength = True
 
-    keylist = range(0, max_paths_per_label - 1)
-    keylist = [str(x) for x in keylist]
+    if max_paths_per_label is not None:
+        keylist = range(0, max_paths_per_label - 1)
+        keylist = [str(x) for x in keylist]
+    else:
+        keylist = None
 
     if return_pathlist:
         pathlist = []
