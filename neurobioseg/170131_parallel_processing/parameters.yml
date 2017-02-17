@@ -1,32 +1,32 @@
 datafolder0: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
 datafolder1: /mnt/localdata01/jhennies/neuraldata/cremi_2016/sample_A_train_betas/
-resultfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/170208_avoid_redundant_path_calculation_sample_a_slice_z_train01_predict10_full/
-intermedfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/170208_avoid_redundant_path_calculation_sample_a_slice_z_train01_predict10_full/intermed/
-scriptsfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/170208_avoid_redundant_path_calculation_sample_a_slice_z_train01_predict10_full/scripts/
+resultfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/170216_crossvalidation_spl_b_slc_z_train_01_pred_10/
+intermedfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/170216_crossvalidation_spl_b_slc_z_train_01_pred_10/intermed/
+scriptsfolder: /mnt/localdata01/jhennies/neuraldata/results/cremi_2016/170216_crossvalidation_spl_b_slc_z_train_01_pred_10/scripts/
 
 debug: False
 
 createfolders: True
 overwriteresults: True
 
-rawdatafile:    'cremi.splA.train.raw_neurons.crop.split_xyz.h5'
+rawdatafile:    'cremi.splB.train.raw_neurons.crop.split_xyz.h5'
 rawdataname:    'raw'
-gtruthfile:     'cremi.splA.train.raw_neurons.crop.split_xyz.h5'
+gtruthfile:     'cremi.splB.train.raw_neurons.crop.split_xyz.h5'
 gtruthname:     'neuron_ids'
-gtlargefile:    'cremi.splA.train.gtlarge.crop.split_z.h5'
+gtlargefile:    'cremi.gtlarge.crop.split_z.h5'
 gtlargename:    'neuron_ids'
-probsfile:      'cremi.splA.train.probs.crop.split_xyz.h5'
+probsfile:      'cremi.splB.train.probs.crop.split_xyz.h5'
 probsname:      'data'
-segmfile:       'cremi.splA.train.mcseg_betas.crop.split_xyz.h5'
-segmlargefile:  'cremi.splA.train.segmlarge.crop.split_z.h5'
-rawfeatsfile:   'cremi.splA.train.rawfeats.crop.split_z.h5'
-probsfeatsfile: 'cremi.splA.train.probsfeats.crop.split_z.h5'
-segfeatsfile:   'cremi.splA.train.segfeats.crop.split_z.h5'
-borderctfile:   'cremi.splA.train.borderct.crop.split_z.h5'
+segmfile:       'cremi.splB.train.mcseg_betas.crop.split_xyz.h5'
+segmlargefile:  'cremi.segmlarge.crop.split_z.h5'
+rawfeatsfile:   'cremi.rawfeats.crop.split_z.h5'
+probsfeatsfile: 'cremi.probsfeats.crop.split_z.h5'
+segfeatsfile:   'cremi.segfeats.crop.split_z.h5'
+borderctfile:   'cremi.borderct.crop.split_z.h5'
 borderctname:   'contacts'
-pathsfile:      'cremi.splA.train.paths.crop.split_z.h5'
-featuresfile:   'cremi.splA.train.features.crop.split_z.h5'
-pathlistfile:   'cremi.splA.train.pathlist.crop.split_z.pkl'
+pathsfile:      'cremi.paths.crop.split_z.h5'
+featuresfile:   'cremi.features.crop.split_z.h5'
+pathlistfile:   'cremi.pathlist.crop.split_z.pkl'
 
 run_remove_small_objects: False
 run_compute_feature_images: False
@@ -232,7 +232,9 @@ features_of_paths:
                 - Kurtosis
                 - Skewness
                 - Pathlength
-            max_paths_per_label: 5
+            max_paths_per_label: ~
+            parallelize: False
+            max_threads: 10
 
 
 random_forest:

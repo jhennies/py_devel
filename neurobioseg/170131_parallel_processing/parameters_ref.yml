@@ -269,7 +269,7 @@ features_of_paths:
                 - Pathlength
             max_paths_per_label: 2
             parallelize: True
-            max_threads: 20
+            max_threads: 5
 
 
 random_forest:
