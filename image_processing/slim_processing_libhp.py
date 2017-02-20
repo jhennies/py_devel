@@ -628,3 +628,158 @@ def compute_paths_for_class(
         # indata[labelskey][kl].unpopulate()
 
     return paths, statistics
+
+
+def rf_combine_sources(features, pathlist):
+    """
+    features:
+    ---------
+
+    What we have:
+    [somesource_0]
+        [features]: [f_00, f_10, ..., f_n0]    # with n being the number of paths
+    ...
+    [somesource_N]:
+        [features]: [f_0N, f_1N, ..., f_nN]
+
+    What we want to have:
+    [features]: [f_00, ..., f_n0, f_01, ..., f_n1, ..., f_0N, ..., fnN]
+
+    pathlist:
+    ---------
+
+    What we have:
+    [somesource_0]: [kl_00, kl_10, ..., kl_n0]    # with n being the number of paths
+    ...
+    [somesource_N]: [kl_0N, kl_1N, ..., kl_nN]
+
+    What we want to have:
+    [somesource_0 + kl_00, ..., somesource_N + kl_nN]
+
+    :return:
+    """
+
+    outfeatures = hp()
+    newpathlist = []
+
+    # print 'Starting rf_combine_sources_new\n'
+
+    for d, k, v, kl in pathlist.data_iterator(leaves_only=True):
+        # print kl
+
+        newpathlist += [kl + list(x) for x in pathlist[kl]]
+
+        for d2, k2, v2, kl2 in features[kl].data_iterator(leaves_only=True):
+            if outfeatures.inkeys(kl2):
+                outfeatures[kl2] \
+                    = np.concatenate((outfeatures[kl2], np.array(v2)), axis=0)
+            else:
+                outfeatures[kl2] = np.array(v2)
+
+    return outfeatures, newpathlist
+
+
+def rf_make_feature_array_with_keylist(features, keylist):
+
+    featsarray = None
+
+    for k in keylist:
+        if featsarray is None:
+            if features[k].ndim == 1:
+                featsarray = np.array([features[k]])
+            elif features[k].ndim == 2:
+                featsarray = np.array(features[k]).swapaxes(0, 1)
+        else:
+            if features[k].ndim == 1:
+                featsarray = np.concatenate((featsarray, [features[k]]), 0)
+            elif features[k].ndim == 2:
+                featsarray = np.concatenate((featsarray, features[k].swapaxes(0, 1)))
+
+    featsarray = featsarray.swapaxes(0, 1)
+
+    return featsarray
+
+
+from sklearn.ensemble import RandomForestClassifier as Skrf
+def random_forest(trainfeatures, testfeatures, debug=False, balance=False, logger=None):
+
+    # print '\n---\n'
+    # print 'trainfeatures: '
+    # print trainfeatures
+    # print '\n---\n'
+    # print 'testfeatures'
+    # print testfeatures
+    # print '\n---\n'
+
+    if balance:
+        lentrue = len(trainfeatures['true'])
+        lenfalse = len(trainfeatures['false'])
+        if lentrue > lenfalse:
+            trainfeatures['true'] = np.array(random.sample(trainfeatures['true'].tolist(), lenfalse))
+        else:
+            trainfeatures['false'] = np.array(random.sample(trainfeatures['false'].tolist(), lentrue))
+
+    traindata, trainlabels = rf_make_forest_input(trainfeatures)
+    testdata, testlabels = rf_make_forest_input(testfeatures)
+    if logger is None:
+        print traindata.shape
+        print testdata.shape
+        print trainlabels.shape
+    else:
+        logger.logging('Data sizes using balance = {}:', balance)
+        logger.logging('    traindata.shape = {}', traindata.shape)
+        logger.logging('    testdata.shape = {}', testdata.shape)
+        logger.logging('    trainlabels.shape = {}', trainlabels.shape)
+
+    if debug:
+        # Check if any item from traindata also occurs in testdata
+        c = 0
+        for i in traindata.tolist():
+            if i in testdata.tolist():
+                c += 1
+        print '{} items were identical.'.format(c)
+
+    rf = Skrf()
+    rf.fit(traindata, trainlabels)
+
+    result = rf.predict(testdata)
+
+    # print result.shape
+    # print testlabels.shape
+
+    return zip(result, testlabels)
+
+
+def rf_make_forest_input(features):
+
+    lentrue = features['true'].shape[0]
+    lenfalse = features['false'].shape[0]
+
+    classes = np.concatenate((np.ones((lentrue,)), np.zeros((lenfalse,))))
+
+    data = np.concatenate((features['true'], features['false']), axis=0)
+
+    data = rf_eliminate_invalid_entries(data)
+
+    return [data, classes]
+
+
+def rf_eliminate_invalid_entries(data):
+
+    data[np.isnan(data)] = 0
+    data[np.isinf(data)] = 0
+
+    data = data.astype(np.float32)
+
+    return data
+
+
+from sklearn.metrics import f1_score, accuracy_score, recall_score, precision_score
+def new_eval(result, truth):
+
+    return {
+        'precision': precision_score(truth, result, average='binary', pos_label=0),
+        'recall': recall_score(truth, result, average='binary', pos_label=0),
+        'f1': f1_score(truth, result, average='binary', pos_label=0),
+        'accuracy': accuracy_score(truth, result)
+    }

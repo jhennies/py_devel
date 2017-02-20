@@ -1062,12 +1062,12 @@ def rf_combine_sources_new(features, pathlist):
 
         newpathlist += [kl + list(x) for x in pathlist[kl]]
 
-        for d, k, v, kl in features[kl].data_iterator(leaves_only=True):
-            if outfeatures.inkeys(kl):
-                outfeatures[kl] \
-                    = np.concatenate((outfeatures[kl], v), axis=0)
+        for d2, k2, v2, kl2 in features[kl].data_iterator(leaves_only=True):
+            if outfeatures.inkeys(kl2):
+                outfeatures[kl2] \
+                    = np.concatenate((outfeatures[kl2], np.array(v2)), axis=0)
             else:
-                outfeatures[kl] = v
+                outfeatures[kl2] = np.array(v2)
 
     return outfeatures, newpathlist
 
