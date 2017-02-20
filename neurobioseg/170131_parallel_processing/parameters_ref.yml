@@ -214,8 +214,8 @@ compute_paths:
                 penaltypower: 10
                 ignorelabels: []
                 max_paths_per_object_seed: ~
-                parallelize: True
-                max_threads: 20
+                parallelize: False
+                max_threads: 1
                 order_of_betas:
                     - beta_0.5
                     - beta_0.45
@@ -226,6 +226,7 @@ compute_paths:
                     - beta_0.65
                     - beta_0.3
                     - beta_0.7
+                minimum_alternative_label_count: 10
 
 
 features_of_paths:
