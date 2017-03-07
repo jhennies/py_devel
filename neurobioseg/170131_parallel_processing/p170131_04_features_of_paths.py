@@ -106,11 +106,11 @@ def features_of_paths(yparams):
                 paths.datastructure2string(maxdepth=4)
             )
 
-            # Iterate over the segmentation images
+            # Iterate over the paths
             for d, k, v, kl in paths[exp_class_src[2]['skeys'][0]].data_iterator(
                     leaves_only=True, yield_short_kl=True, maxdepth=3
             ):
-                yparams.logging('\nImage keylist: {}\n..............................', kl + [k])
+                yparams.logging('\nPath keylist: {}\n..............................', kl + [k])
 
                 segm_kl = kl + [k]
                 imgs_kl = kl
