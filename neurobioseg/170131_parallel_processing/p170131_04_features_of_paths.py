@@ -121,7 +121,7 @@ def features_of_paths(yparams):
                 infeatims = hp()
                 sourcelist = exp_sources['featureims'].dcp()
                 if 'segmentation' in sourcelist:
-                    infeatims['segmentation'] = featureims['segmentation'][segm_kl]
+                    infeatims['segmentation'][k] = featureims['segmentation'][segm_kl]
                     sourcelist.pop('segmentation')
                 for source in sourcelist:
                     infeatims[source] = featureims[source][imgs_kl]

@@ -69,10 +69,12 @@ def random_forest(yparams, debug=False):
         zeroth_defaults = hp()
 
     # pathlist = ipl()
-    # pathlistfile = zeroth_defaults['targets', 'pathlist']
-    # pathlistfile = all_params[pathlistfile[0]] + all_params[pathlistfile[1]]
+    featlistfile = zeroth_defaults['targets', 'featlist']
+    featlistfile = all_params[featlistfile[0]] + all_params[featlistfile[1]]
 
     # yparams.logging('\nDatastructure of pathlistin:\n\n{}', pathlistin.datastructure2string())
+
+    feature_space_lists = dict()
 
     for exp_lbl, experiment in zeroth.iteritems():
 
@@ -245,10 +247,13 @@ def random_forest(yparams, debug=False):
         #         example_kl = kl2
         #         break
         # 2. Get the keylist order of the feature space
+        # TODO: Write this to file
         feature_space_list = []
         for d2, k2, v2, kl2 in truetrainfeats.data_iterator():
             if type(v2) is not type(truetrainfeats):
                 feature_space_list.append(kl2)
+
+        feature_space_lists[exp_lbl] = feature_space_list
 
         intrain = hp()
         intrain['true'] = libhp.rf_make_feature_array_with_keylist(truetrainfeats, feature_space_list)
@@ -282,6 +287,9 @@ def random_forest(yparams, debug=False):
         for key, value in new_eval[exp_lbl].iteritems():
             yparams.logging('{} = {}', key, value)
 
+    with open(featlistfile, 'wb') as f:
+        pickle.dump(feature_space_lists, f)
+
 
 def run_random_forest(
         yamlfile, logging=True, make_only_feature_array=False, debug=False, write=True
@@ -311,7 +319,7 @@ def run_random_forest(
 
 if __name__ == '__main__':
 
-    yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters.yml'
+    yamlfile = os.path.dirname(os.path.abspath(__file__)) + '/parameters_ref.yml'
     # yamlfile = '/mnt/localdata01/jhennies/neuraldata/results/cremi_2016/170127_only_on_beta_5_train0_predict1_full/parameters.yml'
     # yamlfile = '/mnt/localdata01/jhennies/neuraldata/results/cremi_2016/170216_crossvalidation_spl_abc/parameters.yml'
 
