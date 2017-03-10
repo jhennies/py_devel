@@ -72,9 +72,13 @@ def random_forest(yparams, debug=False):
     featlistfile = zeroth_defaults['targets', 'featlist']
     featlistfile = all_params[featlistfile[0]] + all_params[featlistfile[1]]
 
+    classifier_file = zeroth_defaults['targets', 'classifier']
+    classifier_file = all_params[classifier_file[0]] + all_params[classifier_file[1]]
+
     # yparams.logging('\nDatastructure of pathlistin:\n\n{}', pathlistin.datastructure2string())
 
     feature_space_lists = dict()
+    classifiers = dict()
 
     for exp_lbl, experiment in zeroth.iteritems():
 
@@ -269,7 +273,7 @@ def random_forest(yparams, debug=False):
 
         # Classify
         result = hp()
-        result[exp_lbl] = libhp.random_forest(
+        result[exp_lbl], classifiers[exp_lbl] = libhp.random_forest(
             intrain, inpredict, debug=debug, balance=exp_params['balance_classes'],
             logger=yparams
         )
@@ -289,6 +293,11 @@ def random_forest(yparams, debug=False):
 
     with open(featlistfile, 'wb') as f:
         pickle.dump(feature_space_lists, f)
+
+    # Store the classifiers
+    with open(classifier_file, 'wb') as f:
+        pickle.dump(classifiers, f)
+
 
 
 def run_random_forest(

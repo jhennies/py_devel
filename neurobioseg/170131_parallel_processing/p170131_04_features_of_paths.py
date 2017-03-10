@@ -121,10 +121,11 @@ def features_of_paths(yparams):
                 infeatims = hp()
                 sourcelist = exp_sources['featureims'].dcp()
                 if 'segmentation' in sourcelist:
-                    infeatims['segmentation'][k] = featureims['segmentation'][segm_kl]
+                    infeatims['segmentation'] = featureims['segmentation'][segm_kl]
                     sourcelist.pop('segmentation')
                 for source in sourcelist:
-                    infeatims[source] = featureims[source][imgs_kl]
+                    # TODO: This is not nice... Here I try to remove a redundant key
+                    infeatims[source] = featureims[source][imgs_kl][featureims[source][imgs_kl].keys()[0]]
                 # infeatims.populate()
 
                 # Bild an input dict for true paths

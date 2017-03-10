@@ -30,7 +30,7 @@ rffile:         'randomforest.pkl'
 run_remove_small_objects: False
 run_compute_feature_images: False
 run_find_border_contacts: False
-run_compute_paths: True
+run_compute_paths: False
 run_features_of_paths: True
 run_random_forest: True
 
@@ -374,7 +374,7 @@ random_forest:
         params:
             balance_classes: False
         targets:
-            result: [resultfolder, rffile]
+            classifier: [resultfolder, rffile]
             featlist: [intermedfolder, featlistfile]
             pathlist: [intermedfolder, pathlistforestfile]
 
