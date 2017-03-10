@@ -1,100 +1,157 @@
-datafolder: /mnt/localdata02/jhennies/neuraldata/cremi_2016/
-resultfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170124_neurobioseg_x_cropped_avoid_duplicates_develop/
-intermedfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170124_neurobioseg_x_cropped_avoid_duplicates_develop/intermed/
-scriptsfolder: /mnt/localdata02/jhennies/neuraldata/results/cremi_2016/170124_neurobioseg_x_cropped_avoid_duplicates_develop/scripts/
+datafolder: /mnt/localdata01/jhennies/neuraldata/cremi_2016/resolve_merges/
+resultfolder: /mnt/localdata01/jhennies/neuraldata/results/multicut_workflow/170224_test/cache/find_merges_cache/
+intermedfolder: /mnt/localdata01/jhennies/neuraldata/results/multicut_workflow/170224_test/cache/find_merges_cache/intermed/
+scriptsfolder: /mnt/localdata01/jhennies/neuraldata/results/multicut_workflow/170224_test/cache/find_merges_cache/scripts/
 
-debug: True
+debug: False
 
 createfolders: True
 overwriteresults: True
 
-rawdatafile:    'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+rawdatafile:    'cremi.splB.raw_neurons.crop.axes_xyz.crop_x100-612_y100-612.split_z.h5'
 rawdataname:    'raw'
-gtruthfile:     'cremi.splA.train.raw_neurons.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+gtruthfile:     'cremi.splB.raw_neurons.crop.axes_xyz.crop_x100-612_y100-612.split_z.h5'
 gtruthname:     'neuron_ids'
-gtlargefile:    'cremi.splA.train.gtlarge.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-gtlargename:    'neuron_ids'
-probsfile:      'cremi.splA.train.probs.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
+probsfile:      'cremi.splB.train.probs.crop.axes_xyz.crop_x100-612_y100-612.split_z.h5'
 probsname:      'data'
-segmfile:       'cremi.splA.train.mcseg_betas.crop.crop_x10_110_y200_712_z200_712.split_xyz.h5'
-segmlargefile:  'cremi.splA.train.segmlarge.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-rawfeatsfile:   'cremi.splA.train.rawfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-probsfeatsfile: 'cremi.splA.train.probsfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-segfeatsfile:   'cremi.splA.train.segfeats.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-borderctfile:   'cremi.splA.train.borderct.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
+segmfile:       'cremi.splB.train.mcseg_betas.crop.axes_xyz.crop_x100-612_y100-612.split_z.h5'
+segmlargefile:  'segmlarge.h5'
+rawfeatsfile:   'rawfeats.h5'
+probsfeatsfile: 'probsfeats.h5'
+segfeatsfile:   'segfeats.h5'
+borderctfile:   'borderct.h5'
 borderctname:   'contacts'
-pathsfile:      'cremi.splA.train.paths.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-featuresfile:   'cremi.splA.train.features.crop.crop_x10_110_y200_712_z200_712.split_x.h5'
-pathlistfile:   'cremi.splA.train.pathlist.crop.crop_x10_110_y200_712_z200_712.split_x.pkl'
+pathsfile:      'paths.h5'
+featuresfile:   'features.h5'
+pathlistfile:   'pathlist.pkl'
+featlistfile:   'featlist.pkl'
+rffile:         'randomforest.pkl'
 
 run_remove_small_objects: False
 run_compute_feature_images: False
-run_find_border_contacts: True
-run_compute_paths: True
-run_features_of_paths: False
-run_random_forest: False
-
+run_find_border_contacts: False
+run_compute_paths: False
+run_features_of_paths: True
+run_random_forest: True
 
 remove_small_objects:
     sources:
-        - [datafolder, segmfile, {skeys: [['x']]}]
-        - [datafolder, gtruthfile, {skeys: [['x', '*', 'neuron_ids']]}]
+        - [datafolder, segmfile, {skeys: [['z', '*']]}]
     targets:
         - [intermedfolder, segmlargefile]
-        - [intermedfolder, gtlargefile]
     bysize: 10000
     relabel: True
     consecutive_labels: True
     filtering_threads: 1
-    image_threads: 32
+    image_threads: 24
 
 
 compute_feature_images:
 
     'rawdata':
-        source: [datafolder, rawdatafile, {skeys: [['x', '*', raw]]}]
+        source: [datafolder, rawdatafile, {skeys: [['z', '*', raw]]}]
         target: [intermedfolder, rawfeatsfile]
         features:
             raw: ~
             gauss_2:
                 params: [2]
                 func: gaussian
+            gauss_5:
+                params: [5]
+                func: gaussian
+            gauss_10:
+                params: [10]
+                func: gaussian
             mag_1:
                 params: [1]
+                func: gaussian_gradient_magnitude
+            mag_5:
+                params: [5]
+                func: gaussian_gradient_magnitude
+            mag_10:
+                params: [10]
                 func: gaussian_gradient_magnitude
             hess_1:
                 params: [1]
                 func: hessian_eigenvalues
+            hess_5:
+                params: [5]
+                func: hessian_eigenvalues
+            hess_10:
+                params: [10]
+                func: hessian_eigenvalues
             lapl_1:
                 params: [1]
+                func: laplacian_of_gaussian
+            lapl_5:
+                params: [5]
+                func: laplacian_of_gaussian
+            lapl_10:
+                params: [10]
                 func: laplacian_of_gaussian
             structen_1_2:
                 params: [1, 2]   # [inner_scale, outer_scale]
                 func: structure_tensor_eigenvalues
+            structen_4_8:
+                params: [5, 10]
+                func: structure_tensor_eigenvalues
+            structen_8_16:
+                params: [10, 20]
+                func: structure_tensor_eigenvalues
 
     'probs':
-        source: [datafolder, probsfile, {skeys: [['x', '*', data]]}]
+        source: [datafolder, probsfile, {skeys: [['z', '*', data]]}]
         target: [intermedfolder, probsfeatsfile]
         features:
             raw: ~
             gauss_2:
                 params: [2]
                 func: gaussian
+            gauss_5:
+                params: [5]
+                func: gaussian
+            gauss_10:
+                params: [10]
+                func: gaussian
             mag_1:
                 params: [1]
+                func: gaussian_gradient_magnitude
+            mag_5:
+                params: [5]
+                func: gaussian_gradient_magnitude
+            mag_10:
+                params: [10]
                 func: gaussian_gradient_magnitude
             hess_1:
                 params: [1]
                 func: hessian_eigenvalues
+            hess_5:
+                params: [5]
+                func: hessian_eigenvalues
+            hess_10:
+                params: [10]
+                func: hessian_eigenvalues
             lapl_1:
                 params: [1]
+                func: laplacian_of_gaussian
+            lapl_5:
+                params: [5]
+                func: laplacian_of_gaussian
+            lapl_10:
+                params: [10]
                 func: laplacian_of_gaussian
             structen_1_2:
                 params: [1, 2]   # [inner_scale, outer_scale]
                 func: structure_tensor_eigenvalues
+            structen_4_8:
+                params: [5, 10]
+                func: structure_tensor_eigenvalues
+            structen_8_16:
+                params: [10, 20]
+                func: structure_tensor_eigenvalues
 
     'segmentation':
-        source: [intermedfolder, segmlargefile, {skeys: [['x', '0'], ['x', '1', 'beta_0.5']]}]
+        source: [intermedfolder, segmlargefile, {skeys: [['z']]}]
         target: [intermedfolder, segfeatsfile]
         features:
             disttransf:
@@ -104,23 +161,53 @@ compute_feature_images:
                 gauss_2:
                     params: [2]
                     func: gaussian
+                gauss_5:
+                    params: [5]
+                    func: gaussian
+                gauss_10:
+                    params: [10]
+                    func: gaussian
                 mag_1:
                     params: [1]
+                    func: gaussian_gradient_magnitude
+                mag_5:
+                    params: [5]
+                    func: gaussian_gradient_magnitude
+                mag_10:
+                    params: [10]
                     func: gaussian_gradient_magnitude
                 hess_1:
                     params: [1]
                     func: hessian_eigenvalues
+                hess_5:
+                    params: [5]
+                    func: hessian_eigenvalues
+                hess_10:
+                    params: [10]
+                    func: hessian_eigenvalues
                 lapl_1:
                     params: [1]
+                    func: laplacian_of_gaussian
+                lapl_5:
+                    params: [5]
+                    func: laplacian_of_gaussian
+                lapl_10:
+                    params: [10]
                     func: laplacian_of_gaussian
                 structen_1_2:
                     params: [1, 2]   # [inner_scale, outer_scale]
                     func: structure_tensor_eigenvalues
+                structen_4_8:
+                    params: [5, 10]
+                    func: structure_tensor_eigenvalues
+                structen_8_16:
+                    params: [10, 20]
+                    func: structure_tensor_eigenvalues
 
     'default':
         params:
-            anisotropy: [10, 1, 1]
-            max_threads_sources: 6
+            anisotropy: [1, 1, 10]
+            max_threads_sources: 2
             max_threads_features: 5
 
 
@@ -163,59 +250,57 @@ compute_paths:
     # ...
     # experiment_n:
     #     ...
-    # default
+    # default:
     #     ...
 
-    'experiment_0a':
-        falsepaths:
-            params:
-                avoid_duplicates: True
-
-    'experiment_1a': ~
-
-    'predict':
+    # slice z
+    # -------
+    'z_train0':
         truepaths:
             sources:
-                segm: [intermedfolder, segmlargefile, {skeys: [[x, '1', beta_0.5]]}]
-                gt: [intermedfolder, gtlargefile, {skeys: [[x, '1', neuron_ids]]}]
-                conts: [intermedfolder, borderctfile, {skeys: [[x, '1', beta_0.5, contacts]]}]
-                dt: [intermedfolder, segfeatsfile, {skeys: [[x, '1', beta_0.5, disttransf, raw]]}]
+                segm: [intermedfolder, segmlargefile, {skeys: [[z, '0', beta_0.5]]}]
+                gt: [datafolder, gtruthfile, {skeys: [[z, '0', neuron_ids]]}]
+                conts: [intermedfolder, borderctfile, {skeys: [[z, '0', beta_0.5, contacts]]}]
+                dt: [intermedfolder, segfeatsfile, {skeys: [[z, '0', beta_0.5, disttransf, raw]]}]
         falsepaths:
             sources:
-                segm: [intermedfolder, segmlargefile, {skeys: [[x, '1', 'beta_0.5']]}]
-                gt: [intermedfolder, gtlargefile, {skeys: [[x, '1', neuron_ids]]}]
-                conts: [intermedfolder, borderctfile, {skeys: [[x, '1', 'beta_0.5', contacts]]}]
-                dt: [intermedfolder, segfeatsfile, {skeys: [[x, '1', 'beta_0.5', disttransf, raw]]}]
-            params:
-                avoid_duplicates: True
+                segm: [intermedfolder, segmlargefile, {skeys: [[z, '0']]}]
+                gt: [datafolder, gtruthfile, {skeys: [[z, '0', neuron_ids]]}]
+                conts: [intermedfolder, borderctfile, {skeys: [[z, '0', '*', contacts]]}]
+                dt: [intermedfolder, segfeatsfile, {skeys: [[z, '0', '*', disttransf, raw]]}]
+
+
+    'z_predict1':
+        truepaths:
+            sources:
+                segm: [intermedfolder, segmlargefile, {skeys: [[z, '1', beta_0.5]]}]
+                gt: [datafolder, gtruthfile, {skeys: [[z, '1', neuron_ids]]}]
+                conts: [intermedfolder, borderctfile, {skeys: [[z, '1', beta_0.5, contacts]]}]
+                dt: [intermedfolder, segfeatsfile, {skeys: [[z, '1', beta_0.5, disttransf, raw]]}]
+        falsepaths:
+            sources:
+                segm: [intermedfolder, segmlargefile, {skeys: [[z, '1', beta_0.5]]}]
+                gt: [datafolder, gtruthfile, {skeys: [[z, '1', neuron_ids]]}]
+                conts: [intermedfolder, borderctfile, {skeys: [[z, '1', beta_0.5, contacts]]}]
+                dt: [intermedfolder, segfeatsfile, {skeys: [[z, '1', 'beta_0.5', disttransf, raw]]}]
 
     default:
         truepaths:
-            sources:
-                segm: [intermedfolder, segmlargefile, {skeys: [[x, '0', beta_0.5]]}]
-                gt: [intermedfolder, gtlargefile, {skeys: [[x, '0', neuron_ids]]}]
-                conts: [intermedfolder, borderctfile, {skeys: [[x, '0', beta_0.5, contacts]]}]
-                dt: [intermedfolder, segfeatsfile, {skeys: [[x, '0', beta_0.5, disttransf, raw]]}]
             params:
-                max_paths_per_object: 1
+                max_paths_per_object: 5
         falsepaths:
-            sources:
-                segm: [intermedfolder, segmlargefile, {skeys: [[x, '0']]}]
-                gt: [intermedfolder, gtlargefile, {skeys: [[x, '0', neuron_ids]]}]
-                conts: [intermedfolder, borderctfile, {skeys: [[x, '0', '*', contacts]]}]
-                dt: [intermedfolder, segfeatsfile, {skeys: [[x, '0', '*', disttransf, raw]]}]
             params:
-                max_paths_per_object: ~
+                max_paths_per_object: 10
 
         default:
             target: [intermedfolder, pathsfile]
             params:
-                avoid_duplicates: False
+                avoid_duplicates: True
                 penaltypower: 10
                 ignorelabels: []
                 max_paths_per_object_seed: ~
-                parallelize: False
-                max_threads: 1
+                parallelize: True
+                max_threads: 24
                 order_of_betas:
                     - beta_0.5
                     - beta_0.45
@@ -231,23 +316,22 @@ compute_paths:
 
 features_of_paths:
 
-    'experiment_0a':
+    # slice z
+    # -------
+    'z_train0':
         sources:
             paths:
-                truepaths: [intermedfolder, pathsfile, {skeys: [[experiment_0a, truepaths]]}]
-                falsepaths: [intermedfolder, pathsfile, {skeys: [[experiment_0a, falsepaths]]}]
-    'experiment_1a':
-        sources:
-            paths:
-                truepaths: [intermedfolder, pathsfile, {skeys: [[experiment_1a, truepaths]]}]
-                falsepaths: [intermedfolder, pathsfile, {skeys: [[experiment_1a, falsepaths]]}]
+                truepaths: [intermedfolder, pathsfile, {skeys: [[z_train0, truepaths]]}]
+                falsepaths: [intermedfolder, pathsfile, {skeys: [[z_train0, falsepaths]]}]
 
-    'predict':
+    'z_predict1':
         sources:
             paths:
-                truepaths: [intermedfolder, pathsfile, {skeys: [[predict, truepaths]]}]
-                falsepaths: [intermedfolder, pathsfile, {skeys: [[predict, falsepaths]]}]
+                truepaths: [intermedfolder, pathsfile, {skeys: [[z_predict1, truepaths]]}]
+                falsepaths: [intermedfolder, pathsfile, {skeys: [[z_predict1, falsepaths]]}]
 
+    # default
+    # -------
     default:
         sources:
             featureims:
@@ -258,7 +342,7 @@ features_of_paths:
             features: [intermedfolder, featuresfile]
             pathlist: [intermedfolder, pathlistfile]
         params:
-            anisotropy: [10, 1, 1]
+            anisotropy: [1, 1, 10]
             features:
                 - Sum
                 - Mean
@@ -268,29 +352,29 @@ features_of_paths:
                 - Kurtosis
                 - Skewness
                 - Pathlength
-            max_paths_per_label: 2
+            max_paths_per_label: ~
             parallelize: True
-            max_threads: 5
+            max_threads: 10
 
 
 random_forest:
 
-    'experiment_0a':
+    # slice z
+    # -------
+    'z_train0_predict1':
         sources:
-            train: [intermedfolder, featuresfile, {skeys: experiment_0a}]
-            predict: [intermedfolder, featuresfile, {skeys: predict}]
+            train: [intermedfolder, featuresfile, {skeys: z_train0}]
+            predict: [intermedfolder, featuresfile, {skeys: z_predict1}, z_predict1]
+            train_pl: [intermedfolder, pathlistfile, {skeys: [[z_train0]]}]
+            predict_pl: [intermedfolder, pathlistfile, {skeys: [[z_predict1]]}]
 
-    'experiment_1a':
-        sources:
-            train: [intermedfolder, featuresfile, {skeys: experiment_1a}]
-            predict: [intermedfolder, featuresfile, {skeys: predict}]
-
+    # default
+    # -------
     default:
-        sources:
-            pathlist: [intermedfolder, pathlistfile]
         params:
             balance_classes: False
         targets:
-            result: [resultfolder, resultfile]
+            classifier: [resultfolder, rffile]
+            featlist: [intermedfolder, featlistfile]
             pathlist: [intermedfolder, pathlistforestfile]
 
