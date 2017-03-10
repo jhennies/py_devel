@@ -200,6 +200,7 @@ def get_features(
                     newnewfeats = newnewfeats.subset(*featurelist)
 
                     # Done: Extract feature 'Count' manually due to anisotropy
+
                     # Append to the recently computed list of features
                     for nk, nv in newnewfeats.iteritems():
                         nv = nv[1:]
@@ -747,7 +748,7 @@ def random_forest(trainfeatures, testfeatures, debug=False, balance=False, logge
     # print result.shape
     # print testlabels.shape
 
-    return zip(result, testlabels)
+    return zip(result, testlabels), rf
 
 
 def rf_make_forest_input(features):
