@@ -8,98 +8,12 @@ import processing_lib as lib
 from yaml_parameters import YamlParams
 from concurrent import futures
 from timeit import default_timer as timer
+from find_false_merges_src import FeatureImages, FeatureImageParams
+import h5py
+import re
 
 
 __author__ = 'jhennies'
-
-
-def load_images(filepath, skeys=None, recursive_search=False, logger=None):
-
-    if logger is not None:
-        logger.logging('Loading data from \n{}', filepath)
-    else:
-        print 'Loading data from \n{}'.format(filepath)
-
-    data = Hp()
-
-    data.data_from_file(
-        filepath=filepath,
-        skeys=skeys,
-        recursive_search=recursive_search,
-        nodata=True
-    )
-
-    return data
-
-
-class FeatureFunctions:
-
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def gaussian(image, general_params, specific_params):
-        print 'Gaussian: Start...'
-        gaussian = lib.gaussian_smoothing(image, specific_params[0], general_params['anisotropy'])
-        print 'Gaussian: End!'
-        return gaussian
-
-    @staticmethod
-    def disttransf(image, general_params, specific_params):
-        print 'Distance transform: Start...'
-
-        anisotropy = np.array(general_params['anisotropy']).astype(np.float32)
-        image = image.astype(np.float32)
-
-        # Compute boundaries
-        axes = (anisotropy ** -1).astype(np.uint8)
-        image = lib.pixels_at_boundary(image, axes)
-
-        # Compute distance transform
-        image = image.astype(np.float32)
-        image = lib.distance_transform(image, pixel_pitch=anisotropy, background=True)
-
-        print 'Distance transform: End!'
-        return image
-
-    @staticmethod
-    def hessian_eigenvalues(image, general_params, specific_params):
-        print 'Hessian: Start...'
-        hessian = lib.hessian_of_gaussian_eigenvalues(
-            image, specific_params[0], anisotropy=general_params['anisotropy']
-        )
-        print 'Hessian: End!'
-        return hessian
-
-    @staticmethod
-    def structure_tensor_eigenvalues(image, general_params, specific_params):
-        print 'Structure tensor: Start...'
-        structen = lib.structure_tensor_eigenvalues(
-            image, specific_params[0], specific_params[1],
-            anisotropy=general_params['anisotropy']
-        )
-        print 'Structure tensor: End!'
-        return structen
-
-    @staticmethod
-    def gaussian_gradient_magnitude(image, general_params, specific_params):
-        print 'Gradient magnitude: Start...'
-        mag = lib.gaussian_gradient_magnitude(
-            image, specific_params[0],
-            anisotropy=general_params['anisotropy']
-        )
-        print 'Gradient magnitude: End!'
-        return mag
-
-    @staticmethod
-    def laplacian_of_gaussian(image, general_params, specific_params):
-        print 'Laplacian: Start...'
-        lapl = lib.laplacian_of_gaussian(
-            image, specific_params[0],
-            anisotropy=general_params['anisotropy']
-        )
-        print 'Laplacian: End!'
-        return lapl
 
 
 def experiment_parser(yparams, function, name):
@@ -127,90 +41,6 @@ def experiment_parser(yparams, function, name):
         function(final, yparams)
 
 
-def return_img(image):
-    return image
-
-
-def compute_features_multi_wrapper(image, general_params, features, kl, target_file, logger=None):
-
-    if kl is not None and logger is not None:
-        logger.logging('Computing features on image {}', kl)
-
-    result = Hp()
-
-    result[kl] = compute_features_multi(image, general_params, features, logger=logger)
-    image = None
-
-    # Write result
-    logger.logging('Writing in {}', target_file)
-    result.write(target_file)
-
-
-def compute_features_multi(image, general_params, features, logger=None):
-
-    ff = FeatureFunctions()
-    result = Hp()
-
-    if type(image) is not np.ndarray:
-        image = np.array(image)
-
-    if logger is not None:
-        logger.logging(
-            'Starting thread pool with a max of {} threads', general_params['max_threads_features']
-        )
-    with futures.ThreadPoolExecutor(general_params['max_threads_features']) as do_stuff:
-
-        keys = []
-        vals = []
-        tasks = Rdict()
-
-        for k, v in features.iteritems():
-
-            if v:
-
-                tasks[k] = do_stuff.submit(
-                    getattr(ff, v.pop('func')), image, general_params, v.pop('params')
-                )
-                # print 'In the for loop: {}'.format(do_stuff.done())
-                keys.append(k)
-                vals.append(v)
-
-            else:
-                result[k] = image
-
-    for k, v in dict(zip(keys, vals)).iteritems():
-        result[k] = tasks[k].result()
-        if len(v) > 0:
-            result[k] = compute_features_multi(result[k], general_params, v)
-
-    return result
-
-
-def compute_features(image, general_params, features, logger=None, name=None):
-
-    ff = FeatureFunctions()
-    result = Hp()
-
-    if type(image) is not np.ndarray:
-        image = np.array(image)
-
-    if name is not None and logger is not None:
-        logger.logging('Computing features on image {}', name)
-
-    for k, v in features.iteritems():
-
-        if v:
-            # print 'Computing {}'.format(v['func'])
-            result[k] = getattr(ff, v.pop('func'))(image, general_params, v.pop('params'))
-
-            if len(v) > 0:
-                result[k] = compute_features(result[k], general_params, v)
-        else:
-            result[k] = image
-
-    return result
-
-
 def compute_feature_images_multi(experiment, yparams):
 
     all_params = yparams.get_params()
@@ -220,81 +50,64 @@ def compute_feature_images_multi(experiment, yparams):
     params = experiment['params']
     features = experiment['features']
 
-    # Load data
-    if len(source) > 2:
-        kw_load = source[2]
-    data = load_images(
-        all_params[source[0]] + all_params[source[1]], logger=yparams, **kw_load
-    )
-
-    yparams.logging('\nInitial datastructure: \n\n{}', data.datastructure2string(maxdepth=3))
-
+    # Set source file
+    source_file = all_params[source[0]] + all_params[source[1]]
     # Set target file
     target_file = all_params[target[0]] + all_params[target[1]]
 
+    # -----------------------------------------------------------------
+    # This gets me the internal paths that are desired according to the
+    # regular expression input
+    internal_paths = []
 
+    search_pattern = source[2]['re']
+    f = h5py.File(source_file, 'r')
+
+    def recursive_visit(f, name=''):
+        # print name
+        if name != '':
+            name += '/'
+            if re.search(search_pattern, name):
+                internal_paths.append(name)
+        for k, v in f.iteritems():
+            if type(v) is not h5py.Dataset:
+                recursive_visit(v, name=name + k)
+            else:
+                if re.search(search_pattern, name + k):
+                    # print name + k
+                    internal_paths.append(name + k + '/')
+
+    recursive_visit(f)
+    # -----------------------------------------------------------------
+
+    yparams.logging('Found internal paths: {}', internal_paths)
+
+    feature_image_params = FeatureImageParams(
+        feature_list=features,
+        anisotropy=params['anisotropy'],
+        max_threads_features=params['max_threads_features']
+    )
+
+    # Create a list of feature images objects, each referring to one internal path
+    feature_images_list = [
+        FeatureImages(
+            source_filepath=all_params[source[0]] + all_params[source[1]],
+            source_internal_path=x,
+            filepath=target_file,
+            internal_path=x,
+            params=feature_image_params
+        )
+        for x in internal_paths
+    ]
+
+    # Actually compute the feature images
     yparams.logging('Starting thread pool with a max of {} threads', params['max_threads_sources'])
     with futures.ThreadPoolExecutor(params['max_threads_sources']) as do_stuff:
-        tasks = Hp()
-        for d, k, v, kl in data.data_iterator(leaves_only=True):
-            tasks[kl] = do_stuff.submit(
-                compute_features_multi_wrapper, data[kl], params, features.dcp(),
-                kl, target_file, logger=yparams
+        # tasks = Hp()
+        for feature_images in feature_images_list:
+            do_stuff.submit(
+                feature_images.compute_children
             )
-
-        # # result = [x.result() for x in tasks]
-        # for d, k, v, kl in tasks.data_iterator(leaves_only=True):
-        #     data[kl] = v.result()
-
-
-def compute_feature_images(experiment, yparams):
-
-    all_params = yparams.get_params()
-
-    source = experiment['source']
-    target = experiment['target']
-    params = experiment['params']
-    features = experiment['features']
-
-    # Load data
-    if len(source) > 2:
-        kw_load = source[2]
-    data = load_images(
-        all_params[source[0]] + all_params[source[1]], logger=yparams, **kw_load
-    )
-
-    yparams.logging('\nInitial datastructure: \n\n{}', data.datastructure2string(maxdepth=3))
-
-    # Set target file
-    target_file = all_params[target[0]] + all_params[target[1]]
-
-    for d, k, v, kl in data.data_iterator(leaves_only=True):
-        yparams.logging('===============================\nWorking on image: {}', kl)
-
-        # Load data into memory
-        data[kl] = np.array(v)
-
-        # # Feature calculation
-        # start = timer()
-        # data[kl] = compute_features_multi(data[kl], params, features.dcp(), logger=yparams)
-        # # data[kl] = None
-        # elapsed = timer()
-        # elapsed = elapsed - start
-        # print "Time spent in compute_features_multi is: ", elapsed
-
-        start = timer()
-        data[kl] = compute_features(data[kl], params, features.dcp(), logger=yparams, name=kl)
-        elapsed = timer()
-        elapsed = elapsed - start
-        print "Time spent in compute_features is: ", elapsed
-
-        # # Write result
-        # data.write(target_file, keys=kl)
-        # Free memory
-        data[kl] = None
-
-    # Close file
-    data.close()
 
 
 def run_compute_feature_images(yamlfile):
