@@ -49,7 +49,7 @@ remove_small_objects:
 compute_feature_images:
 
     'rawdata':
-        source: [datafolder, rawdatafile, {skeys: [['z', '*', raw]]}]
+        source: [datafolder, rawdatafile, {re: '^z/[^/]+/raw$'}]
         target: [intermedfolder, rawfeatsfile]
         features:
             raw: ~
@@ -100,7 +100,7 @@ compute_feature_images:
                 func: structure_tensor_eigenvalues
 
     'probs':
-        source: [datafolder, probsfile, {skeys: [['z', '*', data]]}]
+        source: [datafolder, probsfile, {re: '^z/[^/]+/data$'}]
         target: [intermedfolder, probsfeatsfile]
         features:
             raw: ~
@@ -151,7 +151,7 @@ compute_feature_images:
                 func: structure_tensor_eigenvalues
 
     'segmentation':
-        source: [intermedfolder, segmlargefile, {skeys: [['z']]}]
+        source: [intermedfolder, segmlargefile, {re: '^z/[^/]+/[^/]+$'}]
         target: [intermedfolder, segfeatsfile]
         features:
             disttransf:
@@ -207,8 +207,8 @@ compute_feature_images:
     'default':
         params:
             anisotropy: [1, 1, 10]
-            max_threads_sources: 2
-            max_threads_features: 5
+            max_threads_sources: 3
+            max_threads_features: 10
 
 
 find_border_contacts:
